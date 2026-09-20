@@ -1,2 +1,5 @@
 # Fixture projects contain intentionally unresolved package imports used by importer tests. They are not part of the published package API.
 test/**/lib/**
+
+# Consumer-facing agent skills are distributed through the repository only.
+skills/

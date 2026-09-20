@@ -1,0 +1,11 @@
+library package_valid;
+import 'package:import_styles/model.dart';
+import 'package:external/model.dart';
+import 'dart:async';
+import 'package:import_styles/model.dart' if (dart.library.io) 'package:external/model.dart';
+export 'package:import_styles/model.dart';
+export 'package:external/model.dart';
+export 'dart:async';
+export 'package:import_styles/model.dart' if (dart.library.io) 'package:external/model.dart';
+part 'relative_part.dart';
+part 'named_part.dart';

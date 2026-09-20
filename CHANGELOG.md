@@ -1,3 +1,7 @@
+## 0.9.1
+
+- Added `preferRelativeImports()`, `preferPackageImports()`, `preferRelativeUris()` and `preferPackageUris()`.
+
 ## 0.9.0
 
 - **Breaking change:** Frozen violation baselines now use package-relative paths with `/` separators. Recreate baselines previously stored with absolute paths; no legacy migration is performed.

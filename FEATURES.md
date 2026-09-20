@@ -56,6 +56,10 @@
 - `pathShouldNotExist`
 - `publicSignaturesShouldNotUseDynamic`
 - `shouldHaveAtMostOnePublicClassPerFile`
+- `preferRelativeImports`
+- `preferPackageImports`
+- `preferRelativeUris`
+- `preferPackageUris`
 - `publicClassNameShouldMatchFileName`
 - `shouldNotUsePartOf`
 - `barrelFilesShouldOnlyExport`

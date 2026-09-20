@@ -94,6 +94,133 @@ final class HeimdallCodeSight {
     return Heimdall.files().that().resideInPath(pathPattern).should().haveAtMostOnePublicClass().as('files should have at most one public class');
   }
 
+  /// Requires same-package imports to use relative URIs, including every
+  /// conditional branch and targets excluded from the imported source set.
+  ///
+  /// Other package imports and SDK imports are accepted. This is a style check;
+  /// use [preferRelativeUris] to also validate URI syntax and package boundaries.
+  HeimdallRule<HeimdallSourceFile> preferRelativeImports({
+    String pathPattern = '**',
+  }) => Heimdall.files().that().resideInPath(pathPattern).should().satisfy(_preferRelativeImports()).as('files should prefer relative imports');
+
+  /// Requires imports to use `package:` or SDK URIs instead of relative URIs.
+  ///
+  /// Checks every conditional branch without requiring imported targets.
+  /// This is a style check; use [preferPackageUris] for the complete URI policy.
+  HeimdallRule<HeimdallSourceFile> preferPackageImports({
+    String pathPattern = '**',
+  }) => Heimdall.files().that().resideInPath(pathPattern).should().satisfy(_preferPackageImports()).as('files should prefer package imports');
+
+  /// Requires relative same-package imports/exports and `package:` external ones.
+  ///
+  /// SDK URIs are accepted for imports/exports. Parts and URI-based part-ofs
+  /// must be relative and stay in the same package; named part-ofs are accepted.
+  /// Checks URI syntax and every conditional branch without reading files.
+  /// Uses the checked project's package metadata. Import each package separately.
+  HeimdallRule<HeimdallSourceFile> preferRelativeUris({
+    String pathPattern = '**',
+  }) => Heimdall.files().that().resideInPath(pathPattern).should().satisfy(_preferRelativeUris()).as('files should prefer relative URIs');
+
+  /// Requires imports/exports to use `package:` or SDK URIs.
+  ///
+  /// Parts and URI-based part-ofs must remain relative within the same package;
+  /// named part-ofs are accepted. Checks syntax and every conditional branch.
+  /// Uses the checked project's package metadata. Import each package separately.
+  /// Rules use imported metadata only and do not read or create files.
+  HeimdallRule<HeimdallSourceFile> preferPackageUris({
+    String pathPattern = '**',
+  }) => Heimdall.files().that().resideInPath(pathPattern).should().satisfy(_preferPackageUris()).as('files should prefer package URIs');
+
+  HeimdallCondition<HeimdallSourceFile> _preferRelativeImports() {
+    return HeimdallCondition('prefer relative imports', (file, project) {
+      final ownPackagePrefix = project.packageName == null ? null : 'package:${project.packageName}/';
+      final findings = [
+        if (ownPackagePrefix != null)
+          for (final directive in file.packageImports)
+            for (final target in directive.targetUris)
+              if (target.startsWith(ownPackagePrefix))
+                HeimdallValidationInfo(
+                  filePath: file.absolutePath,
+                  line: directive.line,
+                  message: 'Use relative import instead of $target',
+                ),
+      ];
+      return HeimdallFindings(subject: file, passed: findings.isEmpty, findings: findings);
+    });
+  }
+
+  HeimdallCondition<HeimdallSourceFile> _preferPackageImports() {
+    return HeimdallCondition('prefer package imports', (file, _) {
+      final findings = [
+        for (final directive in file.relativeImports)
+          for (final target in directive.targetUris)
+            if (!target.contains(':'))
+              HeimdallValidationInfo(
+                filePath: file.absolutePath,
+                line: directive.line,
+                message: 'Use package import instead of $target',
+              ),
+      ];
+      return HeimdallFindings(subject: file, passed: findings.isEmpty, findings: findings);
+    });
+  }
+
+  /// Requires relative internal URIs using cached source-file metadata.
+  HeimdallCondition<HeimdallSourceFile> _preferRelativeUris() {
+    return HeimdallCondition('prefer relative URIs', (file, project) {
+      final findings = <HeimdallValidationInfo>[];
+      for (final reference in file.sourceUris) {
+        final uri = reference.uri;
+        final allowed =
+            reference.isValid &&
+            switch (uri!.scheme) {
+              'dart' => !reference.isPart,
+              'package' => !reference.isPart && project.packageName != null && uri.pathSegments.first != project.packageName,
+              '' => reference.relativeDestination!.toString().startsWith(project.packageRootUri.toString()),
+              _ => false,
+            };
+        if (!allowed) {
+          findings.add(
+            HeimdallValidationInfo(
+              filePath: file.absolutePath,
+              line: reference.directive.line,
+              message: 'URI policy: invalid ${reference.directive.runtimeType} URI ${reference.target}',
+            ),
+          );
+        }
+      }
+      return HeimdallFindings(subject: file, passed: findings.isEmpty, findings: findings);
+    });
+  }
+
+  /// Requires package URIs for imports/exports while keeping parts relative.
+  HeimdallCondition<HeimdallSourceFile> _preferPackageUris() {
+    return HeimdallCondition('prefer package URIs', (file, project) {
+      final findings = <HeimdallValidationInfo>[];
+      for (final reference in file.sourceUris) {
+        final uri = reference.uri;
+        final allowed =
+            reference.isValid &&
+            switch (uri!.scheme) {
+              'dart' => !reference.isPart,
+              'package' => !reference.isPart && project.packageName != null,
+              '' => reference.isPart && reference.relativeDestination!.toString().startsWith(project.packageRootUri.toString()),
+              _ => false,
+            };
+        if (!allowed) {
+          findings.add(
+            HeimdallValidationInfo(
+              filePath: file.absolutePath,
+              line: reference.directive.line,
+              message: 'URI policy: invalid ${reference.directive.runtimeType} URI ${reference.target}',
+            ),
+          );
+        }
+      }
+      return HeimdallFindings(subject: file, passed: findings.isEmpty, findings: findings);
+    });
+  }
+
   /// Ensures a single public class has a file name matching its class name.
   HeimdallRule<HeimdallSourceFile> publicClassNameShouldMatchFileName({
     String pathPattern = '**',

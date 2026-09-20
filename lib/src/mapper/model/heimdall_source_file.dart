@@ -145,6 +145,21 @@ final class HeimdallSourceFile {
   /// Part directives not resolved to imported part files.
   late final List<PartDirective> unresolvedParts = List.unmodifiable(partDirectives.where((directive) => directive.targetFiles.isEmpty));
 
+  /// URI branches from the cached import, export, part and part-of collections.
+  ///
+  /// Syntax and relative destinations are computed once per source file, without
+  /// filesystem access. Named part-of directives do not contain a URI.
+  late final List<HeimdallSourceUri> sourceUris = List.unmodifiable(
+    ([
+      ...importDirectives,
+      ...exportDirectives,
+      ...partDirectives,
+      ...partOfDirectives.where((directive) => directive.uri != null),
+    ]..sort((a, b) => a.offset.compareTo(b.offset))).expand(
+      (directive) => directive.targetUris.map((target) => HeimdallSourceUri._(directive, target, absolutePath)),
+    ),
+  );
+
   /// Top-level declarations declared in this file.
   final List<CompilationUnitMember> declarations;
 
@@ -407,6 +422,45 @@ final class HeimdallSourceFile {
   CharacterLocation sourceLocationAt(int offset) {
     return lineInfo.getLocation(offset.clamp(0, content.length));
   }
+}
+
+/// Cached URI branch of a source-file directive, including inactive alternatives.
+final class HeimdallSourceUri {
+  HeimdallSourceUri._(this.directive, this.target, String originPath) : uri = Uri.tryParse(target) {
+    final parsed = uri;
+    isValid =
+        parsed != null &&
+        !parsed.hasQuery &&
+        !parsed.hasFragment &&
+        !parsed.hasAuthority &&
+        parsed.path.isNotEmpty &&
+        !parsed.path.startsWith('/') &&
+        (parsed.scheme != 'package' ||
+            (parsed.pathSegments.length > 1 &&
+                parsed.pathSegments.every(
+                  (segment) => segment.isNotEmpty && segment != '.' && segment != '..' && !segment.contains('/') && !segment.contains(r'\'),
+                )));
+    relativeDestination = isValid && !parsed!.hasScheme ? Uri.file(originPath).resolveUri(parsed) : null;
+  }
+
+  /// Directive declaring this URI.
+  final Directive directive;
+
+  /// Original URI text, preserving the offending conditional alternative.
+  final String target;
+
+  /// Parsed URI, or null for malformed input.
+  final Uri? uri;
+
+  /// Whether this URI has a supported non-absolute, query-free syntax.
+  late final bool isValid;
+
+  /// Lexical destination for a relative URI, even outside the imported file set.
+  /// This does not indicate whether the destination exists.
+  late final Uri? relativeDestination;
+
+  /// Whether the URI belongs to a part or part-of directive.
+  bool get isPart => directive is PartDirective || directive is PartOfDirective;
 }
 
 bool _hasDartUri(UriBasedDirective directive) => directive.targetUris.any((uri) => uri._uriKind == _DirectiveUriKind.dart);

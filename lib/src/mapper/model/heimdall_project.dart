@@ -46,6 +46,9 @@ final class HeimdallProject {
   /// Absolute package root path, where `pubspec.yaml` lives.
   final String packageRootPath;
 
+  /// Cached directory URI for lexical package-boundary checks.
+  late final Uri packageRootUri = Uri.directory(packageRootPath);
+
   /// Package name read from `pubspec.yaml`, when available.
   final String? packageName;
 

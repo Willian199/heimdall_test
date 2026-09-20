@@ -1,0 +1,3 @@
+class VisibleThroughCombinator {}
+
+class HiddenByCombinator {}

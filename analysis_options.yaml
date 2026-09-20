@@ -1,0 +1,51 @@
+# This file configures the static analysis results for your project (errors,
+# warnings, and lints).
+#
+# This enables the 'recommended' set of lints from `package:lints`.
+# This set helps identify many issues that may lead to problems when running
+# or consuming Dart code, and enforces writing Dart using a single, idiomatic
+# style and format.
+#
+# If you want a smaller set of lints you can change this to specify
+# 'package:lints/core.yaml'. These are just the most critical lints
+# (the recommended set includes the core lints).
+# The core lints are also what is used by pub.dev for scoring packages.
+
+include: package:very_good_analysis/analysis_options.yaml
+
+formatter:
+  page_width: 150
+  trailing_commas: preserve
+
+# Uncomment the following section to specify additional rules.
+
+# linter:
+#   rules:
+#     - camel_case_types
+
+linter:
+  rules:
+    lines_longer_than_80_chars: false
+    avoid_returning_this: false
+    avoid_positional_boolean_parameters: false
+
+analyzer:
+  errors:
+    avoid_positional_boolean_parameters: ignore
+    avoid_returning_this: ignore
+    lines_longer_than_80_chars: ignore
+  exclude:
+    - test/architecture_fixtures/**
+    - test/class_fixtures/**
+    - test/code_fixtures/**
+    - test/dsl_fixtures/**
+    - test/file_member_fixtures/**
+    - test/flutter_mvvm_architecture/**
+    - test/importer_fixtures/**
+    - test/problematic_architecture/**
+
+# For more information about the core and recommended set of lints, see
+# https://dart.dev/go/core-lints
+
+# For additional information about configuring this file, see
+# https://dart.dev/guides/language/analysis-options

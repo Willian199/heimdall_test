@@ -1,0 +1,1 @@
+class HiddenAssignableConsumer extends HiddenContractChild {}

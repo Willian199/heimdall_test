@@ -1,0 +1,3 @@
+name: prefixed_dependencies
+environment:
+  sdk: ^3.11.0

@@ -1,0 +1,1 @@
+class HiddenAliasConsumer implements HiddenContractAlias {}

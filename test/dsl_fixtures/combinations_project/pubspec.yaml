@@ -1,0 +1,5 @@
+name: combinations
+dependencies:
+    forbidden_dep: any
+dev_dependencies:
+    forbidden_dev_dep: any

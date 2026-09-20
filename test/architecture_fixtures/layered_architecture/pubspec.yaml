@@ -1,0 +1,4 @@
+name: layered_architecture
+publish_to: none
+environment:
+  sdk: ^3.8.0

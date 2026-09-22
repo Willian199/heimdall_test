@@ -9,12 +9,12 @@ extension FileHaveNameEndingWithPredicateRules on FilePredicateBuilder {
   }
 
   /// Selects files whose basenames do not end with [suffix].
-  FilePredicateBuilder noHaveNameEndingWith(String suffix) {
+  FilePredicateBuilder notHaveNameEndingWith(String suffix) {
     return satisfy(_fileNameDoesNotEndWith(suffix));
   }
 
   /// Selects files whose basenames end with at least one suffix in [suffixes].
-  FilePredicateBuilder haveNameEndingWithAny(Iterable<String> suffixes) {
+  FilePredicateBuilder haveNameEndingWithAnyOf(Iterable<String> suffixes) {
     final suffixList = suffixes.toNonEmptyList('suffixes');
     return satisfy(
       HeimdallPredicate.anyOf(
@@ -25,7 +25,7 @@ extension FileHaveNameEndingWithPredicateRules on FilePredicateBuilder {
   }
 
   /// Selects files whose basenames end with every suffix in [suffixes].
-  FilePredicateBuilder haveNameEndingWithAll(Iterable<String> suffixes) {
+  FilePredicateBuilder haveNameEndingWithAllOf(Iterable<String> suffixes) {
     final suffixList = suffixes.toNonEmptyList('suffixes');
     return satisfy(
       HeimdallPredicate.allOf(
@@ -36,7 +36,7 @@ extension FileHaveNameEndingWithPredicateRules on FilePredicateBuilder {
   }
 
   /// Selects files whose basenames end with none of [suffixes].
-  FilePredicateBuilder haveNameEndingWithNone(Iterable<String> suffixes) {
+  FilePredicateBuilder haveNameEndingWithNoneOf(Iterable<String> suffixes) {
     final suffixList = suffixes.toNonEmptyList('suffixes');
     return satisfy(
       HeimdallPredicate.noneOf(
@@ -55,12 +55,12 @@ extension FileHaveNameEndingWithShouldRules on FileShouldBuilder {
   }
 
   /// Requires matching file names to not end with [suffix].
-  HeimdallRule<HeimdallSourceFile> noHaveNameEndingWith(String suffix) {
+  HeimdallRule<HeimdallSourceFile> notHaveNameEndingWith(String suffix) {
     return satisfy(_fileShouldNotHaveNameEndingWith(suffix));
   }
 
   /// Requires matching file names to end with at least one suffix in [suffixes].
-  HeimdallRule<HeimdallSourceFile> haveNameEndingWithAny(
+  HeimdallRule<HeimdallSourceFile> haveNameEndingWithAnyOf(
     Iterable<String> suffixes,
   ) {
     final suffixList = suffixes.toNonEmptyList('suffixes');
@@ -73,7 +73,7 @@ extension FileHaveNameEndingWithShouldRules on FileShouldBuilder {
   }
 
   /// Requires matching file names to end with every suffix in [suffixes].
-  HeimdallRule<HeimdallSourceFile> haveNameEndingWithAll(
+  HeimdallRule<HeimdallSourceFile> haveNameEndingWithAllOf(
     Iterable<String> suffixes,
   ) {
     final suffixList = suffixes.toNonEmptyList('suffixes');
@@ -86,7 +86,7 @@ extension FileHaveNameEndingWithShouldRules on FileShouldBuilder {
   }
 
   /// Requires matching file names to end with none of [suffixes].
-  HeimdallRule<HeimdallSourceFile> haveNameEndingWithNone(
+  HeimdallRule<HeimdallSourceFile> haveNameEndingWithNoneOf(
     Iterable<String> suffixes,
   ) {
     final suffixList = suffixes.toNonEmptyList('suffixes');

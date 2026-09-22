@@ -9,12 +9,12 @@ extension MemberCallMethodNameMatchingPredicateRules on MemberPredicateBuilder {
   }
 
   /// Selects members that do not satisfy `callMethodNameMatching`.
-  MemberPredicateBuilder noCallMethodNameMatching(RegExp pattern) {
+  MemberPredicateBuilder notCallMethodNameMatching(RegExp pattern) {
     return satisfy(_memberDoesNotCallMethodNameMatching(pattern));
   }
 
   /// Selects members that call method name matching every value in [patterns].
-  MemberPredicateBuilder callMethodNameMatchingAll(Iterable<RegExp> patterns) {
+  MemberPredicateBuilder callMethodNameMatchingAllOf(Iterable<RegExp> patterns) {
     final valueList = patterns.toNonEmptyList('patterns');
     return satisfy(
       HeimdallPredicate.allOf(
@@ -25,7 +25,7 @@ extension MemberCallMethodNameMatchingPredicateRules on MemberPredicateBuilder {
   }
 
   /// Selects members that call method name matching at least one value in [patterns].
-  MemberPredicateBuilder callMethodNameMatchingAny(Iterable<RegExp> patterns) {
+  MemberPredicateBuilder callMethodNameMatchingAnyOf(Iterable<RegExp> patterns) {
     final valueList = patterns.toNonEmptyList('patterns');
     return satisfy(
       HeimdallPredicate.anyOf(
@@ -36,7 +36,7 @@ extension MemberCallMethodNameMatchingPredicateRules on MemberPredicateBuilder {
   }
 
   /// Selects members that call method name matching none of [patterns].
-  MemberPredicateBuilder callMethodNameMatchingNone(Iterable<RegExp> patterns) {
+  MemberPredicateBuilder callMethodNameMatchingNoneOf(Iterable<RegExp> patterns) {
     final valueList = patterns.toNonEmptyList('patterns');
     return satisfy(
       HeimdallPredicate.noneOf(
@@ -55,12 +55,12 @@ extension MemberCallMethodNameMatchingShouldRules on MemberShouldBuilder {
   }
 
   /// Requires members not to satisfy `callMethodNameMatching`.
-  HeimdallRule<ClassMember> noCallMethodNameMatching(RegExp pattern) {
+  HeimdallRule<ClassMember> notCallMethodNameMatching(RegExp pattern) {
     return satisfy(_memberShouldNotCallMethodNameMatching(pattern));
   }
 
   /// Requires members to call method name matching every value in [patterns].
-  HeimdallRule<ClassMember> callMethodNameMatchingAll(Iterable<RegExp> patterns) {
+  HeimdallRule<ClassMember> callMethodNameMatchingAllOf(Iterable<RegExp> patterns) {
     final valueList = patterns.toNonEmptyList('patterns');
     return satisfy(
       HeimdallCondition.allOf(
@@ -71,7 +71,7 @@ extension MemberCallMethodNameMatchingShouldRules on MemberShouldBuilder {
   }
 
   /// Requires members to call method name matching at least one value in [patterns].
-  HeimdallRule<ClassMember> callMethodNameMatchingAny(Iterable<RegExp> patterns) {
+  HeimdallRule<ClassMember> callMethodNameMatchingAnyOf(Iterable<RegExp> patterns) {
     final valueList = patterns.toNonEmptyList('patterns');
     return satisfy(
       HeimdallCondition.anyOf(
@@ -82,7 +82,7 @@ extension MemberCallMethodNameMatchingShouldRules on MemberShouldBuilder {
   }
 
   /// Requires members to call method name matching none of [patterns].
-  HeimdallRule<ClassMember> callMethodNameMatchingNone(Iterable<RegExp> patterns) {
+  HeimdallRule<ClassMember> callMethodNameMatchingNoneOf(Iterable<RegExp> patterns) {
     final valueList = patterns.toNonEmptyList('patterns');
     return satisfy(
       HeimdallCondition.noneOf(

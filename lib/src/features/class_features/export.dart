@@ -26,7 +26,6 @@ export 'features/class_extend_type_name_starting_with_rules.dart';
 export 'features/class_field_count_rules.dart';
 export 'features/class_have_constructor_name_ending_with_rules.dart';
 export 'features/class_have_constructor_name_matching_rules.dart';
-export 'features/class_have_constructor_name_rules.dart';
 export 'features/class_have_constructor_name_starting_with_rules.dart';
 export 'features/class_have_final_fields_rules.dart';
 export 'features/class_have_private_constructors_rules.dart';

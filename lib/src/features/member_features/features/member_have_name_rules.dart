@@ -7,7 +7,7 @@ extension MemberHaveNamePredicateRules on MemberPredicateBuilder {
   MemberPredicateBuilder haveName(String name) => satisfy(_memberHasName(name));
 
   /// Selects members that do not satisfy `haveName`.
-  MemberPredicateBuilder noHaveName(String name) {
+  MemberPredicateBuilder haveNameDifferentFrom(String name) {
     return satisfy(
       HeimdallPredicate(
         'not have name $name',
@@ -17,7 +17,7 @@ extension MemberHaveNamePredicateRules on MemberPredicateBuilder {
   }
 
   /// Selects members with any name in [names].
-  MemberPredicateBuilder haveNameAny(Iterable<String> names) {
+  MemberPredicateBuilder haveNameEqualToAnyOf(Iterable<String> names) {
     final nameList = names.toNonEmptyList('names');
     return satisfy(
       HeimdallPredicate.anyOf(
@@ -28,7 +28,7 @@ extension MemberHaveNamePredicateRules on MemberPredicateBuilder {
   }
 
   /// Selects members with every name in [names].
-  MemberPredicateBuilder haveNameAll(Iterable<String> names) {
+  MemberPredicateBuilder haveNameEqualToAllOf(Iterable<String> names) {
     final nameList = names.toNonEmptyList('names');
     return satisfy(
       HeimdallPredicate.allOf(
@@ -39,7 +39,7 @@ extension MemberHaveNamePredicateRules on MemberPredicateBuilder {
   }
 
   /// Selects members with none of [names].
-  MemberPredicateBuilder haveNameNone(Iterable<String> names) {
+  MemberPredicateBuilder haveNameEqualToNoneOf(Iterable<String> names) {
     final nameList = names.toNonEmptyList('names');
     return satisfy(
       HeimdallPredicate.noneOf(
@@ -58,7 +58,7 @@ extension MemberHaveNameShouldRules on MemberShouldBuilder {
   }
 
   /// Requires members not to satisfy `haveName`.
-  HeimdallRule<ClassMember> noHaveName(String name) {
+  HeimdallRule<ClassMember> haveNameDifferentFrom(String name) {
     return satisfy(
       prohibitedMemberCondition(
         'have name $name',
@@ -68,7 +68,7 @@ extension MemberHaveNameShouldRules on MemberShouldBuilder {
   }
 
   /// Requires member names to equal at least one name in [names].
-  HeimdallRule<ClassMember> haveNameAny(Iterable<String> names) {
+  HeimdallRule<ClassMember> haveNameEqualToAnyOf(Iterable<String> names) {
     final nameList = names.toNonEmptyList('names');
     return satisfy(
       HeimdallCondition.anyOf(
@@ -79,7 +79,7 @@ extension MemberHaveNameShouldRules on MemberShouldBuilder {
   }
 
   /// Requires member names to equal every name in [names].
-  HeimdallRule<ClassMember> haveNameAll(Iterable<String> names) {
+  HeimdallRule<ClassMember> haveNameEqualToAllOf(Iterable<String> names) {
     final nameList = names.toNonEmptyList('names');
     return satisfy(
       HeimdallCondition.allOf(
@@ -90,7 +90,7 @@ extension MemberHaveNameShouldRules on MemberShouldBuilder {
   }
 
   /// Requires member names to equal none of [names].
-  HeimdallRule<ClassMember> haveNameNone(Iterable<String> names) {
+  HeimdallRule<ClassMember> haveNameEqualToNoneOf(Iterable<String> names) {
     final nameList = names.toNonEmptyList('names');
     return satisfy(
       HeimdallCondition.noneOf(

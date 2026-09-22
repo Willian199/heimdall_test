@@ -9,12 +9,12 @@ extension ClassImplementStartingWithPredicateRules on ClassPredicateBuilder {
   }
 
   /// Selects classes that do not implement a type whose name starts with [prefix].
-  ClassPredicateBuilder noImplementTypeNameStartingWith(String prefix) {
+  ClassPredicateBuilder notImplementTypeNameStartingWith(String prefix) {
     return satisfy(_classDoesNotImplementStartingWith(prefix));
   }
 
   /// Selects classes that implement a type name starting with at least one prefix in [prefixes].
-  ClassPredicateBuilder implementTypeNameStartingWithAny(Iterable<String> prefixes) {
+  ClassPredicateBuilder implementTypeNameStartingWithAnyOf(Iterable<String> prefixes) {
     final prefixList = prefixes.toNonEmptyList('prefixes');
     return satisfy(
       HeimdallPredicate.anyOf(
@@ -25,7 +25,7 @@ extension ClassImplementStartingWithPredicateRules on ClassPredicateBuilder {
   }
 
   /// Selects classes that implement type names starting with every prefix in [prefixes].
-  ClassPredicateBuilder implementTypeNameStartingWithAll(Iterable<String> prefixes) {
+  ClassPredicateBuilder implementTypeNameStartingWithAllOf(Iterable<String> prefixes) {
     final prefixList = prefixes.toNonEmptyList('prefixes');
     return satisfy(
       HeimdallPredicate.allOf(
@@ -36,7 +36,7 @@ extension ClassImplementStartingWithPredicateRules on ClassPredicateBuilder {
   }
 
   /// Selects classes that implement no type name starting with [prefixes].
-  ClassPredicateBuilder implementTypeNameStartingWithNone(Iterable<String> prefixes) {
+  ClassPredicateBuilder implementTypeNameStartingWithNoneOf(Iterable<String> prefixes) {
     final prefixList = prefixes.toNonEmptyList('prefixes');
     return satisfy(
       HeimdallPredicate.noneOf(
@@ -55,12 +55,12 @@ extension ClassImplementStartingWithShouldRules on ClassShouldBuilder {
   }
 
   /// Requires matching classes to not implement a type whose name starts with [prefix].
-  HeimdallRule<CompilationUnitMember> noImplementTypeNameStartingWith(String prefix) {
+  HeimdallRule<CompilationUnitMember> notImplementTypeNameStartingWith(String prefix) {
     return satisfy(_classShouldNotImplementStartingWith(prefix));
   }
 
   /// Requires matching classes to implement a type name starting with at least one prefix in [prefixes].
-  HeimdallRule<CompilationUnitMember> implementTypeNameStartingWithAny(
+  HeimdallRule<CompilationUnitMember> implementTypeNameStartingWithAnyOf(
     Iterable<String> prefixes,
   ) {
     final prefixList = prefixes.toNonEmptyList('prefixes');
@@ -73,7 +73,7 @@ extension ClassImplementStartingWithShouldRules on ClassShouldBuilder {
   }
 
   /// Requires matching classes to implement type names starting with every prefix in [prefixes].
-  HeimdallRule<CompilationUnitMember> implementTypeNameStartingWithAll(
+  HeimdallRule<CompilationUnitMember> implementTypeNameStartingWithAllOf(
     Iterable<String> prefixes,
   ) {
     final prefixList = prefixes.toNonEmptyList('prefixes');
@@ -86,7 +86,7 @@ extension ClassImplementStartingWithShouldRules on ClassShouldBuilder {
   }
 
   /// Requires matching classes to implement no type name starting with [prefixes].
-  HeimdallRule<CompilationUnitMember> implementTypeNameStartingWithNone(
+  HeimdallRule<CompilationUnitMember> implementTypeNameStartingWithNoneOf(
     Iterable<String> prefixes,
   ) {
     final prefixList = prefixes.toNonEmptyList('prefixes');

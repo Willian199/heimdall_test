@@ -1,5 +1,6 @@
 import 'package:analyzer/dart/ast/visitor.dart';
 import 'package:heimdall_test/heimdall_test.dart';
+import 'package:heimdall_test/src/features/class_features/helpers/declaration_condition.dart';
 
 /// Predicate-side DSL for raw type reference rules.
 extension ClassReferenceTypePredicateRules on ClassPredicateBuilder {
@@ -14,7 +15,7 @@ extension ClassReferenceTypePredicateRules on ClassPredicateBuilder {
   }
 
   /// Selects classes that do not reference a type named [typeName].
-  ClassPredicateBuilder noReferenceType(String typeName) {
+  ClassPredicateBuilder notReferenceType(String typeName) {
     return satisfy(
       HeimdallPredicate(
         'not reference type $typeName',
@@ -29,7 +30,7 @@ extension ClassReferenceTypeShouldRules on ClassShouldBuilder {
   /// Requires classes to reference a type named [typeName].
   HeimdallRule<CompilationUnitMember> referenceType(String typeName) {
     return satisfy(
-      _referenceTypeCondition(
+      declarationCondition(
         'reference type $typeName',
         (item) => _referencesType(item, typeName),
       ),
@@ -37,35 +38,14 @@ extension ClassReferenceTypeShouldRules on ClassShouldBuilder {
   }
 
   /// Requires classes not to reference a type named [typeName].
-  HeimdallRule<CompilationUnitMember> noReferenceType(String typeName) {
+  HeimdallRule<CompilationUnitMember> notReferenceType(String typeName) {
     return satisfy(
-      _referenceTypeCondition(
+      declarationCondition(
         'not reference type $typeName',
         (item) => !_referencesType(item, typeName),
       ),
     );
   }
-}
-
-HeimdallCondition<CompilationUnitMember> _referenceTypeCondition(
-  String description,
-  bool Function(CompilationUnitMember item) test,
-) {
-  return HeimdallCondition(description, (item, _) {
-    final passed = test(item);
-    return HeimdallFindings(
-      subject: item,
-      passed: passed,
-      findings: [
-        if (!passed)
-          HeimdallValidationInfo(
-            filePath: item.sourcePath,
-            line: item.line,
-            message: '${item.name} should $description',
-          ),
-      ],
-    );
-  });
 }
 
 bool _referencesType(CompilationUnitMember item, String typeName) {

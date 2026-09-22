@@ -9,12 +9,12 @@ extension FileHaveNameStartingWithPredicateRules on FilePredicateBuilder {
   }
 
   /// Selects files whose basenames do not start with [prefix].
-  FilePredicateBuilder noHaveNameStartingWith(String prefix) {
+  FilePredicateBuilder notHaveNameStartingWith(String prefix) {
     return satisfy(_fileNameDoesNotStartWith(prefix));
   }
 
   /// Selects files whose basenames start with at least one prefix in [prefixes].
-  FilePredicateBuilder haveNameStartingWithAny(Iterable<String> prefixes) {
+  FilePredicateBuilder haveNameStartingWithAnyOf(Iterable<String> prefixes) {
     final prefixList = prefixes.toNonEmptyList('prefixes');
     return satisfy(
       HeimdallPredicate.anyOf(
@@ -25,7 +25,7 @@ extension FileHaveNameStartingWithPredicateRules on FilePredicateBuilder {
   }
 
   /// Selects files whose basenames start with every prefix in [prefixes].
-  FilePredicateBuilder haveNameStartingWithAll(Iterable<String> prefixes) {
+  FilePredicateBuilder haveNameStartingWithAllOf(Iterable<String> prefixes) {
     final prefixList = prefixes.toNonEmptyList('prefixes');
     return satisfy(
       HeimdallPredicate.allOf(
@@ -36,7 +36,7 @@ extension FileHaveNameStartingWithPredicateRules on FilePredicateBuilder {
   }
 
   /// Selects files whose basenames start with none of [prefixes].
-  FilePredicateBuilder haveNameStartingWithNone(Iterable<String> prefixes) {
+  FilePredicateBuilder haveNameStartingWithNoneOf(Iterable<String> prefixes) {
     final prefixList = prefixes.toNonEmptyList('prefixes');
     return satisfy(
       HeimdallPredicate.noneOf(
@@ -55,12 +55,12 @@ extension FileHaveNameStartingWithShouldRules on FileShouldBuilder {
   }
 
   /// Requires matching file names to not start with [prefix].
-  HeimdallRule<HeimdallSourceFile> noHaveNameStartingWith(String prefix) {
+  HeimdallRule<HeimdallSourceFile> notHaveNameStartingWith(String prefix) {
     return satisfy(_fileShouldNotHaveNameStartingWith(prefix));
   }
 
   /// Requires matching file names to start with at least one prefix in [prefixes].
-  HeimdallRule<HeimdallSourceFile> haveNameStartingWithAny(
+  HeimdallRule<HeimdallSourceFile> haveNameStartingWithAnyOf(
     Iterable<String> prefixes,
   ) {
     final prefixList = prefixes.toNonEmptyList('prefixes');
@@ -73,7 +73,7 @@ extension FileHaveNameStartingWithShouldRules on FileShouldBuilder {
   }
 
   /// Requires matching file names to start with every prefix in [prefixes].
-  HeimdallRule<HeimdallSourceFile> haveNameStartingWithAll(
+  HeimdallRule<HeimdallSourceFile> haveNameStartingWithAllOf(
     Iterable<String> prefixes,
   ) {
     final prefixList = prefixes.toNonEmptyList('prefixes');
@@ -86,7 +86,7 @@ extension FileHaveNameStartingWithShouldRules on FileShouldBuilder {
   }
 
   /// Requires matching file names to start with none of [prefixes].
-  HeimdallRule<HeimdallSourceFile> haveNameStartingWithNone(
+  HeimdallRule<HeimdallSourceFile> haveNameStartingWithNoneOf(
     Iterable<String> prefixes,
   ) {
     final prefixList = prefixes.toNonEmptyList('prefixes');

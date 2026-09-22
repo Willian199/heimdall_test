@@ -11,17 +11,17 @@ import 'package:heimdall_test/src/features/queries/member_queries.dart';
 /// Predicate-side DSL for field declared type assignability rules.
 extension MemberHaveDeclaredTypeAssignableToPredicateRules on MemberPredicateBuilder {
   /// Selects fields whose declared type is assignable to [typeName].
-  MemberPredicateBuilder haveDeclaredTypeAssignableTo(String typeName) {
+  MemberPredicateBuilder haveDeclaredFieldTypeAssignableTo(String typeName) {
     return satisfy(_memberDeclaredTypeAssignableTo(typeName));
   }
 
-  /// Selects members that do not satisfy `haveDeclaredTypeAssignableTo`.
-  MemberPredicateBuilder noHaveDeclaredTypeAssignableTo(String typeName) {
+  /// Selects members that do not satisfy `haveDeclaredFieldTypeAssignableTo`.
+  MemberPredicateBuilder notHaveDeclaredFieldTypeAssignableTo(String typeName) {
     return satisfy(_memberDeclaredTypeNotAssignableTo(typeName));
   }
 
   /// Selects fields whose declared type is assignable to at least one value in [typeNames].
-  MemberPredicateBuilder haveDeclaredTypeAssignableToAny(Iterable<String> typeNames) {
+  MemberPredicateBuilder haveDeclaredFieldTypeAssignableToAnyOf(Iterable<String> typeNames) {
     final valueList = typeNames.toNonEmptyList('typeNames');
     return satisfy(
       HeimdallPredicate.anyOf(
@@ -32,7 +32,7 @@ extension MemberHaveDeclaredTypeAssignableToPredicateRules on MemberPredicateBui
   }
 
   /// Selects fields whose declared type is assignable to every value in [typeNames].
-  MemberPredicateBuilder haveDeclaredTypeAssignableToAll(Iterable<String> typeNames) {
+  MemberPredicateBuilder haveDeclaredFieldTypeAssignableToAllOf(Iterable<String> typeNames) {
     final valueList = typeNames.toNonEmptyList('typeNames');
     return satisfy(
       HeimdallPredicate.allOf(
@@ -43,7 +43,7 @@ extension MemberHaveDeclaredTypeAssignableToPredicateRules on MemberPredicateBui
   }
 
   /// Selects fields whose declared type is assignable to none of [typeNames].
-  MemberPredicateBuilder haveDeclaredTypeAssignableToNone(Iterable<String> typeNames) {
+  MemberPredicateBuilder haveDeclaredFieldTypeAssignableToNoneOf(Iterable<String> typeNames) {
     final valueList = typeNames.toNonEmptyList('typeNames');
     return satisfy(
       HeimdallPredicate.noneOf(
@@ -57,17 +57,17 @@ extension MemberHaveDeclaredTypeAssignableToPredicateRules on MemberPredicateBui
 /// Condition-side DSL for field declared type assignability rules.
 extension MemberHaveDeclaredTypeAssignableToShouldRules on MemberShouldBuilder {
   /// Requires fields to have a declared type assignable to [typeName].
-  HeimdallRule<ClassMember> haveDeclaredTypeAssignableTo(String typeName) {
+  HeimdallRule<ClassMember> haveDeclaredFieldTypeAssignableTo(String typeName) {
     return satisfy(_memberShouldHaveDeclaredTypeAssignableTo(typeName));
   }
 
-  /// Requires members not to satisfy `haveDeclaredTypeAssignableTo`.
-  HeimdallRule<ClassMember> noHaveDeclaredTypeAssignableTo(String typeName) {
+  /// Requires members not to satisfy `haveDeclaredFieldTypeAssignableTo`.
+  HeimdallRule<ClassMember> notHaveDeclaredFieldTypeAssignableTo(String typeName) {
     return satisfy(_memberShouldNotHaveDeclaredTypeAssignableTo(typeName));
   }
 
   /// Requires fields to have a declared type assignable to at least one value in [typeNames].
-  HeimdallRule<ClassMember> haveDeclaredTypeAssignableToAny(Iterable<String> typeNames) {
+  HeimdallRule<ClassMember> haveDeclaredFieldTypeAssignableToAnyOf(Iterable<String> typeNames) {
     final valueList = typeNames.toNonEmptyList('typeNames');
     return satisfy(
       HeimdallCondition.anyOf(
@@ -78,7 +78,7 @@ extension MemberHaveDeclaredTypeAssignableToShouldRules on MemberShouldBuilder {
   }
 
   /// Requires fields to have a declared type assignable to every value in [typeNames].
-  HeimdallRule<ClassMember> haveDeclaredTypeAssignableToAll(Iterable<String> typeNames) {
+  HeimdallRule<ClassMember> haveDeclaredFieldTypeAssignableToAllOf(Iterable<String> typeNames) {
     final valueList = typeNames.toNonEmptyList('typeNames');
     return satisfy(
       HeimdallCondition.allOf(
@@ -89,7 +89,7 @@ extension MemberHaveDeclaredTypeAssignableToShouldRules on MemberShouldBuilder {
   }
 
   /// Requires fields to have a declared type assignable to none of [typeNames].
-  HeimdallRule<ClassMember> haveDeclaredTypeAssignableToNone(Iterable<String> typeNames) {
+  HeimdallRule<ClassMember> haveDeclaredFieldTypeAssignableToNoneOf(Iterable<String> typeNames) {
     final valueList = typeNames.toNonEmptyList('typeNames');
     return satisfy(
       HeimdallCondition.noneOf(

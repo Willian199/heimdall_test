@@ -1,5 +1,6 @@
 import 'package:heimdall_test/heimdall_test.dart';
 import 'package:heimdall_test/src/features/file_features/helpers/source_file_location.dart';
+import 'package:heimdall_test/src/features/queries/parameter_queries.dart';
 
 /// Predicate-side DSL for received parameter rules.
 extension FileReceiveParameterPredicateRules on FilePredicateBuilder {
@@ -9,7 +10,7 @@ extension FileReceiveParameterPredicateRules on FilePredicateBuilder {
   }
 
   /// Selects files that do not receive [parameterName].
-  FilePredicateBuilder noReceiveParameter(String parameterName) {
+  FilePredicateBuilder notReceiveParameter(String parameterName) {
     return satisfy(_fileDoesNotReceiveParameter(parameterName));
   }
 
@@ -55,7 +56,7 @@ extension FileReceiveParameterShouldRules on FileShouldBuilder {
   }
 
   /// Requires matching files to not receive [parameterName].
-  HeimdallRule<HeimdallSourceFile> noReceiveParameter(String parameterName) {
+  HeimdallRule<HeimdallSourceFile> notReceiveParameter(String parameterName) {
     return satisfy(_fileShouldNotReceiveParameter(parameterName));
   }
 
@@ -104,7 +105,7 @@ HeimdallCondition<HeimdallSourceFile> _fileShouldReceiveParameter(
 ) {
   return HeimdallCondition('receive parameter $parameterName', (item, _) {
     final hasParameter = _executableParameters(item).any(
-      (parameter) => _isPositionalOrRequiredNamedParameter(
+      (parameter) => isPositionalOrRequiredNamedParameter(
         parameter,
         parameterName,
       ),
@@ -131,7 +132,7 @@ HeimdallPredicate<HeimdallSourceFile> _fileReceivesParameter(
   return HeimdallPredicate(
     'receive parameter $parameterName',
     (item, _) => _executableParameters(item).any(
-      (parameter) => _isPositionalOrRequiredNamedParameter(
+      (parameter) => isPositionalOrRequiredNamedParameter(
         parameter,
         parameterName,
       ),
@@ -145,7 +146,7 @@ HeimdallCondition<HeimdallSourceFile> _fileShouldNotReceiveParameter(
   return HeimdallCondition('not receive parameter $parameterName', (item, _) {
     final findings = _executableParameters(item)
         .where(
-          (parameter) => _isPositionalOrRequiredNamedParameter(
+          (parameter) => isPositionalOrRequiredNamedParameter(
             parameter,
             parameterName,
           ),
@@ -173,7 +174,7 @@ HeimdallPredicate<HeimdallSourceFile> _fileDoesNotReceiveParameter(
   return HeimdallPredicate(
     'not receive parameter $parameterName',
     (item, _) => !_executableParameters(item).any(
-      (parameter) => _isPositionalOrRequiredNamedParameter(
+      (parameter) => isPositionalOrRequiredNamedParameter(
         parameter,
         parameterName,
       ),
@@ -195,14 +196,4 @@ Iterable<FormalParameter> _executableParameters(HeimdallSourceFile item) sync* {
       yield* member.parameters.parameters;
     }
   }
-}
-
-bool _isPositionalOrRequiredNamedParameter(
-  FormalParameter parameter,
-  String name,
-) {
-  if (parameter.name?.lexeme != name) return false;
-  if (parameter is! DefaultFormalParameter) return true;
-  if (!parameter.isNamed) return true;
-  return parameter.isRequiredNamed;
 }

@@ -9,12 +9,12 @@ extension ClassAssignableToTypeNameMatchingPredicateRules on ClassPredicateBuild
   }
 
   /// Selects declarations not assignable to a type whose name matches [pattern].
-  ClassPredicateBuilder noAreAssignableToTypeNameMatching(RegExp pattern) {
+  ClassPredicateBuilder areNotAssignableToTypeNameMatching(RegExp pattern) {
     return satisfy(_classNotAssignableToTypeNameMatching(pattern));
   }
 
   /// Selects declarations assignable to a type name matching at least one regex in [patterns].
-  ClassPredicateBuilder areAssignableToTypeNameMatchingAny(
+  ClassPredicateBuilder areAssignableToTypeNameMatchingAnyOf(
     Iterable<RegExp> patterns,
   ) {
     final patternList = patterns.toNonEmptyList('patterns');
@@ -27,7 +27,7 @@ extension ClassAssignableToTypeNameMatchingPredicateRules on ClassPredicateBuild
   }
 
   /// Selects declarations assignable to type names matching every regex in [patterns].
-  ClassPredicateBuilder areAssignableToTypeNameMatchingAll(
+  ClassPredicateBuilder areAssignableToTypeNameMatchingAllOf(
     Iterable<RegExp> patterns,
   ) {
     final patternList = patterns.toNonEmptyList('patterns');
@@ -40,7 +40,7 @@ extension ClassAssignableToTypeNameMatchingPredicateRules on ClassPredicateBuild
   }
 
   /// Selects declarations assignable to no type name matching [patterns].
-  ClassPredicateBuilder areAssignableToTypeNameMatchingNone(
+  ClassPredicateBuilder areAssignableToTypeNameMatchingNoneOf(
     Iterable<RegExp> patterns,
   ) {
     final patternList = patterns.toNonEmptyList('patterns');
@@ -63,14 +63,14 @@ extension ClassAssignableToTypeNameMatchingShouldRules on ClassShouldBuilder {
   }
 
   /// Requires matching classes to not be assignable to a type whose name matches [pattern].
-  HeimdallRule<CompilationUnitMember> noBeAssignableToTypeNameMatching(
+  HeimdallRule<CompilationUnitMember> notBeAssignableToTypeNameMatching(
     RegExp pattern,
   ) {
     return satisfy(_classShouldNotBeAssignableToTypeNameMatching(pattern));
   }
 
   /// Requires matching classes to be assignable to a type name matching at least one regex in [patterns].
-  HeimdallRule<CompilationUnitMember> beAssignableToTypeNameMatchingAny(
+  HeimdallRule<CompilationUnitMember> beAssignableToTypeNameMatchingAnyOf(
     Iterable<RegExp> patterns,
   ) {
     final patternList = patterns.toNonEmptyList('patterns');
@@ -83,7 +83,7 @@ extension ClassAssignableToTypeNameMatchingShouldRules on ClassShouldBuilder {
   }
 
   /// Requires matching classes to be assignable to type names matching every regex in [patterns].
-  HeimdallRule<CompilationUnitMember> beAssignableToTypeNameMatchingAll(
+  HeimdallRule<CompilationUnitMember> beAssignableToTypeNameMatchingAllOf(
     Iterable<RegExp> patterns,
   ) {
     final patternList = patterns.toNonEmptyList('patterns');
@@ -96,7 +96,7 @@ extension ClassAssignableToTypeNameMatchingShouldRules on ClassShouldBuilder {
   }
 
   /// Requires matching classes to be assignable to no type name matching [patterns].
-  HeimdallRule<CompilationUnitMember> beAssignableToTypeNameMatchingNone(
+  HeimdallRule<CompilationUnitMember> beAssignableToTypeNameMatchingNoneOf(
     Iterable<RegExp> patterns,
   ) {
     final patternList = patterns.toNonEmptyList('patterns');

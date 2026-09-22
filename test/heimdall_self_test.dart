@@ -1,7 +1,5 @@
-import 'dart:io';
-
 import 'package:heimdall_test/heimdall_test.dart';
-import 'package:path/path.dart' as p;
+
 import 'package:test/test.dart';
 
 void main() {
@@ -10,17 +8,7 @@ void main() {
 
     setUpAll(() {
       HeimdallFileImporter.clearCache();
-      final libRoot = '${Directory.current.path}/lib/'.replaceAll(r'\', '/');
-      project = HeimdallFileImporter(
-        importOptions: [
-          PathPredicateImportOption(
-            (path) => path.replaceAll(r'\', '/').startsWith(libRoot),
-            cacheKey: 'self-lib-only',
-          ),
-          const ExcludeGeneratedDartImportOption(),
-        ],
-        useCache: false,
-      ).importPath(Directory.current.path);
+      project = const HeimdallFileImporter(useCache: false).importPath();
     });
 
     test('imports its own package library surface', () {
@@ -28,10 +16,10 @@ void main() {
       expect(project.files, isNotEmpty);
       expect(
         project.files.map((file) => file.relativePath),
-        everyElement(startsWith('lib/')),
+        everyElement(endsWith('.dart')),
       );
 
-      expect(project.fileByRelativePath('lib/heimdall_test.dart'), isNotNull);
+      expect(project.fileByRelativePath('heimdall_test.dart'), isNotNull);
       expect(
         project.typeDeclarations.map((declaration) => declaration.name),
         containsAll([
@@ -56,7 +44,7 @@ void main() {
     test('keeps public barrels exporting only package library entrypoints', () {
       Heimdall.code()
           .barrelFilesShouldOnlyExport(
-            barrelPattern: 'lib/*.dart',
+            barrelPattern: '*.dart',
             allowedExportPatterns: [
               'heimdall.dart',
               'src/*.dart',
@@ -74,9 +62,7 @@ void main() {
             HeimdallPredicate(
               'are production files outside importer parsing code',
               (file, _) =>
-                  file.relativePath.startsWith('lib/') &&
-                  file.relativePath != 'lib/src/mapper/importer/importer.dart' &&
-                  file.relativePath != 'lib/src/mapper/importer/source_file_parser.dart',
+                  file.relativePath != 'src/mapper/importer/importer.dart' && file.relativePath != 'src/mapper/importer/source_file_parser.dart',
             ),
           )
           .should()
@@ -91,7 +77,7 @@ void main() {
     test('keeps built-in sight classes final', () {
       Heimdall.classes()
           .that()
-          .resideInPath('lib/src/library/**')
+          .resideInPath('src/library/**')
           .and()
           .haveTypeNameStartingWith('Heimdall')
           .should()
@@ -101,26 +87,20 @@ void main() {
     });
 
     test('keeps built-in rule APIs free of meaningless wrappers', () {
-      Heimdall.classes()
-          .that()
-          .resideInPath('lib/src/library/**')
-          .should()
-          .satisfy(_notHaveMeaninglessRuleWrappers())
-          .check(project)
-          .assertNoFindings();
+      Heimdall.classes().that().resideInPath('src/library/**').should().satisfy(_notHaveMeaninglessRuleWrappers()).check(project).assertNoFindings();
     });
 
     test('keeps source file and type names conventional', () {
-      Heimdall.files().that().resideInPath('lib/src/**').should().satisfy(_haveSnakeCaseDartFileNames()).check(project).assertNoFindings();
+      Heimdall.files().that().resideInPath('src/**').should().haveNameMatching(RegExp(r'^[a-z][a-z0-9_]*\.dart$')).check(project).assertNoFindings();
 
-      Heimdall.classes().that().resideInPath('lib/src/**').should().satisfy(_havePascalCasePublicTypeNames()).check(project).assertNoFindings();
+      Heimdall.classes().that().resideInPath('src/**').should().satisfy(_havePascalCasePublicTypeNames()).check(project).assertNoFindings();
     });
 
     test('keeps core rule files named after their public rule class', () {
       const rulePaths = [
-        'lib/src/core/class_rules/**',
-        'lib/src/core/file_rules/**',
-        'lib/src/core/member_rules/**',
+        'src/core/class_rules/**',
+        'src/core/file_rules/**',
+        'src/core/member_rules/**',
       ];
 
       for (final path in rulePaths) {
@@ -128,11 +108,11 @@ void main() {
             .that()
             .resideInPath(path)
             .and()
-            .resideOutsideOfPath('lib/src/core/heimdall_builder_contracts.dart')
+            .resideOutsideOfPath('src/core/heimdall_builder_contracts.dart')
             .and()
-            .resideOutsideOfPath('lib/src/core/**/features/**')
+            .resideOutsideOfPath('src/core/**/features/**')
             .and()
-            .resideOutsideOfPath('lib/src/core/member_rules/member_rules.dart')
+            .resideOutsideOfPath('src/core/member_rules/member_rules.dart')
             .should()
             .haveAtMostOnePublicClass()
             .check(project)
@@ -142,11 +122,11 @@ void main() {
             .that()
             .resideInPath(path)
             .and()
-            .resideOutsideOfPath('lib/src/core/heimdall_builder_contracts.dart')
+            .resideOutsideOfPath('src/core/heimdall_builder_contracts.dart')
             .and()
-            .resideOutsideOfPath('lib/src/core/**/features/**')
+            .resideOutsideOfPath('src/core/**/features/**')
             .and()
-            .resideOutsideOfPath('lib/src/core/member_rules/member_rules.dart')
+            .resideOutsideOfPath('src/core/member_rules/member_rules.dart')
             .should()
             .havePublicClassNameMatchingFileName()
             .check(project)
@@ -157,23 +137,23 @@ void main() {
     test('keeps source layers depending in the documented direction', () {
       Heimdall.layers()
           .layer('Public')
-          .definedBy(['lib/*.dart'])
+          .definedBy(['*.dart'])
           .layer('Core')
           .definedBy([
-            'lib/src/core.dart',
-            'lib/src/core/(**)',
-            'lib/src/mapper/(**)',
+            'src/core.dart',
+            'src/core/(**)',
+            'src/mapper/(**)',
           ])
           .layer('Dsl')
           .definedBy([
-            'lib/src/dsl.dart',
-            'lib/src/heimdall.dart',
-            'lib/src/dsl/(**)',
+            'src/dsl.dart',
+            'src/heimdall.dart',
+            'src/dsl/(**)',
           ])
           .layer('Library')
-          .definedBy(['lib/src/library_rules.dart', 'lib/src/library/(**)'])
+          .definedBy(['src/library_rules.dart', 'src/library/(**)'])
           .layer('Plugins')
-          .definedBy(['lib/src/plugins.dart'])
+          .definedBy(['src/plugins.dart'])
           .whereLayer('Public')
           .mayOnlyAccessLayers(['Core', 'Dsl', 'Library', 'Plugins'])
           .whereLayer('Core')
@@ -189,26 +169,6 @@ void main() {
           .check(project)
           .assertNoFindings();
     });
-  });
-}
-
-HeimdallCondition<HeimdallSourceFile> _haveSnakeCaseDartFileNames() {
-  final snakeCase = RegExp(r'^[a-z][a-z0-9_]*\.dart$');
-  return HeimdallCondition('have snake_case Dart file names', (file, _) {
-    final fileName = p.basename(file.relativePath);
-    final findings = snakeCase.hasMatch(fileName)
-        ? const <HeimdallValidationInfo>[]
-        : [
-            HeimdallValidationInfo(
-              filePath: file.absolutePath,
-              message: '${file.relativePath} should use a snake_case file name',
-            ),
-          ];
-    return HeimdallFindings(
-      subject: file,
-      passed: findings.isEmpty,
-      findings: findings,
-    );
   });
 }
 

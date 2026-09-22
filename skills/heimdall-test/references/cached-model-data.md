@@ -2,7 +2,7 @@
 
 Use this reference when a requirement needs a custom predicate/condition or a diagnostic query. Prefer the built-in DSL for requirements it already expresses.
 
-The models are exported through `package:heimdall_test/heimdall_test.dart`. Their implementation lives in `lib/src/mapper/model/` in the package source. The collections below are available in the 0.9.1 API.
+The models are exported through `package:heimdall_test/heimdall_test.dart`. Their implementation lives in `lib/src/mapper/model/` in the package source. The collections below are available in the 0.10.0 API.
 
 ## Two different caches
 

@@ -97,7 +97,7 @@ final class FilePredicateBuilder implements HeimdallPredicateBuilder<HeimdallSou
   }
 
   /// Selects files that are not empty.
-  FilePredicateBuilder noBeEmpty() {
+  FilePredicateBuilder notBeEmpty() {
     return satisfy(
       HeimdallPredicate(
         'not be empty',

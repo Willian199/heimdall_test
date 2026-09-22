@@ -1,46 +1,47 @@
 import 'package:heimdall_test/heimdall_test.dart';
+import 'package:heimdall_test/src/features/queries/declaration_rule_predicates.dart';
 import 'package:heimdall_test/src/features/queries/declaration_type_queries.dart';
 
 /// Predicate-side DSL for class superclass prefix rules.
 extension ClassExtendTypeNameStartingWithPredicateRules on ClassPredicateBuilder {
   /// Selects classes that extend a type whose name starts with [prefix].
   ClassPredicateBuilder extendTypeNameStartingWith(String prefix) {
-    return satisfy(_classExtendsTypeNameStartingWith(prefix));
+    return satisfy(classExtendsTypeNameStartingWith(prefix));
   }
 
   /// Selects classes that do not extend a type whose name starts with [prefix].
-  ClassPredicateBuilder noExtendTypeNameStartingWith(String prefix) {
+  ClassPredicateBuilder notExtendTypeNameStartingWith(String prefix) {
     return satisfy(_classDoesNotExtendTypeNameStartingWith(prefix));
   }
 
   /// Selects classes that extend a type name starting with at least one prefix in [prefixes].
-  ClassPredicateBuilder extendTypeNameStartingWithAny(Iterable<String> prefixes) {
+  ClassPredicateBuilder extendTypeNameStartingWithAnyOf(Iterable<String> prefixes) {
     final prefixList = prefixes.toNonEmptyList('prefixes');
     return satisfy(
       HeimdallPredicate.anyOf(
-        prefixList.map(_classExtendsTypeNameStartingWith),
+        prefixList.map(classExtendsTypeNameStartingWith),
         description: 'extend type name starting with any of ${prefixList.join(', ')}',
       ),
     );
   }
 
   /// Selects classes that extend type names starting with every prefix in [prefixes].
-  ClassPredicateBuilder extendTypeNameStartingWithAll(Iterable<String> prefixes) {
+  ClassPredicateBuilder extendTypeNameStartingWithAllOf(Iterable<String> prefixes) {
     final prefixList = prefixes.toNonEmptyList('prefixes');
     return satisfy(
       HeimdallPredicate.allOf(
-        prefixList.map(_classExtendsTypeNameStartingWith),
+        prefixList.map(classExtendsTypeNameStartingWith),
         description: 'extend type names starting with all of ${prefixList.join(', ')}',
       ),
     );
   }
 
   /// Selects classes that extend no type name starting with [prefixes].
-  ClassPredicateBuilder extendTypeNameStartingWithNone(Iterable<String> prefixes) {
+  ClassPredicateBuilder extendTypeNameStartingWithNoneOf(Iterable<String> prefixes) {
     final prefixList = prefixes.toNonEmptyList('prefixes');
     return satisfy(
       HeimdallPredicate.noneOf(
-        prefixList.map(_classExtendsTypeNameStartingWith),
+        prefixList.map(classExtendsTypeNameStartingWith),
         description: 'extend type name starting with none of ${prefixList.join(', ')}',
       ),
     );
@@ -55,12 +56,12 @@ extension ClassExtendTypeNameStartingWithShouldRules on ClassShouldBuilder {
   }
 
   /// Requires matching classes to not extend a type whose name starts with [prefix].
-  HeimdallRule<CompilationUnitMember> noExtendTypeNameStartingWith(String prefix) {
+  HeimdallRule<CompilationUnitMember> notExtendTypeNameStartingWith(String prefix) {
     return satisfy(_classShouldNotExtendTypeNameStartingWith(prefix));
   }
 
   /// Requires matching classes to extend a type name starting with at least one prefix in [prefixes].
-  HeimdallRule<CompilationUnitMember> extendTypeNameStartingWithAny(
+  HeimdallRule<CompilationUnitMember> extendTypeNameStartingWithAnyOf(
     Iterable<String> prefixes,
   ) {
     final prefixList = prefixes.toNonEmptyList('prefixes');
@@ -73,7 +74,7 @@ extension ClassExtendTypeNameStartingWithShouldRules on ClassShouldBuilder {
   }
 
   /// Requires matching classes to extend type names starting with every prefix in [prefixes].
-  HeimdallRule<CompilationUnitMember> extendTypeNameStartingWithAll(
+  HeimdallRule<CompilationUnitMember> extendTypeNameStartingWithAllOf(
     Iterable<String> prefixes,
   ) {
     final prefixList = prefixes.toNonEmptyList('prefixes');
@@ -86,7 +87,7 @@ extension ClassExtendTypeNameStartingWithShouldRules on ClassShouldBuilder {
   }
 
   /// Requires matching classes to extend no type name starting with [prefixes].
-  HeimdallRule<CompilationUnitMember> extendTypeNameStartingWithNone(
+  HeimdallRule<CompilationUnitMember> extendTypeNameStartingWithNoneOf(
     Iterable<String> prefixes,
   ) {
     final prefixList = prefixes.toNonEmptyList('prefixes');
@@ -97,19 +98,6 @@ extension ClassExtendTypeNameStartingWithShouldRules on ClassShouldBuilder {
       ),
     );
   }
-}
-
-HeimdallPredicate<CompilationUnitMember> _classExtendsTypeNameStartingWith(
-  String prefix,
-) {
-  return HeimdallPredicate(
-    'extend type name starting with $prefix',
-    (item, project) => extendsTypeNamedWhere(
-      item,
-      project,
-      (typeName) => typeName.startsWith(prefix),
-    ),
-  );
 }
 
 HeimdallPredicate<CompilationUnitMember> _classDoesNotExtendTypeNameStartingWith(

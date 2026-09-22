@@ -1,4 +1,5 @@
 import 'package:heimdall_test/heimdall_test.dart';
+import 'package:heimdall_test/src/features/class_features/helpers/declaration_condition.dart';
 
 /// Predicate-side DSL for class member-count rules.
 extension ClassMemberCountPredicateRules on ClassPredicateBuilder {
@@ -13,7 +14,7 @@ extension ClassMemberCountPredicateRules on ClassPredicateBuilder {
   }
 
   /// Selects classes that do not declare exactly [count] members.
-  ClassPredicateBuilder noHaveMemberCount(int count) {
+  ClassPredicateBuilder haveMemberCountOtherThan(int count) {
     return satisfy(
       HeimdallPredicate(
         'not have member count $count',
@@ -33,10 +34,10 @@ extension ClassMemberCountPredicateRules on ClassPredicateBuilder {
   }
 
   /// Selects classes that declare [count] or fewer members.
-  ClassPredicateBuilder noHaveMoreThanMembers(int count) {
+  ClassPredicateBuilder haveAtMostMembers(int count) {
     return satisfy(
       HeimdallPredicate(
-        'not have more than $count members',
+        'have at most $count members',
         (item, _) => item.members.length <= count,
       ),
     );
@@ -48,7 +49,7 @@ extension ClassMemberCountShouldRules on ClassShouldBuilder {
   /// Requires classes to declare exactly [count] members.
   HeimdallRule<CompilationUnitMember> haveMemberCount(int count) {
     return satisfy(
-      _memberCountCondition(
+      declarationCondition(
         'have member count $count',
         (item) => item.members.length == count,
       ),
@@ -56,9 +57,9 @@ extension ClassMemberCountShouldRules on ClassShouldBuilder {
   }
 
   /// Requires classes not to declare exactly [count] members.
-  HeimdallRule<CompilationUnitMember> noHaveMemberCount(int count) {
+  HeimdallRule<CompilationUnitMember> haveMemberCountOtherThan(int count) {
     return satisfy(
-      _memberCountCondition(
+      declarationCondition(
         'not have member count $count',
         (item) => item.members.length != count,
       ),
@@ -68,7 +69,7 @@ extension ClassMemberCountShouldRules on ClassShouldBuilder {
   /// Requires classes to declare more than [count] members.
   HeimdallRule<CompilationUnitMember> haveMoreThanMembers(int count) {
     return satisfy(
-      _memberCountCondition(
+      declarationCondition(
         'have more than $count members',
         (item) => item.members.length > count,
       ),
@@ -76,33 +77,12 @@ extension ClassMemberCountShouldRules on ClassShouldBuilder {
   }
 
   /// Requires classes to declare [count] or fewer members.
-  HeimdallRule<CompilationUnitMember> noHaveMoreThanMembers(int count) {
+  HeimdallRule<CompilationUnitMember> haveAtMostMembers(int count) {
     return satisfy(
-      _memberCountCondition(
-        'not have more than $count members',
+      declarationCondition(
+        'have at most $count members',
         (item) => item.members.length <= count,
       ),
     );
   }
-}
-
-HeimdallCondition<CompilationUnitMember> _memberCountCondition(
-  String description,
-  bool Function(CompilationUnitMember item) test,
-) {
-  return HeimdallCondition(description, (item, _) {
-    final passed = test(item);
-    return HeimdallFindings(
-      subject: item,
-      passed: passed,
-      findings: [
-        if (!passed)
-          HeimdallValidationInfo(
-            filePath: item.sourcePath,
-            line: item.line,
-            message: '${item.name} should $description',
-          ),
-      ],
-    );
-  });
 }

@@ -16,12 +16,12 @@ extension MemberAnnotatedWithTypeNameStartingWithPredicateRules on MemberPredica
   }
 
   /// Selects members that do not satisfy `areAnnotatedWithTypeNameStartingWith`.
-  MemberPredicateBuilder noAreAnnotatedWithTypeNameStartingWith(String prefix) {
+  MemberPredicateBuilder areNotAnnotatedWithTypeNameStartingWith(String prefix) {
     return satisfy(_memberDoesNotBeAnnotatedWithTypeNameStartingWith(prefix));
   }
 
   /// Selects members that annotated with type name starting with every value in [prefixes].
-  MemberPredicateBuilder areAnnotatedWithTypeNameStartingWithAll(Iterable<String> prefixes) {
+  MemberPredicateBuilder areAnnotatedWithTypeNameStartingWithAllOf(Iterable<String> prefixes) {
     final valueList = prefixes.toNonEmptyList('prefixes');
     return satisfy(
       HeimdallPredicate.allOf(
@@ -32,7 +32,7 @@ extension MemberAnnotatedWithTypeNameStartingWithPredicateRules on MemberPredica
   }
 
   /// Selects members that annotated with type name starting with at least one value in [prefixes].
-  MemberPredicateBuilder areAnnotatedWithTypeNameStartingWithAny(Iterable<String> prefixes) {
+  MemberPredicateBuilder areAnnotatedWithTypeNameStartingWithAnyOf(Iterable<String> prefixes) {
     final valueList = prefixes.toNonEmptyList('prefixes');
     return satisfy(
       HeimdallPredicate.anyOf(
@@ -43,7 +43,7 @@ extension MemberAnnotatedWithTypeNameStartingWithPredicateRules on MemberPredica
   }
 
   /// Selects members that annotated with type name starting with none of [prefixes].
-  MemberPredicateBuilder areAnnotatedWithTypeNameStartingWithNone(Iterable<String> prefixes) {
+  MemberPredicateBuilder areAnnotatedWithTypeNameStartingWithNoneOf(Iterable<String> prefixes) {
     final valueList = prefixes.toNonEmptyList('prefixes');
     return satisfy(
       HeimdallPredicate.noneOf(
@@ -62,12 +62,12 @@ extension MemberAnnotatedWithTypeNameStartingWithShouldRules on MemberShouldBuil
   }
 
   /// Requires members not to satisfy `beAnnotatedWithTypeNameStartingWith`.
-  HeimdallRule<ClassMember> noBeAnnotatedWithTypeNameStartingWith(String prefix) {
+  HeimdallRule<ClassMember> notBeAnnotatedWithTypeNameStartingWith(String prefix) {
     return satisfy(_memberShouldNotBeAnnotatedWithTypeNameStartingWith(prefix));
   }
 
   /// Requires members to annotated with type name starting with every value in [prefixes].
-  HeimdallRule<ClassMember> beAnnotatedWithTypeNameStartingWithAll(Iterable<String> prefixes) {
+  HeimdallRule<ClassMember> beAnnotatedWithTypeNameStartingWithAllOf(Iterable<String> prefixes) {
     final valueList = prefixes.toNonEmptyList('prefixes');
     return satisfy(
       HeimdallCondition.allOf(
@@ -78,7 +78,7 @@ extension MemberAnnotatedWithTypeNameStartingWithShouldRules on MemberShouldBuil
   }
 
   /// Requires members to annotated with type name starting with at least one value in [prefixes].
-  HeimdallRule<ClassMember> beAnnotatedWithTypeNameStartingWithAny(Iterable<String> prefixes) {
+  HeimdallRule<ClassMember> beAnnotatedWithTypeNameStartingWithAnyOf(Iterable<String> prefixes) {
     final valueList = prefixes.toNonEmptyList('prefixes');
     return satisfy(
       HeimdallCondition.anyOf(
@@ -89,7 +89,7 @@ extension MemberAnnotatedWithTypeNameStartingWithShouldRules on MemberShouldBuil
   }
 
   /// Requires members to annotated with type name starting with none of [prefixes].
-  HeimdallRule<ClassMember> beAnnotatedWithTypeNameStartingWithNone(Iterable<String> prefixes) {
+  HeimdallRule<ClassMember> beAnnotatedWithTypeNameStartingWithNoneOf(Iterable<String> prefixes) {
     final valueList = prefixes.toNonEmptyList('prefixes');
     return satisfy(
       HeimdallCondition.noneOf(

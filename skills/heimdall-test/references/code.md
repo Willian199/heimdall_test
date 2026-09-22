@@ -6,7 +6,6 @@
 - `shouldNotImportDartMirrors`
 - `shouldNotImportPackage`
 - `pathShouldBeEmpty`
-- `pathShouldNotExist`
 - `publicSignaturesShouldNotUseDynamic`
 - `shouldHaveAtMostOnePublicClassPerFile`
 - `preferRelativeImports`
@@ -43,8 +42,18 @@ Heimdall.code()
 | Align public class and filename | `publicClassNameShouldMatchFileName(...)` |
 | Forbid part-of directives | `shouldNotUsePartOf()` |
 | Restrict barrel contents | `barrelFilesShouldOnlyExport(...)` |
-| Require no files in a path | `pathShouldBeEmpty(...)`, `pathShouldNotExist(...)` |
+| Require no files in a path | `pathShouldBeEmpty(...)` |
 
 Import policies apply to imports; the broader URI policies also cover other directive URIs, such as exports and parts. `shouldParse()` checks parsing, not full semantic analysis.
+
+`preferPackageImports()` rejects relative import targets in every conditional
+branch, using the same implementation as `files().should().notUseRelativeImports()`.
+It does not filter by the project's package name and accepts other URI schemes.
+To restrict imports to `package:` and `dart:`, use
+`files().should().useOnlyPackageOrSdkImports()`.
+`preferRelativeImports()` is the style rule that uses the project's package name:
+it rejects imports beginning with `package:<current-package>/` while accepting
+external packages and SDK imports. If the package name is unavailable, it cannot
+identify same-package imports and reports no style findings.
 
 For a selected subtree with several conditions, use [Heimdall.files()](files.md). The built-in policies reuse the imported data, so no separate source scan is needed.

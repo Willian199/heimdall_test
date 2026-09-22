@@ -9,7 +9,7 @@ extension FileDeclareClassPredicateRules on FilePredicateBuilder {
   }
 
   /// Selects files that do not declare a class named [className].
-  FilePredicateBuilder noDeclareClass(String className) {
+  FilePredicateBuilder notDeclareClass(String className) {
     return satisfy(
       HeimdallPredicate(
         'not declare class $className',
@@ -62,7 +62,7 @@ extension FileDeclareClassShouldRules on FileShouldBuilder {
   }
 
   /// Requires matching files to not declare a class named [className].
-  HeimdallRule<HeimdallSourceFile> noDeclareClass(String className) {
+  HeimdallRule<HeimdallSourceFile> notDeclareClass(String className) {
     return satisfy(_fileShouldNotDeclareClass(className));
   }
 

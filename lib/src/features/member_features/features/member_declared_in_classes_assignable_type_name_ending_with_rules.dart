@@ -1,5 +1,6 @@
 import 'package:heimdall_test/heimdall_test.dart';
-import 'package:heimdall_test/src/features/queries/declaration_type_queries.dart';
+import 'package:heimdall_test/src/features/member_features/helpers/member_owner_rule_helpers.dart';
+import 'package:heimdall_test/src/features/queries/declaration_rule_predicates.dart';
 import 'package:heimdall_test/src/features/queries/member_queries.dart';
 
 /// Predicate-side DSL for member owner declaration rules.
@@ -8,50 +9,50 @@ extension MemberDeclaredInClassesAssignableEndingWithPredicateRules on MemberPre
   MemberPredicateBuilder areDeclaredInClassesAssignableToTypeNameEndingWith(
     String suffix,
   ) {
-    return areDeclaredInClassesThat(_classAssignableToTypeNameEndingWith(suffix));
+    return areDeclaredInClassesThat(classAssignableToTypeNameEndingWith(suffix));
   }
 
   /// Selects members that do not satisfy `areDeclaredInClassesAssignableToTypeNameEndingWith`.
-  MemberPredicateBuilder noAreDeclaredInClassesAssignableToTypeNameEndingWith(
+  MemberPredicateBuilder areNotDeclaredInClassesAssignableToTypeNameEndingWith(
     String suffix,
   ) {
     return satisfy(_memberDoesNotBeDeclaredInClassesAssignableToTypeNameEndingWith(suffix));
   }
 
   /// Selects members declared in classes assignable to a type name ending with any suffix in [suffixes].
-  MemberPredicateBuilder areDeclaredInClassesAssignableToTypeNameEndingWithAny(
+  MemberPredicateBuilder areDeclaredInClassesAssignableToTypeNameEndingWithAnyOf(
     Iterable<String> suffixes,
   ) {
     final suffixList = suffixes.toNonEmptyList('suffixes');
     return areDeclaredInClassesThat(
       HeimdallPredicate.anyOf(
-        suffixList.map(_classAssignableToTypeNameEndingWith),
+        suffixList.map(classAssignableToTypeNameEndingWith),
         description: 'are assignable to type name ending with any of ${suffixList.join(', ')}',
       ),
     );
   }
 
   /// Selects members declared in classes assignable to type names ending with every suffix in [suffixes].
-  MemberPredicateBuilder areDeclaredInClassesAssignableToTypeNameEndingWithAll(
+  MemberPredicateBuilder areDeclaredInClassesAssignableToTypeNameEndingWithAllOf(
     Iterable<String> suffixes,
   ) {
     final suffixList = suffixes.toNonEmptyList('suffixes');
     return areDeclaredInClassesThat(
       HeimdallPredicate.allOf(
-        suffixList.map(_classAssignableToTypeNameEndingWith),
+        suffixList.map(classAssignableToTypeNameEndingWith),
         description: 'are assignable to type names ending with all of ${suffixList.join(', ')}',
       ),
     );
   }
 
   /// Selects members declared in classes assignable to no type name ending with [suffixes].
-  MemberPredicateBuilder areDeclaredInClassesAssignableToTypeNameEndingWithNone(
+  MemberPredicateBuilder areDeclaredInClassesAssignableToTypeNameEndingWithNoneOf(
     Iterable<String> suffixes,
   ) {
     final suffixList = suffixes.toNonEmptyList('suffixes');
     return areDeclaredInClassesThat(
       HeimdallPredicate.noneOf(
-        suffixList.map(_classAssignableToTypeNameEndingWith),
+        suffixList.map(classAssignableToTypeNameEndingWith),
         description: 'are assignable to type name ending with none of ${suffixList.join(', ')}',
       ),
     );
@@ -64,82 +65,60 @@ extension MemberDeclaredInClassesAssignableEndingWithShouldRules on MemberShould
   HeimdallRule<ClassMember> beDeclaredInClassesAssignableToTypeNameEndingWith(
     String suffix,
   ) {
-    return beDeclaredInClassesThat(_classAssignableToTypeNameEndingWith(suffix));
+    return beDeclaredInClassesThat(classAssignableToTypeNameEndingWith(suffix));
   }
 
   /// Requires members not to satisfy `beDeclaredInClassesAssignableToTypeNameEndingWith`.
-  HeimdallRule<ClassMember> noBeDeclaredInClassesAssignableToTypeNameEndingWith(
+  HeimdallRule<ClassMember> notBeDeclaredInClassesAssignableToTypeNameEndingWith(
     String suffix,
   ) {
     return satisfy(_memberShouldNotBeDeclaredInClassesAssignableToTypeNameEndingWith(suffix));
   }
 
   /// Requires members to be declared in classes assignable to a type name ending with any suffix in [suffixes].
-  HeimdallRule<ClassMember> beDeclaredInClassesAssignableToTypeNameEndingWithAny(
+  HeimdallRule<ClassMember> beDeclaredInClassesAssignableToTypeNameEndingWithAnyOf(
     Iterable<String> suffixes,
   ) {
     final suffixList = suffixes.toNonEmptyList('suffixes');
     return satisfy(
       HeimdallCondition.anyOf(
-        suffixList.map(_classAssignableToTypeNameEndingWith).map(_memberShouldBeDeclaredInClassesThat),
+        suffixList.map(classAssignableToTypeNameEndingWith).map(memberShouldBeDeclaredInClassesThat),
         description: 'be assignable to type name ending with any of ${suffixList.join(', ')}',
       ),
     );
   }
 
   /// Requires members to be declared in classes assignable to type names ending with every suffix in [suffixes].
-  HeimdallRule<ClassMember> beDeclaredInClassesAssignableToTypeNameEndingWithAll(
+  HeimdallRule<ClassMember> beDeclaredInClassesAssignableToTypeNameEndingWithAllOf(
     Iterable<String> suffixes,
   ) {
     final suffixList = suffixes.toNonEmptyList('suffixes');
     return satisfy(
       HeimdallCondition.allOf(
-        suffixList.map(_classAssignableToTypeNameEndingWith).map(_memberShouldBeDeclaredInClassesThat),
+        suffixList.map(classAssignableToTypeNameEndingWith).map(memberShouldBeDeclaredInClassesThat),
         description: 'be assignable to type names ending with all of ${suffixList.join(', ')}',
       ),
     );
   }
 
   /// Requires members to be declared in classes assignable to no type name ending with [suffixes].
-  HeimdallRule<ClassMember> beDeclaredInClassesAssignableToTypeNameEndingWithNone(
+  HeimdallRule<ClassMember> beDeclaredInClassesAssignableToTypeNameEndingWithNoneOf(
     Iterable<String> suffixes,
   ) {
     final suffixList = suffixes.toNonEmptyList('suffixes');
     return satisfy(
       HeimdallCondition.noneOf(
-        suffixList.map(_classAssignableToTypeNameEndingWith).map(_memberShouldBeDeclaredInClassesThat),
+        suffixList.map(classAssignableToTypeNameEndingWith).map(memberShouldBeDeclaredInClassesThat),
         description: 'be assignable to type name ending with none of ${suffixList.join(', ')}',
       ),
     );
   }
 }
 
-HeimdallCondition<ClassMember> _memberShouldBeDeclaredInClassesThat(
-  HeimdallPredicate<CompilationUnitMember> classPredicate,
-) {
-  return memberCondition(
-    'be declared in classes that ${classPredicate.description}',
-    (item, project) => classPredicate.test(item.owner, project),
-  );
-}
-
-HeimdallPredicate<CompilationUnitMember> _classAssignableToTypeNameEndingWith(
-  String suffix,
-) {
-  return HeimdallPredicate(
-    'are assignable to type name ending with $suffix',
-    (item, project) => isAssignableToTypeNamedWhere(
-      item,
-      project,
-      (typeName) => typeName.endsWith(suffix),
-    ),
-  );
-}
-
 HeimdallCondition<ClassMember> _memberShouldNotBeDeclaredInClassesAssignableToTypeNameEndingWith(
   String suffix,
 ) {
-  final classPredicate = _classAssignableToTypeNameEndingWith(suffix);
+  final classPredicate = classAssignableToTypeNameEndingWith(suffix);
   return prohibitedMemberCondition(
     'be declared in classes that ${classPredicate.description}',
     (item, project) => classPredicate.test(item.owner, project),
@@ -149,7 +128,7 @@ HeimdallCondition<ClassMember> _memberShouldNotBeDeclaredInClassesAssignableToTy
 HeimdallPredicate<ClassMember> _memberDoesNotBeDeclaredInClassesAssignableToTypeNameEndingWith(
   String suffix,
 ) {
-  final classPredicate = _classAssignableToTypeNameEndingWith(suffix);
+  final classPredicate = classAssignableToTypeNameEndingWith(suffix);
   return HeimdallPredicate(
     'not be declared in classes assignable to type name ending with $suffix',
     (item, project) => !classPredicate.test(item.owner, project),

@@ -1,4 +1,5 @@
 import 'package:heimdall_test/heimdall_test.dart';
+import 'package:heimdall_test/src/features/member_features/helpers/member_owner_rule_helpers.dart';
 import 'package:heimdall_test/src/features/queries/declaration_type_queries.dart';
 import 'package:heimdall_test/src/features/queries/member_queries.dart';
 
@@ -10,12 +11,12 @@ extension MemberDeclaredInClassesThatImplementsStartingWithPredicateRules on Mem
   }
 
   /// Selects members that do not satisfy `areDeclaredInClassesThatImplementTypeNameStartingWith`.
-  MemberPredicateBuilder noAreDeclaredInClassesThatImplementTypeNameStartingWith(String prefix) {
+  MemberPredicateBuilder areNotDeclaredInClassesThatImplementTypeNameStartingWith(String prefix) {
     return satisfy(_memberDoesNotBeDeclaredInClassesThatImplementTypeNameStartingWith(prefix));
   }
 
   /// Selects members declared in classes that implement type name starting with any value in [prefixes].
-  MemberPredicateBuilder areDeclaredInClassesThatImplementTypeNameStartingWithAny(Iterable<String> prefixes) {
+  MemberPredicateBuilder areDeclaredInClassesThatImplementTypeNameStartingWithAnyOf(Iterable<String> prefixes) {
     final valueList = prefixes.toNonEmptyList('prefixes');
     return areDeclaredInClassesThat(
       HeimdallPredicate.anyOf(
@@ -26,7 +27,7 @@ extension MemberDeclaredInClassesThatImplementsStartingWithPredicateRules on Mem
   }
 
   /// Selects members declared in classes that implement type name starting with every value in [prefixes].
-  MemberPredicateBuilder areDeclaredInClassesThatImplementTypeNameStartingWithAll(Iterable<String> prefixes) {
+  MemberPredicateBuilder areDeclaredInClassesThatImplementTypeNameStartingWithAllOf(Iterable<String> prefixes) {
     final valueList = prefixes.toNonEmptyList('prefixes');
     return areDeclaredInClassesThat(
       HeimdallPredicate.allOf(
@@ -37,7 +38,7 @@ extension MemberDeclaredInClassesThatImplementsStartingWithPredicateRules on Mem
   }
 
   /// Selects members declared in classes that implement type name starting with none of [prefixes].
-  MemberPredicateBuilder areDeclaredInClassesThatImplementTypeNameStartingWithNone(Iterable<String> prefixes) {
+  MemberPredicateBuilder areDeclaredInClassesThatImplementTypeNameStartingWithNoneOf(Iterable<String> prefixes) {
     final valueList = prefixes.toNonEmptyList('prefixes');
     return areDeclaredInClassesThat(
       HeimdallPredicate.noneOf(
@@ -56,51 +57,42 @@ extension MemberDeclaredInClassesThatImplementsStartingWithShouldRules on Member
   }
 
   /// Requires members not to satisfy `beDeclaredInClassesThatImplementTypeNameStartingWith`.
-  HeimdallRule<ClassMember> noBeDeclaredInClassesThatImplementTypeNameStartingWith(String prefix) {
+  HeimdallRule<ClassMember> notBeDeclaredInClassesThatImplementTypeNameStartingWith(String prefix) {
     return satisfy(_memberShouldNotBeDeclaredInClassesThatImplementTypeNameStartingWith(prefix));
   }
 
   /// Requires members to be declared in classes that implement type name starting with any value in [prefixes].
-  HeimdallRule<ClassMember> beDeclaredInClassesThatImplementTypeNameStartingWithAny(Iterable<String> prefixes) {
+  HeimdallRule<ClassMember> beDeclaredInClassesThatImplementTypeNameStartingWithAnyOf(Iterable<String> prefixes) {
     final valueList = prefixes.toNonEmptyList('prefixes');
     return satisfy(
       HeimdallCondition.anyOf(
-        valueList.map(_classImplementsTypeNameStartingWith).map(_memberShouldBeDeclaredInClassesThat),
+        valueList.map(_classImplementsTypeNameStartingWith).map(memberShouldBeDeclaredInClassesThat),
         description: 'implement type name starting with any of ${valueList.join(', ')}',
       ),
     );
   }
 
   /// Requires members to be declared in classes that implement type name starting with every value in [prefixes].
-  HeimdallRule<ClassMember> beDeclaredInClassesThatImplementTypeNameStartingWithAll(Iterable<String> prefixes) {
+  HeimdallRule<ClassMember> beDeclaredInClassesThatImplementTypeNameStartingWithAllOf(Iterable<String> prefixes) {
     final valueList = prefixes.toNonEmptyList('prefixes');
     return satisfy(
       HeimdallCondition.allOf(
-        valueList.map(_classImplementsTypeNameStartingWith).map(_memberShouldBeDeclaredInClassesThat),
+        valueList.map(_classImplementsTypeNameStartingWith).map(memberShouldBeDeclaredInClassesThat),
         description: 'implement type name starting with all of ${valueList.join(', ')}',
       ),
     );
   }
 
   /// Requires members to be declared in classes that implement type name starting with none of [prefixes].
-  HeimdallRule<ClassMember> beDeclaredInClassesThatImplementTypeNameStartingWithNone(Iterable<String> prefixes) {
+  HeimdallRule<ClassMember> beDeclaredInClassesThatImplementTypeNameStartingWithNoneOf(Iterable<String> prefixes) {
     final valueList = prefixes.toNonEmptyList('prefixes');
     return satisfy(
       HeimdallCondition.noneOf(
-        valueList.map(_classImplementsTypeNameStartingWith).map(_memberShouldBeDeclaredInClassesThat),
+        valueList.map(_classImplementsTypeNameStartingWith).map(memberShouldBeDeclaredInClassesThat),
         description: 'implement type name starting with none of ${valueList.join(', ')}',
       ),
     );
   }
-}
-
-HeimdallCondition<ClassMember> _memberShouldBeDeclaredInClassesThat(
-  HeimdallPredicate<CompilationUnitMember> classPredicate,
-) {
-  return memberCondition(
-    'be declared in classes that ${classPredicate.description}',
-    (item, project) => classPredicate.test(item.owner, project),
-  );
 }
 
 HeimdallPredicate<CompilationUnitMember> _classImplementsTypeNameStartingWith(String prefix) {

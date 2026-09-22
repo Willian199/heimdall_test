@@ -1,4 +1,5 @@
 import 'package:heimdall_test/heimdall_test.dart';
+import 'package:heimdall_test/src/features/class_features/helpers/declaration_condition.dart';
 
 /// Predicate-side DSL for class executable code-unit count rules.
 extension ClassCodeUnitCountPredicateRules on ClassPredicateBuilder {
@@ -13,7 +14,7 @@ extension ClassCodeUnitCountPredicateRules on ClassPredicateBuilder {
   }
 
   /// Selects classes that do not declare exactly [count] executable code units.
-  ClassPredicateBuilder noHaveCodeUnitCount(int count) {
+  ClassPredicateBuilder haveCodeUnitCountOtherThan(int count) {
     return satisfy(
       HeimdallPredicate(
         'not have code unit count $count',
@@ -33,10 +34,10 @@ extension ClassCodeUnitCountPredicateRules on ClassPredicateBuilder {
   }
 
   /// Selects classes that declare [count] or fewer executable code units.
-  ClassPredicateBuilder noHaveMoreThanCodeUnits(int count) {
+  ClassPredicateBuilder haveAtMostCodeUnits(int count) {
     return satisfy(
       HeimdallPredicate(
-        'not have more than $count code units',
+        'have at most $count code units',
         (item, _) => _codeUnitCount(item) <= count,
       ),
     );
@@ -48,7 +49,7 @@ extension ClassCodeUnitCountShouldRules on ClassShouldBuilder {
   /// Requires classes to declare exactly [count] executable code units.
   HeimdallRule<CompilationUnitMember> haveCodeUnitCount(int count) {
     return satisfy(
-      _codeUnitCountCondition(
+      declarationCondition(
         'have code unit count $count',
         (item) => _codeUnitCount(item) == count,
       ),
@@ -56,9 +57,9 @@ extension ClassCodeUnitCountShouldRules on ClassShouldBuilder {
   }
 
   /// Requires classes not to declare exactly [count] executable code units.
-  HeimdallRule<CompilationUnitMember> noHaveCodeUnitCount(int count) {
+  HeimdallRule<CompilationUnitMember> haveCodeUnitCountOtherThan(int count) {
     return satisfy(
-      _codeUnitCountCondition(
+      declarationCondition(
         'not have code unit count $count',
         (item) => _codeUnitCount(item) != count,
       ),
@@ -68,7 +69,7 @@ extension ClassCodeUnitCountShouldRules on ClassShouldBuilder {
   /// Requires classes to declare more than [count] executable code units.
   HeimdallRule<CompilationUnitMember> haveMoreThanCodeUnits(int count) {
     return satisfy(
-      _codeUnitCountCondition(
+      declarationCondition(
         'have more than $count code units',
         (item) => _codeUnitCount(item) > count,
       ),
@@ -76,35 +77,14 @@ extension ClassCodeUnitCountShouldRules on ClassShouldBuilder {
   }
 
   /// Requires classes to declare [count] or fewer executable code units.
-  HeimdallRule<CompilationUnitMember> noHaveMoreThanCodeUnits(int count) {
+  HeimdallRule<CompilationUnitMember> haveAtMostCodeUnits(int count) {
     return satisfy(
-      _codeUnitCountCondition(
-        'not have more than $count code units',
+      declarationCondition(
+        'have at most $count code units',
         (item) => _codeUnitCount(item) <= count,
       ),
     );
   }
-}
-
-HeimdallCondition<CompilationUnitMember> _codeUnitCountCondition(
-  String description,
-  bool Function(CompilationUnitMember item) test,
-) {
-  return HeimdallCondition(description, (item, _) {
-    final passed = test(item);
-    return HeimdallFindings(
-      subject: item,
-      passed: passed,
-      findings: [
-        if (!passed)
-          HeimdallValidationInfo(
-            filePath: item.sourcePath,
-            line: item.line,
-            message: '${item.name} should $description',
-          ),
-      ],
-    );
-  });
 }
 
 int _codeUnitCount(CompilationUnitMember item) {

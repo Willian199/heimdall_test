@@ -8,7 +8,7 @@ extension ClassResideInPathMatchingPredicateRules on ClassPredicateBuilder {
   }
 
   /// Selects declarations whose relative path does not match [pattern].
-  ClassPredicateBuilder noResideInPathMatching(RegExp pattern) {
+  ClassPredicateBuilder resideOutsideOfPathMatching(RegExp pattern) {
     return satisfy(_classDoesNotResideInPathMatching(pattern));
   }
 
@@ -35,7 +35,7 @@ extension ClassResideInPathMatchingPredicateRules on ClassPredicateBuilder {
   }
 
   /// Selects declarations whose relative path matches none of [patterns].
-  ClassPredicateBuilder resideInNoPathsMatching(Iterable<RegExp> patterns) {
+  ClassPredicateBuilder resideOutsideOfAllPathsMatching(Iterable<RegExp> patterns) {
     final patternList = patterns.toNonEmptyList('patterns');
     return satisfy(
       HeimdallPredicate.noneOf(
@@ -54,7 +54,7 @@ extension ClassResideInPathMatchingShouldRules on ClassShouldBuilder {
   }
 
   /// Requires matching classes to not reside in a path matching [pattern].
-  HeimdallRule<CompilationUnitMember> noResideInPathMatching(RegExp pattern) {
+  HeimdallRule<CompilationUnitMember> resideOutsideOfPathMatching(RegExp pattern) {
     return satisfy(_classShouldNotResideInPathMatching(pattern));
   }
 
@@ -85,7 +85,7 @@ extension ClassResideInPathMatchingShouldRules on ClassShouldBuilder {
   }
 
   /// Requires matching classes to reside in a path matching none of [patterns].
-  HeimdallRule<CompilationUnitMember> resideInNoPathsMatching(
+  HeimdallRule<CompilationUnitMember> resideOutsideOfAllPathsMatching(
     Iterable<RegExp> patterns,
   ) {
     final patternList = patterns.toNonEmptyList('patterns');

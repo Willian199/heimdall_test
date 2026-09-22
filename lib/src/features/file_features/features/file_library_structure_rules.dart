@@ -8,7 +8,7 @@ extension FileLibraryStructurePredicateRules on FilePredicateBuilder {
   }
 
   /// Selects files that do not declare a `library` directive named [name].
-  FilePredicateBuilder noHaveLibraryDirectiveNamed(String name) {
+  FilePredicateBuilder haveNoLibraryDirectiveNamed(String name) {
     return satisfy(
       HeimdallPredicate(
         'not have library directive named $name',
@@ -59,7 +59,7 @@ extension FileLibraryStructureShouldRules on FileShouldBuilder {
   }
 
   /// Requires matching files to not declare a `library` directive named [name].
-  HeimdallRule<HeimdallSourceFile> noHaveLibraryDirectiveNamed(String name) {
+  HeimdallRule<HeimdallSourceFile> haveNoLibraryDirectiveNamed(String name) {
     return satisfy(
       HeimdallCondition('not have library directive named $name', (
         item,

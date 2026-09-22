@@ -7,13 +7,13 @@ extension ClassHavePublicFieldsPredicateRules on ClassPredicateBuilder {
     return satisfy(_classHasOnlyPublicFields());
   }
 
-  /// Selects classes with at least one private field.
-  ClassPredicateBuilder noHaveOnlyPublicFields() {
+  /// Selects classes with no fields or at least one private field.
+  ClassPredicateBuilder notHaveOnlyPublicFields() {
     return satisfy(_classDoesNotHaveOnlyPublicFields());
   }
 
   /// Selects classes where every field in [fieldNames] is public.
-  ClassPredicateBuilder haveAllPublicFields(Iterable<String> fieldNames) {
+  ClassPredicateBuilder havePublicFieldsNamedAllOf(Iterable<String> fieldNames) {
     final fieldList = fieldNames.toNonEmptyList('fieldNames');
     return satisfy(
       HeimdallPredicate.allOf(
@@ -24,7 +24,7 @@ extension ClassHavePublicFieldsPredicateRules on ClassPredicateBuilder {
   }
 
   /// Selects classes where at least one field in [fieldNames] is public.
-  ClassPredicateBuilder haveAnyPublicFields(Iterable<String> fieldNames) {
+  ClassPredicateBuilder havePublicFieldNamedAnyOf(Iterable<String> fieldNames) {
     final fieldList = fieldNames.toNonEmptyList('fieldNames');
     return satisfy(
       HeimdallPredicate.anyOf(
@@ -35,7 +35,7 @@ extension ClassHavePublicFieldsPredicateRules on ClassPredicateBuilder {
   }
 
   /// Selects classes where none of [fieldNames] is public.
-  ClassPredicateBuilder haveNoPublicFields(Iterable<String> fieldNames) {
+  ClassPredicateBuilder haveNoPublicFieldsNamed(Iterable<String> fieldNames) {
     final fieldList = fieldNames.toNonEmptyList('fieldNames');
     return satisfy(
       HeimdallPredicate.noneOf(
@@ -54,12 +54,12 @@ extension ClassHavePublicFieldsShouldRules on ClassShouldBuilder {
   }
 
   /// Requires matching classes to have at least one private field.
-  HeimdallRule<CompilationUnitMember> noHaveOnlyPublicFields() {
+  HeimdallRule<CompilationUnitMember> notHaveOnlyPublicFields() {
     return satisfy(_classShouldNotHaveOnlyPublicFields());
   }
 
   /// Requires every field in [fieldNames] to be public.
-  HeimdallRule<CompilationUnitMember> haveAllPublicFields(
+  HeimdallRule<CompilationUnitMember> havePublicFieldsNamedAllOf(
     Iterable<String> fieldNames,
   ) {
     final fieldList = fieldNames.toNonEmptyList('fieldNames');
@@ -72,7 +72,7 @@ extension ClassHavePublicFieldsShouldRules on ClassShouldBuilder {
   }
 
   /// Requires at least one field in [fieldNames] to be public.
-  HeimdallRule<CompilationUnitMember> haveAnyPublicFields(
+  HeimdallRule<CompilationUnitMember> havePublicFieldNamedAnyOf(
     Iterable<String> fieldNames,
   ) {
     final fieldList = fieldNames.toNonEmptyList('fieldNames');
@@ -85,7 +85,7 @@ extension ClassHavePublicFieldsShouldRules on ClassShouldBuilder {
   }
 
   /// Requires none of [fieldNames] to be public.
-  HeimdallRule<CompilationUnitMember> haveNoPublicFields(
+  HeimdallRule<CompilationUnitMember> haveNoPublicFieldsNamed(
     Iterable<String> fieldNames,
   ) {
     final fieldList = fieldNames.toNonEmptyList('fieldNames');

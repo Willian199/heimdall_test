@@ -1,4 +1,5 @@
 import 'package:heimdall_test/heimdall_test.dart';
+import 'package:heimdall_test/src/features/file_features/helpers/file_constructor_queries.dart';
 import 'package:heimdall_test/src/features/file_features/helpers/source_file_location.dart';
 
 /// Predicate-side DSL for factory constructor rules.
@@ -9,7 +10,7 @@ extension FileDeclareFactoryConstructorPredicateRules on FilePredicateBuilder {
   }
 
   /// Selects files that do not declare a `factory` constructor.
-  FilePredicateBuilder noDeclareFactoryConstructor({String? className}) {
+  FilePredicateBuilder notDeclareFactoryConstructor({String? className}) {
     return satisfy(
       _fileDoesNotDeclareFactoryConstructor(className: className),
     );
@@ -77,7 +78,7 @@ extension FileDeclareFactoryConstructorShouldRules on FileShouldBuilder {
   }
 
   /// Requires matching files to not declare a `factory` constructor.
-  HeimdallRule<HeimdallSourceFile> noDeclareFactoryConstructor({
+  HeimdallRule<HeimdallSourceFile> notDeclareFactoryConstructor({
     String? className,
   }) {
     return satisfy(
@@ -142,7 +143,7 @@ HeimdallPredicate<HeimdallSourceFile> _fileDeclaresFactoryConstructor({
 }) {
   return HeimdallPredicate(
     'declare factory constructor',
-    (item, _) => _constructors(
+    (item, _) => fileConstructors(
       item,
       className: className,
     ).any((constructor) => constructor.isFactory),
@@ -153,7 +154,7 @@ HeimdallCondition<HeimdallSourceFile> _fileShouldDeclareFactoryConstructor({
   String? className,
 }) {
   return HeimdallCondition('declare factory constructor', (item, _) {
-    final hasConstructor = _constructors(
+    final hasConstructor = fileConstructors(
       item,
       className: className,
     ).any((constructor) => constructor.isFactory);
@@ -178,7 +179,7 @@ HeimdallPredicate<HeimdallSourceFile> _fileDoesNotDeclareFactoryConstructor({
 }) {
   return HeimdallPredicate(
     'not declare factory constructor',
-    (item, _) => !_constructors(
+    (item, _) => !fileConstructors(
       item,
       className: className,
     ).any((constructor) => constructor.isFactory),
@@ -189,7 +190,7 @@ HeimdallCondition<HeimdallSourceFile> _fileShouldNotDeclareFactoryConstructor({
   String? className,
 }) {
   return HeimdallCondition('not declare factory constructor', (item, _) {
-    final findings = _constructors(item, className: className)
+    final findings = fileConstructors(item, className: className)
         .where((constructor) => constructor.isFactory)
         .map(
           (constructor) => fileNodeFinding(
@@ -206,12 +207,4 @@ HeimdallCondition<HeimdallSourceFile> _fileShouldNotDeclareFactoryConstructor({
       findings: findings,
     );
   });
-}
-
-Iterable<ConstructorDeclaration> _constructors(
-  HeimdallSourceFile item, {
-  String? className,
-}) {
-  if (className == null) return item.constructors;
-  return item.constructors.where((constructor) => constructor.ownerName == className);
 }

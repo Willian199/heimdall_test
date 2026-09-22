@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:heimdall_test/heimdall_test.dart';
 import 'package:test/test.dart';
 
@@ -7,7 +5,7 @@ void main() {
   group('Architecture rules', () {
     HeimdallProject importArchitectureFixture(String name) {
       return const HeimdallFileImporter(useCache: false).importPath(
-        '${Directory.current.path}/test/architecture_fixtures/$name',
+        'test/architecture_fixtures/$name',
       );
     }
 
@@ -78,7 +76,7 @@ void main() {
           .that()
           .haveTypeName('UserRepository')
           .should()
-          .noDependOnClassesThat(
+          .notDependOnClassesThat(
             HeimdallPredicate(
               'are the domain A user',
               (item, _) => item.name == 'User' && item.relativePath.contains('/domain_a/'),
@@ -89,7 +87,7 @@ void main() {
           .that()
           .haveTypeName('UserRepository')
           .should()
-          .noDependOnClassesThat(
+          .notDependOnClassesThat(
             HeimdallPredicate(
               'are the domain B user',
               (item, _) => item.name == 'User' && item.relativePath.contains('/domain_b/'),
@@ -156,7 +154,7 @@ void main() {
           .that()
           .haveTypeName('AnnotatedRepository')
           .should()
-          .noDependOnClassesThat(
+          .notDependOnClassesThat(
             HeimdallPredicate(
               'are the domain A marker',
               (item, _) => item.name == 'Marker' && item.relativePath.contains('/domain_a/'),
@@ -167,7 +165,7 @@ void main() {
           .that()
           .haveTypeName('AnnotatedRepository')
           .should()
-          .noDependOnClassesThat(
+          .notDependOnClassesThat(
             HeimdallPredicate(
               'are the domain B marker',
               (item, _) => item.name == 'Marker' && item.relativePath.contains('/domain_b/'),
@@ -191,7 +189,7 @@ void main() {
           .that()
           .haveTypeName('Consumer')
           .should()
-          .noDependOnClassesThat(
+          .notDependOnClassesThat(
             HeimdallPredicate(
               'reside in feature B',
               (item, _) => item.relativePath.contains('/features/b/'),
@@ -201,7 +199,7 @@ void main() {
       final slices = Heimdall.slices(
         'lib/src/features/(*)',
       ).shouldNotDependOnEachOther().check(project);
-      final uriRule = Heimdall.files().that().haveName('consumer.dart').should().noImportUri('../b/service_io.dart').check(project);
+      final uriRule = Heimdall.files().that().haveName('consumer.dart').should().notImportUri('../b/service_io.dart').check(project);
       final layers = Heimdall.layers()
           .layer('A')
           .definedBy(['features/a'])
@@ -416,7 +414,7 @@ void main() {
 
     HeimdallProject importFixture(String name) {
       return const HeimdallFileImporter(useCache: false).importPath(
-        '${Directory.current.path}/test/$name',
+        'test/$name',
       );
     }
 

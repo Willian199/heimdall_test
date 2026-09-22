@@ -8,7 +8,7 @@ extension ClassDeclareFieldPredicateRules on ClassPredicateBuilder {
   }
 
   /// Selects classes that do not declare a field named [fieldName].
-  ClassPredicateBuilder noDeclareField(String fieldName) {
+  ClassPredicateBuilder notDeclareField(String fieldName) {
     return satisfy(
       HeimdallPredicate(
         'not declare field $fieldName',
@@ -29,7 +29,7 @@ extension ClassDeclareFieldPredicateRules on ClassPredicateBuilder {
   }
 
   /// Selects classes that declare at least one field in [fieldNames].
-  ClassPredicateBuilder declareAnyFields(Iterable<String> fieldNames) {
+  ClassPredicateBuilder declareAnyField(Iterable<String> fieldNames) {
     final fieldList = fieldNames.toNonEmptyList('fieldNames');
     return satisfy(
       HeimdallPredicate.anyOf(
@@ -59,7 +59,7 @@ extension ClassDeclareFieldShouldRules on ClassShouldBuilder {
   }
 
   /// Requires matching classes to not declare a field named [fieldName].
-  HeimdallRule<CompilationUnitMember> noDeclareField(String fieldName) {
+  HeimdallRule<CompilationUnitMember> notDeclareField(String fieldName) {
     return satisfy(_classShouldNotDeclareField(fieldName));
   }
 
@@ -77,7 +77,7 @@ extension ClassDeclareFieldShouldRules on ClassShouldBuilder {
   }
 
   /// Requires matching classes to declare at least one field in [fieldNames].
-  HeimdallRule<CompilationUnitMember> declareAnyFields(
+  HeimdallRule<CompilationUnitMember> declareAnyField(
     Iterable<String> fieldNames,
   ) {
     final fieldList = fieldNames.toNonEmptyList('fieldNames');

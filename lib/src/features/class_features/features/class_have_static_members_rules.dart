@@ -7,13 +7,13 @@ extension ClassHaveStaticMembersPredicateRules on ClassPredicateBuilder {
     return satisfy(_classHasOnlyStaticMembers());
   }
 
-  /// Selects classes with at least one non-static field or method.
-  ClassPredicateBuilder noHaveOnlyStaticMembers() {
+  /// Selects classes with no fields or methods, or at least one non-static field or method.
+  ClassPredicateBuilder notHaveOnlyStaticMembers() {
     return satisfy(_classDoesNotHaveOnlyStaticMembers());
   }
 
   /// Selects classes where every member in [memberNames] is static.
-  ClassPredicateBuilder haveAllStaticMembers(Iterable<String> memberNames) {
+  ClassPredicateBuilder haveStaticMembersNamedAllOf(Iterable<String> memberNames) {
     final memberList = memberNames.toNonEmptyList('memberNames');
     return satisfy(
       HeimdallPredicate.allOf(
@@ -24,7 +24,7 @@ extension ClassHaveStaticMembersPredicateRules on ClassPredicateBuilder {
   }
 
   /// Selects classes where at least one member in [memberNames] is static.
-  ClassPredicateBuilder haveAnyStaticMembers(Iterable<String> memberNames) {
+  ClassPredicateBuilder haveStaticMemberNamedAnyOf(Iterable<String> memberNames) {
     final memberList = memberNames.toNonEmptyList('memberNames');
     return satisfy(
       HeimdallPredicate.anyOf(
@@ -35,7 +35,7 @@ extension ClassHaveStaticMembersPredicateRules on ClassPredicateBuilder {
   }
 
   /// Selects classes where none of [memberNames] is static.
-  ClassPredicateBuilder haveNoStaticMembers(Iterable<String> memberNames) {
+  ClassPredicateBuilder haveNoStaticMembersNamed(Iterable<String> memberNames) {
     final memberList = memberNames.toNonEmptyList('memberNames');
     return satisfy(
       HeimdallPredicate.noneOf(
@@ -54,12 +54,12 @@ extension ClassHaveStaticMembersShouldRules on ClassShouldBuilder {
   }
 
   /// Requires matching classes to have at least one non-static field or method.
-  HeimdallRule<CompilationUnitMember> noHaveOnlyStaticMembers() {
+  HeimdallRule<CompilationUnitMember> notHaveOnlyStaticMembers() {
     return satisfy(_classShouldNotHaveOnlyStaticMembers());
   }
 
   /// Requires every member in [memberNames] to be static.
-  HeimdallRule<CompilationUnitMember> haveAllStaticMembers(
+  HeimdallRule<CompilationUnitMember> haveStaticMembersNamedAllOf(
     Iterable<String> memberNames,
   ) {
     final memberList = memberNames.toNonEmptyList('memberNames');
@@ -72,7 +72,7 @@ extension ClassHaveStaticMembersShouldRules on ClassShouldBuilder {
   }
 
   /// Requires at least one member in [memberNames] to be static.
-  HeimdallRule<CompilationUnitMember> haveAnyStaticMembers(
+  HeimdallRule<CompilationUnitMember> haveStaticMemberNamedAnyOf(
     Iterable<String> memberNames,
   ) {
     final memberList = memberNames.toNonEmptyList('memberNames');
@@ -85,7 +85,7 @@ extension ClassHaveStaticMembersShouldRules on ClassShouldBuilder {
   }
 
   /// Requires none of [memberNames] to be static.
-  HeimdallRule<CompilationUnitMember> haveNoStaticMembers(
+  HeimdallRule<CompilationUnitMember> haveNoStaticMembersNamed(
     Iterable<String> memberNames,
   ) {
     final memberList = memberNames.toNonEmptyList('memberNames');

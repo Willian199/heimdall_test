@@ -16,12 +16,12 @@ extension MemberCallConstructorTypeNameStartingWithPredicateRules on MemberPredi
   }
 
   /// Selects members that do not satisfy `callConstructorTypeNameStartingWith`.
-  MemberPredicateBuilder noCallConstructorTypeNameStartingWith(String prefix) {
+  MemberPredicateBuilder notCallConstructorTypeNameStartingWith(String prefix) {
     return satisfy(_memberDoesNotCallConstructorTypeNameStartingWith(prefix));
   }
 
   /// Selects members that call constructor type name starting with every value in [prefixes].
-  MemberPredicateBuilder callConstructorTypeNameStartingWithAll(Iterable<String> prefixes) {
+  MemberPredicateBuilder callConstructorTypeNameStartingWithAllOf(Iterable<String> prefixes) {
     final valueList = prefixes.toNonEmptyList('prefixes');
     return satisfy(
       HeimdallPredicate.allOf(
@@ -32,7 +32,7 @@ extension MemberCallConstructorTypeNameStartingWithPredicateRules on MemberPredi
   }
 
   /// Selects members that call constructor type name starting with at least one value in [prefixes].
-  MemberPredicateBuilder callConstructorTypeNameStartingWithAny(Iterable<String> prefixes) {
+  MemberPredicateBuilder callConstructorTypeNameStartingWithAnyOf(Iterable<String> prefixes) {
     final valueList = prefixes.toNonEmptyList('prefixes');
     return satisfy(
       HeimdallPredicate.anyOf(
@@ -43,7 +43,7 @@ extension MemberCallConstructorTypeNameStartingWithPredicateRules on MemberPredi
   }
 
   /// Selects members that call constructor type name starting with none of [prefixes].
-  MemberPredicateBuilder callConstructorTypeNameStartingWithNone(Iterable<String> prefixes) {
+  MemberPredicateBuilder callConstructorTypeNameStartingWithNoneOf(Iterable<String> prefixes) {
     final valueList = prefixes.toNonEmptyList('prefixes');
     return satisfy(
       HeimdallPredicate.noneOf(
@@ -62,12 +62,12 @@ extension MemberCallConstructorTypeNameStartingWithShouldRules on MemberShouldBu
   }
 
   /// Requires members not to satisfy `callConstructorTypeNameStartingWith`.
-  HeimdallRule<ClassMember> noCallConstructorTypeNameStartingWith(String prefix) {
+  HeimdallRule<ClassMember> notCallConstructorTypeNameStartingWith(String prefix) {
     return satisfy(_memberShouldNotCallConstructorTypeNameStartingWith(prefix));
   }
 
   /// Requires members to call constructor type name starting with every value in [prefixes].
-  HeimdallRule<ClassMember> callConstructorTypeNameStartingWithAll(Iterable<String> prefixes) {
+  HeimdallRule<ClassMember> callConstructorTypeNameStartingWithAllOf(Iterable<String> prefixes) {
     final valueList = prefixes.toNonEmptyList('prefixes');
     return satisfy(
       HeimdallCondition.allOf(
@@ -78,7 +78,7 @@ extension MemberCallConstructorTypeNameStartingWithShouldRules on MemberShouldBu
   }
 
   /// Requires members to call constructor type name starting with at least one value in [prefixes].
-  HeimdallRule<ClassMember> callConstructorTypeNameStartingWithAny(Iterable<String> prefixes) {
+  HeimdallRule<ClassMember> callConstructorTypeNameStartingWithAnyOf(Iterable<String> prefixes) {
     final valueList = prefixes.toNonEmptyList('prefixes');
     return satisfy(
       HeimdallCondition.anyOf(
@@ -89,7 +89,7 @@ extension MemberCallConstructorTypeNameStartingWithShouldRules on MemberShouldBu
   }
 
   /// Requires members to call constructor type name starting with none of [prefixes].
-  HeimdallRule<ClassMember> callConstructorTypeNameStartingWithNone(Iterable<String> prefixes) {
+  HeimdallRule<ClassMember> callConstructorTypeNameStartingWithNoneOf(Iterable<String> prefixes) {
     final valueList = prefixes.toNonEmptyList('prefixes');
     return satisfy(
       HeimdallCondition.noneOf(

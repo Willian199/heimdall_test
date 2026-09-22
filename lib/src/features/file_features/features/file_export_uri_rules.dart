@@ -9,7 +9,7 @@ extension FileExportUriPredicateRules on FilePredicateBuilder {
   }
 
   /// Selects files that do not export [uri].
-  FilePredicateBuilder noExportUri(String uri) {
+  FilePredicateBuilder notExportUri(String uri) {
     return satisfy(
       HeimdallPredicate(
         'not export $uri',
@@ -41,7 +41,7 @@ extension FileExportUriPredicateRules on FilePredicateBuilder {
   }
 
   /// Selects files that export none of the URIs in [uris].
-  FilePredicateBuilder exportNoneUris(Iterable<String> uris) {
+  FilePredicateBuilder exportNoUris(Iterable<String> uris) {
     final uriList = uris.toNonEmptyList('uris');
     return satisfy(
       HeimdallPredicate.noneOf(
@@ -60,7 +60,7 @@ extension FileExportUriShouldRules on FileShouldBuilder {
   }
 
   /// Requires matching files to not export [uri].
-  HeimdallRule<HeimdallSourceFile> noExportUri(String uri) {
+  HeimdallRule<HeimdallSourceFile> notExportUri(String uri) {
     return satisfy(
       HeimdallCondition('not export $uri', (item, _) {
         final findings = item.exportDirectives
@@ -107,7 +107,7 @@ extension FileExportUriShouldRules on FileShouldBuilder {
   }
 
   /// Requires matching files to export none of the URIs in [uris].
-  HeimdallRule<HeimdallSourceFile> exportNoneUris(Iterable<String> uris) {
+  HeimdallRule<HeimdallSourceFile> exportNoUris(Iterable<String> uris) {
     final uriList = uris.toNonEmptyList('uris');
     return satisfy(
       HeimdallCondition.noneOf(

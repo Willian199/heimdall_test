@@ -9,7 +9,7 @@ extension FileImportUriPredicateRules on FilePredicateBuilder {
   }
 
   /// Selects files that do not import [uri].
-  FilePredicateBuilder noImportUri(String uri) {
+  FilePredicateBuilder notImportUri(String uri) {
     return satisfy(
       HeimdallPredicate(
         'not import $uri',
@@ -41,7 +41,7 @@ extension FileImportUriPredicateRules on FilePredicateBuilder {
   }
 
   /// Selects files that import none of the URIs in [uris].
-  FilePredicateBuilder importNoneUris(Iterable<String> uris) {
+  FilePredicateBuilder importNoUris(Iterable<String> uris) {
     final uriList = uris.toNonEmptyList('uris');
     return satisfy(
       HeimdallPredicate.noneOf(
@@ -60,7 +60,7 @@ extension FileImportUriShouldRules on FileShouldBuilder {
   }
 
   /// Requires matching files to not import [uri].
-  HeimdallRule<HeimdallSourceFile> noImportUri(String uri) {
+  HeimdallRule<HeimdallSourceFile> notImportUri(String uri) {
     return satisfy(
       HeimdallCondition('not import $uri', (item, _) {
         final findings = item.importDirectives
@@ -107,7 +107,7 @@ extension FileImportUriShouldRules on FileShouldBuilder {
   }
 
   /// Requires matching files to import none of the URIs in [uris].
-  HeimdallRule<HeimdallSourceFile> importNoneUris(Iterable<String> uris) {
+  HeimdallRule<HeimdallSourceFile> importNoUris(Iterable<String> uris) {
     final uriList = uris.toNonEmptyList('uris');
     return satisfy(
       HeimdallCondition.noneOf(

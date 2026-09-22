@@ -1,15 +1,16 @@
 import 'package:heimdall_test/heimdall_test.dart';
+import 'package:heimdall_test/src/features/queries/declaration_rule_predicates.dart';
 import 'package:heimdall_test/src/features/queries/declaration_type_queries.dart';
 
 /// Predicate-side DSL for exact assignability rules.
 extension ClassAssignableToPredicateRules on ClassPredicateBuilder {
   /// Selects declarations assignable to [typeName].
   ClassPredicateBuilder areAssignableTo(String typeName) {
-    return satisfy(_classAssignableTo(typeName));
+    return satisfy(classAssignableTo(typeName));
   }
 
   /// Selects declarations that are not assignable to [typeName].
-  ClassPredicateBuilder noAreAssignableTo(String typeName) {
+  ClassPredicateBuilder areNotAssignableTo(String typeName) {
     return satisfy(
       HeimdallPredicate(
         'are not assignable to $typeName',
@@ -19,33 +20,33 @@ extension ClassAssignableToPredicateRules on ClassPredicateBuilder {
   }
 
   /// Selects declarations assignable to at least one type in [typeNames].
-  ClassPredicateBuilder areAssignableToAny(Iterable<String> typeNames) {
+  ClassPredicateBuilder areAssignableToAnyOf(Iterable<String> typeNames) {
     final typeList = typeNames.toNonEmptyList('typeNames');
     return satisfy(
       HeimdallPredicate.anyOf(
-        typeList.map(_classAssignableTo),
+        typeList.map(classAssignableTo),
         description: 'are assignable to any of ${typeList.join(', ')}',
       ),
     );
   }
 
   /// Selects declarations assignable to every type in [typeNames].
-  ClassPredicateBuilder areAssignableToAll(Iterable<String> typeNames) {
+  ClassPredicateBuilder areAssignableToAllOf(Iterable<String> typeNames) {
     final typeList = typeNames.toNonEmptyList('typeNames');
     return satisfy(
       HeimdallPredicate.allOf(
-        typeList.map(_classAssignableTo),
+        typeList.map(classAssignableTo),
         description: 'are assignable to all of ${typeList.join(', ')}',
       ),
     );
   }
 
   /// Selects declarations assignable to none of [typeNames].
-  ClassPredicateBuilder areAssignableToNone(Iterable<String> typeNames) {
+  ClassPredicateBuilder areAssignableToNoneOf(Iterable<String> typeNames) {
     final typeList = typeNames.toNonEmptyList('typeNames');
     return satisfy(
       HeimdallPredicate.noneOf(
-        typeList.map(_classAssignableTo),
+        typeList.map(classAssignableTo),
         description: 'are assignable to none of ${typeList.join(', ')}',
       ),
     );
@@ -60,12 +61,12 @@ extension ClassAssignableToShouldRules on ClassShouldBuilder {
   }
 
   /// Requires matching classes to not be assignable to [typeName].
-  HeimdallRule<CompilationUnitMember> noBeAssignableTo(String typeName) {
+  HeimdallRule<CompilationUnitMember> notBeAssignableTo(String typeName) {
     return satisfy(_classShouldNotBeAssignableTo(typeName));
   }
 
   /// Requires matching classes to be assignable to at least one type in [typeNames].
-  HeimdallRule<CompilationUnitMember> beAssignableToAny(
+  HeimdallRule<CompilationUnitMember> beAssignableToAnyOf(
     Iterable<String> typeNames,
   ) {
     final typeList = typeNames.toNonEmptyList('typeNames');
@@ -78,7 +79,7 @@ extension ClassAssignableToShouldRules on ClassShouldBuilder {
   }
 
   /// Requires matching classes to be assignable to every type in [typeNames].
-  HeimdallRule<CompilationUnitMember> beAssignableToAll(
+  HeimdallRule<CompilationUnitMember> beAssignableToAllOf(
     Iterable<String> typeNames,
   ) {
     final typeList = typeNames.toNonEmptyList('typeNames');
@@ -91,7 +92,7 @@ extension ClassAssignableToShouldRules on ClassShouldBuilder {
   }
 
   /// Requires matching classes to be assignable to none of [typeNames].
-  HeimdallRule<CompilationUnitMember> beAssignableToNone(
+  HeimdallRule<CompilationUnitMember> beAssignableToNoneOf(
     Iterable<String> typeNames,
   ) {
     final typeList = typeNames.toNonEmptyList('typeNames');
@@ -102,13 +103,6 @@ extension ClassAssignableToShouldRules on ClassShouldBuilder {
       ),
     );
   }
-}
-
-HeimdallPredicate<CompilationUnitMember> _classAssignableTo(String typeName) {
-  return HeimdallPredicate(
-    'are assignable to $typeName',
-    (item, project) => isAssignableTo(item, typeName, project),
-  );
 }
 
 HeimdallCondition<CompilationUnitMember> _classShouldBeAssignableTo(

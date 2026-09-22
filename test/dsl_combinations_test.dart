@@ -354,7 +354,7 @@ void main() {
             .that()
             .resideInPath('data')
             .should()
-            .noDependOnClassesThat(
+            .notDependOnClassesThat(
               HeimdallPredicate(
                 'reside in domain',
                 (item, _) => item.relativePath.contains('/domain/'),
@@ -365,7 +365,7 @@ void main() {
             .that()
             .haveTypeName('CommentRepository')
             .should()
-            .noDependOnClassesThat(
+            .notDependOnClassesThat(
               HeimdallPredicate(
                 'are DomainService',
                 (item, _) => item.name == 'DomainService',
@@ -384,7 +384,7 @@ void main() {
             .that()
             .haveTypeName('CombinatorRepository')
             .should()
-            .noDependOnClassesThat(
+            .notDependOnClassesThat(
               HeimdallPredicate(
                 'are HiddenByCombinator',
                 (item, _) => item.name == 'HiddenByCombinator',
@@ -395,7 +395,7 @@ void main() {
             .that()
             .haveTypeName('ImportShowRepository')
             .should()
-            .noDependOnClassesThat(
+            .notDependOnClassesThat(
               HeimdallPredicate(
                 'are HiddenByCombinator',
                 (item, _) => item.name == 'HiddenByCombinator',
@@ -406,7 +406,7 @@ void main() {
             .that()
             .haveTypeName('SimpleIdentifierRepository')
             .should()
-            .noDependOnClassesThat(
+            .notDependOnClassesThat(
               HeimdallPredicate('are User', (item, _) => item.name == 'User'),
             )
             .check(project);
@@ -414,7 +414,7 @@ void main() {
             .that()
             .haveTypeName('StaticRepository')
             .should()
-            .noDependOnClassesThat(
+            .notDependOnClassesThat(
               HeimdallPredicate('are User', (item, _) => item.name == 'User'),
             )
             .check(project);
@@ -422,7 +422,7 @@ void main() {
             .that()
             .haveTypeName('DualCombinatorRepository')
             .should()
-            .noDependOnClassesThat(
+            .notDependOnClassesThat(
               HeimdallPredicate(
                 'are HiddenByCombinator',
                 (item, _) => item.name == 'HiddenByCombinator',
@@ -433,7 +433,7 @@ void main() {
             .that()
             .haveTypeName('DuplicateVisibleRepository')
             .should()
-            .noDependOnClassesThat(
+            .notDependOnClassesThat(
               HeimdallPredicate(
                 'are VisibleThroughCombinator',
                 (item, _) => item.name == 'VisibleThroughCombinator',
@@ -444,7 +444,7 @@ void main() {
             .that()
             .haveTypeName('TypeParameterHolder')
             .should()
-            .noDependOnClassesThat(
+            .notDependOnClassesThat(
               HeimdallPredicate('are User', (item, _) => item.name == 'User'),
             )
             .check(project);

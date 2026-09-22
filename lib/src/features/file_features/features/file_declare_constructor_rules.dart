@@ -1,4 +1,5 @@
 import 'package:heimdall_test/heimdall_test.dart';
+import 'package:heimdall_test/src/features/file_features/helpers/file_constructor_queries.dart';
 import 'package:heimdall_test/src/features/file_features/helpers/source_file_location.dart';
 
 /// Predicate-side DSL for declared constructor rules.
@@ -12,7 +13,7 @@ extension FileDeclareConstructorPredicateRules on FilePredicateBuilder {
   }
 
   /// Selects files that do not declare a constructor named [name].
-  FilePredicateBuilder noDeclareConstructor({
+  FilePredicateBuilder notDeclareConstructor({
     String name = 'new',
     String? className,
   }) {
@@ -92,7 +93,7 @@ extension FileDeclareConstructorShouldRules on FileShouldBuilder {
   }
 
   /// Requires matching files to not declare a constructor named [name].
-  HeimdallRule<HeimdallSourceFile> noDeclareConstructor({
+  HeimdallRule<HeimdallSourceFile> notDeclareConstructor({
     String name = 'new',
     String? className,
   }) {
@@ -164,7 +165,7 @@ HeimdallCondition<HeimdallSourceFile> _fileShouldDeclareConstructor({
   String? className,
 }) {
   return HeimdallCondition('declare constructor $name', (item, _) {
-    final hasConstructor = _constructors(item, className: className).any(
+    final hasConstructor = fileConstructors(item, className: className).any(
       (constructor) => _constructorName(constructor) == name,
     );
     final findings = hasConstructor
@@ -189,7 +190,7 @@ HeimdallPredicate<HeimdallSourceFile> _fileDeclaresConstructor({
 }) {
   return HeimdallPredicate(
     'declare constructor $name',
-    (item, _) => _constructors(item, className: className).any(
+    (item, _) => fileConstructors(item, className: className).any(
       (constructor) => _constructorName(constructor) == name,
     ),
   );
@@ -200,7 +201,7 @@ HeimdallCondition<HeimdallSourceFile> _fileShouldNotDeclareConstructor({
   String? className,
 }) {
   return HeimdallCondition('not declare constructor $name', (item, _) {
-    final findings = _constructors(item, className: className)
+    final findings = fileConstructors(item, className: className)
         .where((constructor) => _constructorName(constructor) == name)
         .map(
           (constructor) => fileNodeFinding(
@@ -225,18 +226,10 @@ HeimdallPredicate<HeimdallSourceFile> _fileDoesNotDeclareConstructor({
 }) {
   return HeimdallPredicate(
     'not declare constructor $name',
-    (item, _) => !_constructors(item, className: className).any(
+    (item, _) => !fileConstructors(item, className: className).any(
       (constructor) => _constructorName(constructor) == name,
     ),
   );
-}
-
-Iterable<ConstructorDeclaration> _constructors(
-  HeimdallSourceFile item, {
-  String? className,
-}) {
-  if (className == null) return item.constructors;
-  return item.constructors.where((constructor) => constructor.ownerName == className);
 }
 
 String _constructorName(ConstructorDeclaration constructor) {

@@ -9,7 +9,7 @@ extension FileBasicContentPredicateRules on FilePredicateBuilder {
   }
 
   /// Selects files that have no Dart documentation comments.
-  FilePredicateBuilder noHaveDocumentationComment() {
+  FilePredicateBuilder haveNoDocumentationComment() {
     return satisfy(_fileHasNoDocumentationComment());
   }
 }
@@ -22,7 +22,7 @@ extension FileBasicContentShouldRules on FileShouldBuilder {
   }
 
   /// Requires matching files to have no Dart documentation comments.
-  HeimdallRule<HeimdallSourceFile> noHaveDocumentationComment() {
+  HeimdallRule<HeimdallSourceFile> haveNoDocumentationComment() {
     return satisfy(_fileShouldHaveNoDocumentationComment());
   }
 }

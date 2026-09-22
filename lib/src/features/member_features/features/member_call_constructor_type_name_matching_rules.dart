@@ -9,7 +9,7 @@ extension MemberCallConstructorTypeNameMatchingPredicateRules on MemberPredicate
   }
 
   /// Selects members that do not satisfy `callConstructorTypeNameMatching`.
-  MemberPredicateBuilder noCallConstructorTypeNameMatching(RegExp pattern) {
+  MemberPredicateBuilder notCallConstructorTypeNameMatching(RegExp pattern) {
     return satisfy(
       HeimdallPredicate(
         'not call constructor type name matching ${pattern.pattern}',
@@ -19,7 +19,7 @@ extension MemberCallConstructorTypeNameMatchingPredicateRules on MemberPredicate
   }
 
   /// Selects members that call constructor type name matching every value in [patterns].
-  MemberPredicateBuilder callConstructorTypeNameMatchingAll(Iterable<RegExp> patterns) {
+  MemberPredicateBuilder callConstructorTypeNameMatchingAllOf(Iterable<RegExp> patterns) {
     final valueList = patterns.toNonEmptyList('patterns');
     return satisfy(
       HeimdallPredicate.allOf(
@@ -30,7 +30,7 @@ extension MemberCallConstructorTypeNameMatchingPredicateRules on MemberPredicate
   }
 
   /// Selects members that call constructor type name matching at least one value in [patterns].
-  MemberPredicateBuilder callConstructorTypeNameMatchingAny(Iterable<RegExp> patterns) {
+  MemberPredicateBuilder callConstructorTypeNameMatchingAnyOf(Iterable<RegExp> patterns) {
     final valueList = patterns.toNonEmptyList('patterns');
     return satisfy(
       HeimdallPredicate.anyOf(
@@ -41,7 +41,7 @@ extension MemberCallConstructorTypeNameMatchingPredicateRules on MemberPredicate
   }
 
   /// Selects members that call constructor type name matching none of [patterns].
-  MemberPredicateBuilder callConstructorTypeNameMatchingNone(Iterable<RegExp> patterns) {
+  MemberPredicateBuilder callConstructorTypeNameMatchingNoneOf(Iterable<RegExp> patterns) {
     final valueList = patterns.toNonEmptyList('patterns');
     return satisfy(
       HeimdallPredicate.noneOf(
@@ -60,7 +60,7 @@ extension MemberCallConstructorTypeNameMatchingShouldRules on MemberShouldBuilde
   }
 
   /// Requires members not to satisfy `callConstructorTypeNameMatching`.
-  HeimdallRule<ClassMember> noCallConstructorTypeNameMatching(RegExp pattern) {
+  HeimdallRule<ClassMember> notCallConstructorTypeNameMatching(RegExp pattern) {
     return satisfy(
       prohibitedMemberCondition(
         'call constructor type name matching ${pattern.pattern}',
@@ -70,7 +70,7 @@ extension MemberCallConstructorTypeNameMatchingShouldRules on MemberShouldBuilde
   }
 
   /// Requires members to call constructor type name matching every value in [patterns].
-  HeimdallRule<ClassMember> callConstructorTypeNameMatchingAll(Iterable<RegExp> patterns) {
+  HeimdallRule<ClassMember> callConstructorTypeNameMatchingAllOf(Iterable<RegExp> patterns) {
     final valueList = patterns.toNonEmptyList('patterns');
     return satisfy(
       HeimdallCondition.allOf(
@@ -81,7 +81,7 @@ extension MemberCallConstructorTypeNameMatchingShouldRules on MemberShouldBuilde
   }
 
   /// Requires members to call constructor type name matching at least one value in [patterns].
-  HeimdallRule<ClassMember> callConstructorTypeNameMatchingAny(Iterable<RegExp> patterns) {
+  HeimdallRule<ClassMember> callConstructorTypeNameMatchingAnyOf(Iterable<RegExp> patterns) {
     final valueList = patterns.toNonEmptyList('patterns');
     return satisfy(
       HeimdallCondition.anyOf(
@@ -92,7 +92,7 @@ extension MemberCallConstructorTypeNameMatchingShouldRules on MemberShouldBuilde
   }
 
   /// Requires members to call constructor type name matching none of [patterns].
-  HeimdallRule<ClassMember> callConstructorTypeNameMatchingNone(Iterable<RegExp> patterns) {
+  HeimdallRule<ClassMember> callConstructorTypeNameMatchingNoneOf(Iterable<RegExp> patterns) {
     final valueList = patterns.toNonEmptyList('patterns');
     return satisfy(
       HeimdallCondition.noneOf(

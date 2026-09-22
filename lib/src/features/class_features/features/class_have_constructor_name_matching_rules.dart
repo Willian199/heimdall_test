@@ -10,17 +10,17 @@ import 'package:heimdall_test/src/features/class_features/helpers/class_construc
 /// Predicate-side DSL for constructor name regex rules.
 extension ClassHaveConstructorNameMatchingPredicateRules on ClassPredicateBuilder {
   /// Selects classes that declare a constructor name matching [pattern].
-  ClassPredicateBuilder haveConstructorNameMatching(RegExp pattern) {
+  ClassPredicateBuilder declareConstructorWithNameMatching(RegExp pattern) {
     return satisfy(classHasConstructorName('matches ${pattern.pattern}', pattern.hasMatch));
   }
 
   /// Selects classes that do not declare a constructor name matching [pattern].
-  ClassPredicateBuilder noHaveConstructorNameMatching(RegExp pattern) {
+  ClassPredicateBuilder notDeclareConstructorWithNameMatching(RegExp pattern) {
     return satisfy(classDoesNotHaveConstructorName('matches ${pattern.pattern}', pattern.hasMatch));
   }
 
   /// Selects classes that declare constructor names matching every regex in [patterns].
-  ClassPredicateBuilder haveConstructorNameMatchingAll(
+  ClassPredicateBuilder declareConstructorWithNameMatchingAllOf(
     Iterable<RegExp> patterns,
   ) {
     final patternList = patterns.toNonEmptyList('patterns');
@@ -33,7 +33,7 @@ extension ClassHaveConstructorNameMatchingPredicateRules on ClassPredicateBuilde
   }
 
   /// Selects classes that declare at least one constructor name matching [patterns].
-  ClassPredicateBuilder haveConstructorNameMatchingAny(
+  ClassPredicateBuilder declareConstructorWithNameMatchingAnyOf(
     Iterable<RegExp> patterns,
   ) {
     final patternList = patterns.toNonEmptyList('patterns');
@@ -46,7 +46,7 @@ extension ClassHaveConstructorNameMatchingPredicateRules on ClassPredicateBuilde
   }
 
   /// Selects classes that declare no constructor name matching [patterns].
-  ClassPredicateBuilder haveConstructorNameMatchingNone(
+  ClassPredicateBuilder declareConstructorWithNameMatchingNoneOf(
     Iterable<RegExp> patterns,
   ) {
     final patternList = patterns.toNonEmptyList('patterns');
@@ -62,21 +62,21 @@ extension ClassHaveConstructorNameMatchingPredicateRules on ClassPredicateBuilde
 /// Condition-side DSL for constructor name regex rules.
 extension ClassHaveConstructorNameMatchingShouldRules on ClassShouldBuilder {
   /// Requires matching classes to declare a constructor name matching [pattern].
-  HeimdallRule<CompilationUnitMember> haveConstructorNameMatching(
+  HeimdallRule<CompilationUnitMember> declareConstructorWithNameMatching(
     RegExp pattern,
   ) {
     return satisfy(classShouldHaveConstructorName('matches ${pattern.pattern}', pattern.hasMatch));
   }
 
   /// Requires matching classes to not declare a constructor name matching [pattern].
-  HeimdallRule<CompilationUnitMember> noHaveConstructorNameMatching(
+  HeimdallRule<CompilationUnitMember> notDeclareConstructorWithNameMatching(
     RegExp pattern,
   ) {
     return satisfy(classShouldNotHaveConstructorName('matches ${pattern.pattern}', pattern.hasMatch));
   }
 
   /// Requires matching classes to declare constructor names matching every regex in [patterns].
-  HeimdallRule<CompilationUnitMember> haveConstructorNameMatchingAll(
+  HeimdallRule<CompilationUnitMember> declareConstructorWithNameMatchingAllOf(
     Iterable<RegExp> patterns,
   ) {
     final patternList = patterns.toNonEmptyList('patterns');
@@ -89,7 +89,7 @@ extension ClassHaveConstructorNameMatchingShouldRules on ClassShouldBuilder {
   }
 
   /// Requires matching classes to declare at least one constructor name matching [patterns].
-  HeimdallRule<CompilationUnitMember> haveConstructorNameMatchingAny(
+  HeimdallRule<CompilationUnitMember> declareConstructorWithNameMatchingAnyOf(
     Iterable<RegExp> patterns,
   ) {
     final patternList = patterns.toNonEmptyList('patterns');
@@ -102,7 +102,7 @@ extension ClassHaveConstructorNameMatchingShouldRules on ClassShouldBuilder {
   }
 
   /// Requires matching classes to declare no constructor name matching [patterns].
-  HeimdallRule<CompilationUnitMember> haveConstructorNameMatchingNone(
+  HeimdallRule<CompilationUnitMember> declareConstructorWithNameMatchingNoneOf(
     Iterable<RegExp> patterns,
   ) {
     final patternList = patterns.toNonEmptyList('patterns');

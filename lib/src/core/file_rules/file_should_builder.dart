@@ -127,7 +127,7 @@ final class FileShouldBuilder implements HeimdallShouldBuilder<HeimdallSourceFil
   }
 
   /// Requires matching files to not contain only whitespace.
-  HeimdallRule<HeimdallSourceFile> noBeEmpty() {
+  HeimdallRule<HeimdallSourceFile> notBeEmpty() {
     return satisfy(
       HeimdallCondition('not be empty', (item, _) {
         final List<HeimdallValidationInfo> findings;

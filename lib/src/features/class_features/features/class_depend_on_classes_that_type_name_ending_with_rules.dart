@@ -1,16 +1,17 @@
 import 'package:heimdall_test/heimdall_test.dart';
+import 'package:heimdall_test/src/features/class_features/helpers/class_dependency_rule_helpers.dart';
 import 'package:heimdall_test/src/features/queries/declaration_dependency_queries.dart';
 
 /// Predicate-side DSL for dependency target type name suffix rules.
 extension ClassDependOnClassesThatTypeNameEndingWithPredicateRules on ClassPredicateBuilder {
   /// Selects declarations that depend on a class whose type name ends with [suffix].
   ClassPredicateBuilder dependOnClassesWithTypeNameEndingWith(String suffix) {
-    return satisfy(_classDependsOnTarget(_targetTypeNameEndsWith(suffix)));
+    return satisfy(classDependsOnTarget(_targetTypeNameEndsWith(suffix)));
   }
 
   /// Selects declarations that do not depend on a class whose type name ends with [suffix].
-  ClassPredicateBuilder noDependOnClassesWithTypeNameEndingWith(String suffix) {
-    return satisfy(_classDoesNotDependOnTarget(_targetTypeNameEndsWith(suffix)));
+  ClassPredicateBuilder notDependOnClassesWithTypeNameEndingWith(String suffix) {
+    return satisfy(classDoesNotDependOnTarget(_targetTypeNameEndsWith(suffix)));
   }
 
   /// Selects declarations that depend on every target suffix in [suffixes].
@@ -94,14 +95,14 @@ extension ClassDependOnClassesThatTypeNameEndingWithShouldRules on ClassShouldBu
   HeimdallRule<CompilationUnitMember> dependOnClassesWithTypeNameEndingWith(
     String suffix,
   ) {
-    return satisfy(_classShouldDependOnTarget(_targetTypeNameEndsWith(suffix)));
+    return satisfy(classShouldDependOnTarget(_targetTypeNameEndsWith(suffix)));
   }
 
   /// Requires matching classes to not depend on a class whose type name ends with [suffix].
-  HeimdallRule<CompilationUnitMember> noDependOnClassesWithTypeNameEndingWith(
+  HeimdallRule<CompilationUnitMember> notDependOnClassesWithTypeNameEndingWith(
     String suffix,
   ) {
-    return satisfy(_classShouldNotDependOnTarget(_targetTypeNameEndsWith(suffix)));
+    return satisfy(classShouldNotDependOnTarget(_targetTypeNameEndsWith(suffix)));
   }
 
   /// Requires matching classes to depend on every target suffix in [suffixes].
@@ -111,7 +112,7 @@ extension ClassDependOnClassesThatTypeNameEndingWithShouldRules on ClassShouldBu
     final suffixList = suffixes.toNonEmptyList('suffixes');
     return satisfy(
       HeimdallCondition.allOf(
-        suffixList.map(_targetTypeNameEndsWith).map(_classShouldDependOnTarget),
+        suffixList.map(_targetTypeNameEndsWith).map(classShouldDependOnTarget),
         description: 'depend on all classes with type name ending with ${suffixList.join(', ')}',
       ),
     );
@@ -124,7 +125,7 @@ extension ClassDependOnClassesThatTypeNameEndingWithShouldRules on ClassShouldBu
     final suffixList = suffixes.toNonEmptyList('suffixes');
     return satisfy(
       HeimdallCondition.anyOf(
-        suffixList.map(_targetTypeNameEndsWith).map(_classShouldDependOnTarget),
+        suffixList.map(_targetTypeNameEndsWith).map(classShouldDependOnTarget),
         description: 'depend on any class with type name ending with ${suffixList.join(', ')}',
       ),
     );
@@ -137,82 +138,11 @@ extension ClassDependOnClassesThatTypeNameEndingWithShouldRules on ClassShouldBu
     final suffixList = suffixes.toNonEmptyList('suffixes');
     return satisfy(
       HeimdallCondition.noneOf(
-        suffixList.map(_targetTypeNameEndsWith).map(_classShouldDependOnTarget),
+        suffixList.map(_targetTypeNameEndsWith).map(classShouldDependOnTarget),
         description: 'depend on no class with type name ending with ${suffixList.join(', ')}',
       ),
     );
   }
-}
-
-HeimdallPredicate<CompilationUnitMember> _classDependsOnTarget(
-  HeimdallPredicate<CompilationUnitMember> targetPredicate,
-) {
-  return HeimdallPredicate(
-    'depend on classes with type name that ${targetPredicate.description}',
-    (item, project) => targetDeclarations(
-      item,
-      project,
-    ).any((target) => targetPredicate.test(target, project)),
-  );
-}
-
-HeimdallPredicate<CompilationUnitMember> _classDoesNotDependOnTarget(
-  HeimdallPredicate<CompilationUnitMember> targetPredicate,
-) {
-  return HeimdallPredicate(
-    'not depend on classes with type name that ${targetPredicate.description}',
-    (item, project) => !declarationDependenciesFrom(
-      item,
-      project,
-    ).any((dependency) => targetPredicate.test(dependency.target, project)),
-  );
-}
-
-HeimdallCondition<CompilationUnitMember> _classShouldDependOnTarget(
-  HeimdallPredicate<CompilationUnitMember> targetPredicate,
-) {
-  return HeimdallCondition('depend on classes with type name that ${targetPredicate.description}', (item, project) {
-    final findings =
-        targetDeclarations(
-          item,
-          project,
-        ).any((target) => targetPredicate.test(target, project))
-        ? const <HeimdallValidationInfo>[]
-        : [
-            HeimdallValidationInfo(
-              filePath: item.sourcePath,
-              line: item.line,
-              message: '${item.name} does not depend on a matching class',
-            ),
-          ];
-    return HeimdallFindings(
-      subject: item,
-      passed: findings.isEmpty,
-      findings: findings,
-    );
-  });
-}
-
-HeimdallCondition<CompilationUnitMember> _classShouldNotDependOnTarget(
-  HeimdallPredicate<CompilationUnitMember> targetPredicate,
-) {
-  return HeimdallCondition('not depend on classes with type name that ${targetPredicate.description}', (item, project) {
-    final findings = declarationDependenciesFrom(item, project)
-        .where((dependency) => targetPredicate.test(dependency.target, project))
-        .map(
-          (dependency) => HeimdallValidationInfo(
-            filePath: item.sourcePath,
-            line: dependency.directive.line,
-            message: '${item.name} depends on forbidden ${dependency.target.name}',
-          ),
-        )
-        .toList();
-    return HeimdallFindings(
-      subject: item,
-      passed: findings.isEmpty,
-      findings: findings,
-    );
-  });
 }
 
 HeimdallPredicate<CompilationUnitMember> _targetTypeNameEndsWith(

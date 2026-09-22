@@ -16,12 +16,12 @@ extension MemberReceiveParameterTypeNameEndingWithPredicateRules on MemberPredic
   }
 
   /// Selects members that do not satisfy `receiveParameterTypeNameEndingWith`.
-  MemberPredicateBuilder noReceiveParameterTypeNameEndingWith(String suffix) {
+  MemberPredicateBuilder notReceiveParameterTypeNameEndingWith(String suffix) {
     return satisfy(_memberDoesNotReceiveParameterTypeNameEndingWith(suffix));
   }
 
   /// Selects executable members that receive a parameter type name ending with any value in [suffixes].
-  MemberPredicateBuilder receiveParameterTypeNameEndingWithAny(Iterable<String> suffixes) {
+  MemberPredicateBuilder receiveParameterTypeNameEndingWithAnyOf(Iterable<String> suffixes) {
     final valueList = suffixes.toNonEmptyList('suffixes');
     return satisfy(
       HeimdallPredicate.anyOf(
@@ -32,7 +32,7 @@ extension MemberReceiveParameterTypeNameEndingWithPredicateRules on MemberPredic
   }
 
   /// Selects executable members that receive parameter type names ending with every value in [suffixes].
-  MemberPredicateBuilder receiveParameterTypeNameEndingWithAll(Iterable<String> suffixes) {
+  MemberPredicateBuilder receiveParameterTypeNameEndingWithAllOf(Iterable<String> suffixes) {
     final valueList = suffixes.toNonEmptyList('suffixes');
     return satisfy(
       HeimdallPredicate.allOf(
@@ -43,7 +43,7 @@ extension MemberReceiveParameterTypeNameEndingWithPredicateRules on MemberPredic
   }
 
   /// Selects executable members that receive no parameter type name ending with values in [suffixes].
-  MemberPredicateBuilder receiveParameterTypeNameEndingWithNone(Iterable<String> suffixes) {
+  MemberPredicateBuilder receiveParameterTypeNameEndingWithNoneOf(Iterable<String> suffixes) {
     final valueList = suffixes.toNonEmptyList('suffixes');
     return satisfy(
       HeimdallPredicate.noneOf(
@@ -62,12 +62,12 @@ extension MemberReceiveParameterTypeNameEndingWithShouldRules on MemberShouldBui
   }
 
   /// Requires members not to satisfy `receiveParameterTypeNameEndingWith`.
-  HeimdallRule<ClassMember> noReceiveParameterTypeNameEndingWith(String suffix) {
+  HeimdallRule<ClassMember> notReceiveParameterTypeNameEndingWith(String suffix) {
     return satisfy(_memberShouldNotReceiveParameterTypeNameEndingWith(suffix));
   }
 
   /// Requires executable members to receive a parameter type name ending with any value in [suffixes].
-  HeimdallRule<ClassMember> receiveParameterTypeNameEndingWithAny(Iterable<String> suffixes) {
+  HeimdallRule<ClassMember> receiveParameterTypeNameEndingWithAnyOf(Iterable<String> suffixes) {
     final valueList = suffixes.toNonEmptyList('suffixes');
     return satisfy(
       HeimdallCondition.anyOf(
@@ -78,7 +78,7 @@ extension MemberReceiveParameterTypeNameEndingWithShouldRules on MemberShouldBui
   }
 
   /// Requires executable members to receive parameter type names ending with every value in [suffixes].
-  HeimdallRule<ClassMember> receiveParameterTypeNameEndingWithAll(Iterable<String> suffixes) {
+  HeimdallRule<ClassMember> receiveParameterTypeNameEndingWithAllOf(Iterable<String> suffixes) {
     final valueList = suffixes.toNonEmptyList('suffixes');
     return satisfy(
       HeimdallCondition.allOf(
@@ -89,7 +89,7 @@ extension MemberReceiveParameterTypeNameEndingWithShouldRules on MemberShouldBui
   }
 
   /// Requires executable members to receive no parameter type name ending with values in [suffixes].
-  HeimdallRule<ClassMember> receiveParameterTypeNameEndingWithNone(Iterable<String> suffixes) {
+  HeimdallRule<ClassMember> receiveParameterTypeNameEndingWithNoneOf(Iterable<String> suffixes) {
     final valueList = suffixes.toNonEmptyList('suffixes');
     return satisfy(
       HeimdallCondition.noneOf(

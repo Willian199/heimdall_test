@@ -14,14 +14,14 @@ void main() {
           .that()
           .haveTypeName('${variant}Consumer')
           .should()
-          .noDependOnClassesWithTypeName('Forbidden')
+          .notDependOnClassesWithTypeName('Forbidden')
           .check(project);
       expect(positive.checkedCount, 1);
       expect(positive.findings, isEmpty);
       expect(negative.findings, hasLength(1));
       expect(negative.findings.single.filePath, endsWith('${variant.toLowerCase()}_piece.dart'));
       expect(
-        Heimdall.classes().that().haveTypeName('${variant}HiddenConsumer').should().noDependOnClassesWithTypeName('Hidden').check(project).findings,
+        Heimdall.classes().that().haveTypeName('${variant}HiddenConsumer').should().notDependOnClassesWithTypeName('Hidden').check(project).findings,
         isEmpty,
       );
     });
@@ -32,10 +32,10 @@ void main() {
     expect(project.parseErrors, isEmpty);
     for (final name in ['direct', 'body']) {
       expect(Heimdall.constructors().that().haveName(name).should().callConstructor('Product').check(project).findings, isEmpty);
-      expect(Heimdall.constructors().that().haveName(name).should().noCallConstructor('Product').check(project).findings, hasLength(1));
+      expect(Heimdall.constructors().that().haveName(name).should().notCallConstructor('Product').check(project).findings, hasLength(1));
     }
     expect(Heimdall.constructors().that().haveName('method').should().callMethod('createProduct').check(project).findings, isEmpty);
-    expect(Heimdall.constructors().that().haveName('method').should().noCallMethod('createProduct').check(project).findings, hasLength(1));
+    expect(Heimdall.constructors().that().haveName('method').should().notCallMethod('createProduct').check(project).findings, hasLength(1));
   });
 
   for (final name in ['plain', 'named', 'explicitNew', 'constant', 'prefixed', 'prefixedNamed', 'prefixedNew']) {
@@ -43,7 +43,7 @@ void main() {
       final project = importer.importPath('$fixture/calls');
       expect(project.parseErrors, isEmpty);
       expect(Heimdall.methods().that().haveName(name).should().callConstructor('Product').check(project).findings, isEmpty);
-      expect(Heimdall.methods().that().haveName(name).should().noCallConstructor('Product').check(project).findings, hasLength(1));
+      expect(Heimdall.methods().that().haveName(name).should().notCallConstructor('Product').check(project).findings, hasLength(1));
       final selected = Heimdall.methods().that().haveName(name).and().callConstructor('Product').should().haveName(name).check(project);
       expect(selected.checkedCount, 1);
       expect(selected.findings, isEmpty);
@@ -58,7 +58,7 @@ void main() {
 
   test('static and instance methods are not treated as named constructors', () {
     final project = importer.importPath('$fixture/calls');
-    expect(Heimdall.methods().that().haveName('methodsOnly').should().noCallConstructor('Product').check(project).findings, isEmpty);
+    expect(Heimdall.methods().that().haveName('methodsOnly').should().notCallConstructor('Product').check(project).findings, isEmpty);
   });
 
   test('project conditions can be negated and composed with assertions enabled', () {

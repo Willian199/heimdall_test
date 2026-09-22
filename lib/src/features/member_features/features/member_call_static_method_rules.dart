@@ -10,7 +10,7 @@ extension MemberCallStaticMethodPredicateRules on MemberPredicateBuilder {
   }
 
   /// Selects members that do not satisfy `callStaticMethod`.
-  MemberPredicateBuilder noCallStaticMethod(String targetType, String methodName) {
+  MemberPredicateBuilder notCallStaticMethod(String targetType, String methodName) {
     return satisfy(_memberDoesNotCallStaticMethod(targetType, methodName));
   }
 
@@ -68,7 +68,7 @@ extension MemberCallStaticMethodShouldRules on MemberShouldBuilder {
   }
 
   /// Requires members not to satisfy `callStaticMethod`.
-  HeimdallRule<ClassMember> noCallStaticMethod(
+  HeimdallRule<ClassMember> notCallStaticMethod(
     String targetType,
     String methodName,
   ) {

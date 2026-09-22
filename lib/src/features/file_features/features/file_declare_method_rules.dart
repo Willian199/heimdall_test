@@ -9,7 +9,7 @@ extension FileDeclareMethodPredicateRules on FilePredicateBuilder {
   }
 
   /// Selects files that do not declare a function or class method named [methodName].
-  FilePredicateBuilder noDeclareMethod(String methodName) {
+  FilePredicateBuilder notDeclareMethod(String methodName) {
     return satisfy(_fileDoesNotDeclareMethod(methodName));
   }
 
@@ -55,7 +55,7 @@ extension FileDeclareMethodShouldRules on FileShouldBuilder {
   }
 
   /// Requires matching files to not declare a function or class method named [methodName].
-  HeimdallRule<HeimdallSourceFile> noDeclareMethod(String methodName) {
+  HeimdallRule<HeimdallSourceFile> notDeclareMethod(String methodName) {
     return satisfy(_fileShouldNotDeclareMethod(methodName));
   }
 

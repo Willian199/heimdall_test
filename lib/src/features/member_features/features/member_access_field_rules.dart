@@ -10,7 +10,7 @@ extension MemberAccessFieldPredicateRules on MemberPredicateBuilder {
   }
 
   /// Selects members that do not satisfy `accessField`.
-  MemberPredicateBuilder noAccessField(String fieldName) {
+  MemberPredicateBuilder notAccessField(String fieldName) {
     return satisfy(_memberDoesNotAccessField(fieldName));
   }
 
@@ -54,7 +54,7 @@ extension MemberAccessFieldShouldRules on MemberShouldBuilder {
   HeimdallRule<ClassMember> accessField(String fieldName) => satisfy(_memberShouldAccessField(fieldName));
 
   /// Requires members not to satisfy `accessField`.
-  HeimdallRule<ClassMember> noAccessField(String fieldName) {
+  HeimdallRule<ClassMember> notAccessField(String fieldName) {
     return satisfy(_memberShouldNotAccessField(fieldName));
   }
 

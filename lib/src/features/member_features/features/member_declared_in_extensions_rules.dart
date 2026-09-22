@@ -16,7 +16,7 @@ extension MemberDeclaredInExtensionsPredicateRules on MemberPredicateBuilder {
   }
 
   /// Selects members that do not satisfy `areDeclaredInExtensions`.
-  MemberPredicateBuilder noAreDeclaredInExtensions(String extendedType) {
+  MemberPredicateBuilder areNotDeclaredInExtensions(String extendedType) {
     return satisfy(
       HeimdallPredicate(
         'not be declared in extension on $extendedType',
@@ -73,7 +73,7 @@ extension MemberDeclaredInExtensionsShouldRules on MemberShouldBuilder {
   }
 
   /// Requires members not to satisfy `beDeclaredInExtensions`.
-  HeimdallRule<ClassMember> noBeDeclaredInExtensions(String extendedType) {
+  HeimdallRule<ClassMember> notBeDeclaredInExtensions(String extendedType) {
     return satisfy(
       prohibitedMemberCondition(
         'be declared in extensions on $extendedType',

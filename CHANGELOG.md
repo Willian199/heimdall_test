@@ -1,3 +1,8 @@
+## 0.10.0
+
+- **Breaking:** Renamed negative and collection rules, clarified count semantics (`haveAtMost...`, `...CountOtherThan`), and removed redundant APIs.
+- Unified import policies and improved conditional-URI diagnostics, parse-error combinations, and declaration checks.
+
 ## 0.9.1
 
 - Added `preferRelativeImports()`, `preferPackageImports()`, `preferRelativeUris()` and `preferPackageUris()`.

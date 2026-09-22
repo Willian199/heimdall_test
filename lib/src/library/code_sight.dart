@@ -1,4 +1,5 @@
 import 'package:heimdall_test/heimdall_test.dart';
+import 'package:heimdall_test/src/features/file_features/helpers/import_style_conditions.dart';
 import 'package:heimdall_test/src/features/queries/declaration_lookup_queries.dart';
 import 'package:heimdall_test/src/features/queries/type_annotation_queries.dart';
 
@@ -9,7 +10,7 @@ final class HeimdallCodeSight {
 
   /// Ensures imported files do not import `dart:mirrors`.
   HeimdallRule<HeimdallSourceFile> shouldNotImportDartMirrors() {
-    return Heimdall.files().should().noImportUri('dart:mirrors').as('code should not import dart:mirrors');
+    return Heimdall.files().should().notImportUri('dart:mirrors').as('code should not import dart:mirrors');
   }
 
   /// Ensures imported files do not import [packageName].
@@ -17,7 +18,7 @@ final class HeimdallCodeSight {
     String packageName,
   ) {
     final escapedPackageName = RegExp.escape(packageName);
-    return Heimdall.files().should().noImportUriMatching(RegExp('^package:$escapedPackageName/')).as('code should not import package:$packageName');
+    return Heimdall.files().should().notImportUriMatching(RegExp('^package:$escapedPackageName/')).as('code should not import package:$packageName');
   }
 
   /// Ensures all imported files parse without analyzer errors.
@@ -31,14 +32,6 @@ final class HeimdallCodeSight {
   /// imported files are found under the path.
   HeimdallRule<HeimdallSourceFile> pathShouldBeEmpty(String pathPattern) =>
       _emptyPathRule(pathPattern, description: 'path $pathPattern should be empty');
-
-  /// Ensures [pathPattern] does not exist among imported files.
-  ///
-  /// Because Heimdall imports files rather than directories, this has the same
-  /// runtime behavior as [pathShouldBeEmpty] and uses stricter wording for
-  /// rules that ban a legacy path.
-  HeimdallRule<HeimdallSourceFile> pathShouldNotExist(String pathPattern) =>
-      _emptyPathRule(pathPattern, description: 'path $pathPattern should not exist');
 
   /// Ensures public declarations in [pathPattern] do not expose `dynamic`.
   ///
@@ -103,13 +96,20 @@ final class HeimdallCodeSight {
     String pathPattern = '**',
   }) => Heimdall.files().that().resideInPath(pathPattern).should().satisfy(_preferRelativeImports()).as('files should prefer relative imports');
 
-  /// Requires imports to use `package:` or SDK URIs instead of relative URIs.
+  /// Rejects relative import targets, regardless of package ownership.
   ///
   /// Checks every conditional branch without requiring imported targets.
-  /// This is a style check; use [preferPackageUris] for the complete URI policy.
+  /// Uses the same check as [FileImportStyleShouldRules.notUseRelativeImports].
+  /// Other URI schemes are accepted; this does not restrict imports to
+  /// `package:` and `dart:`. Use [preferPackageUris] for the complete URI policy.
   HeimdallRule<HeimdallSourceFile> preferPackageImports({
     String pathPattern = '**',
-  }) => Heimdall.files().that().resideInPath(pathPattern).should().satisfy(_preferPackageImports()).as('files should prefer package imports');
+  }) => Heimdall.files()
+      .that()
+      .resideInPath(pathPattern)
+      .should()
+      .satisfy(fileShouldNotUseRelativeImports(description: 'prefer package imports', message: (uri) => 'Use package import instead of $uri'))
+      .as('files should prefer package imports');
 
   /// Requires relative same-package imports/exports and `package:` external ones.
   ///
@@ -144,22 +144,6 @@ final class HeimdallCodeSight {
                   line: directive.line,
                   message: 'Use relative import instead of $target',
                 ),
-      ];
-      return HeimdallFindings(subject: file, passed: findings.isEmpty, findings: findings);
-    });
-  }
-
-  HeimdallCondition<HeimdallSourceFile> _preferPackageImports() {
-    return HeimdallCondition('prefer package imports', (file, _) {
-      final findings = [
-        for (final directive in file.relativeImports)
-          for (final target in directive.targetUris)
-            if (!target.contains(':'))
-              HeimdallValidationInfo(
-                filePath: file.absolutePath,
-                line: directive.line,
-                message: 'Use package import instead of $target',
-              ),
       ];
       return HeimdallFindings(subject: file, passed: findings.isEmpty, findings: findings);
     });

@@ -10,7 +10,7 @@ import 'package:heimdall_test/src/features/member_features/helpers/member_declar
 /// Predicate-side DSL for field declared type-name suffix rules.
 extension MemberHaveDeclaredTypeNameEndingWithPredicateRules on MemberPredicateBuilder {
   /// Selects fields whose declared type name ends with [suffix].
-  MemberPredicateBuilder haveDeclaredTypeNameEndingWith(String suffix) {
+  MemberPredicateBuilder haveDeclaredFieldTypeNameEndingWith(String suffix) {
     return satisfy(
       memberDeclaredTypeNamePredicate(
         'have declared type name ending with $suffix',
@@ -19,8 +19,8 @@ extension MemberHaveDeclaredTypeNameEndingWithPredicateRules on MemberPredicateB
     );
   }
 
-  /// Selects members that do not satisfy `haveDeclaredTypeNameEndingWith`.
-  MemberPredicateBuilder noHaveDeclaredTypeNameEndingWith(String suffix) {
+  /// Selects members that do not satisfy `haveDeclaredFieldTypeNameEndingWith`.
+  MemberPredicateBuilder notHaveDeclaredFieldTypeNameEndingWith(String suffix) {
     return satisfy(
       memberDoesNotHaveDeclaredTypeNamePredicate(
         'have declared type name ending with $suffix',
@@ -30,7 +30,7 @@ extension MemberHaveDeclaredTypeNameEndingWithPredicateRules on MemberPredicateB
   }
 
   /// Selects fields whose declared type name ends with any value in [suffixes].
-  MemberPredicateBuilder haveDeclaredTypeNameEndingWithAny(Iterable<String> suffixes) {
+  MemberPredicateBuilder haveDeclaredFieldTypeNameEndingWithAnyOf(Iterable<String> suffixes) {
     final valueList = suffixes.toNonEmptyList('suffixes');
     return satisfy(
       HeimdallPredicate.anyOf(
@@ -46,7 +46,7 @@ extension MemberHaveDeclaredTypeNameEndingWithPredicateRules on MemberPredicateB
   }
 
   /// Selects fields whose declared type name ends with every value in [suffixes].
-  MemberPredicateBuilder haveDeclaredTypeNameEndingWithAll(Iterable<String> suffixes) {
+  MemberPredicateBuilder haveDeclaredFieldTypeNameEndingWithAllOf(Iterable<String> suffixes) {
     final valueList = suffixes.toNonEmptyList('suffixes');
     return satisfy(
       HeimdallPredicate.allOf(
@@ -62,7 +62,7 @@ extension MemberHaveDeclaredTypeNameEndingWithPredicateRules on MemberPredicateB
   }
 
   /// Selects fields whose declared type name ends with none of [suffixes].
-  MemberPredicateBuilder haveDeclaredTypeNameEndingWithNone(Iterable<String> suffixes) {
+  MemberPredicateBuilder haveDeclaredFieldTypeNameEndingWithNoneOf(Iterable<String> suffixes) {
     final valueList = suffixes.toNonEmptyList('suffixes');
     return satisfy(
       HeimdallPredicate.noneOf(
@@ -81,7 +81,7 @@ extension MemberHaveDeclaredTypeNameEndingWithPredicateRules on MemberPredicateB
 /// Condition-side DSL for field declared type-name suffix rules.
 extension MemberHaveDeclaredTypeNameEndingWithShouldRules on MemberShouldBuilder {
   /// Requires fields to have a declared type name ending with [suffix].
-  HeimdallRule<ClassMember> haveDeclaredTypeNameEndingWith(String suffix) {
+  HeimdallRule<ClassMember> haveDeclaredFieldTypeNameEndingWith(String suffix) {
     return satisfy(
       memberDeclaredTypeNameCondition(
         'have declared type name ending with $suffix',
@@ -90,8 +90,8 @@ extension MemberHaveDeclaredTypeNameEndingWithShouldRules on MemberShouldBuilder
     );
   }
 
-  /// Requires members not to satisfy `haveDeclaredTypeNameEndingWith`.
-  HeimdallRule<ClassMember> noHaveDeclaredTypeNameEndingWith(String suffix) {
+  /// Requires members not to satisfy `haveDeclaredFieldTypeNameEndingWith`.
+  HeimdallRule<ClassMember> notHaveDeclaredFieldTypeNameEndingWith(String suffix) {
     return satisfy(
       memberMustNotHaveDeclaredTypeNameCondition(
         'have declared type name ending with $suffix',
@@ -101,7 +101,7 @@ extension MemberHaveDeclaredTypeNameEndingWithShouldRules on MemberShouldBuilder
   }
 
   /// Requires fields to have a declared type name ending with any value in [suffixes].
-  HeimdallRule<ClassMember> haveDeclaredTypeNameEndingWithAny(Iterable<String> suffixes) {
+  HeimdallRule<ClassMember> haveDeclaredFieldTypeNameEndingWithAnyOf(Iterable<String> suffixes) {
     final valueList = suffixes.toNonEmptyList('suffixes');
     return satisfy(
       HeimdallCondition.anyOf(
@@ -117,7 +117,7 @@ extension MemberHaveDeclaredTypeNameEndingWithShouldRules on MemberShouldBuilder
   }
 
   /// Requires fields to have a declared type name ending with every value in [suffixes].
-  HeimdallRule<ClassMember> haveDeclaredTypeNameEndingWithAll(Iterable<String> suffixes) {
+  HeimdallRule<ClassMember> haveDeclaredFieldTypeNameEndingWithAllOf(Iterable<String> suffixes) {
     final valueList = suffixes.toNonEmptyList('suffixes');
     return satisfy(
       HeimdallCondition.allOf(
@@ -133,7 +133,7 @@ extension MemberHaveDeclaredTypeNameEndingWithShouldRules on MemberShouldBuilder
   }
 
   /// Requires fields to have a declared type name ending with none of [suffixes].
-  HeimdallRule<ClassMember> haveDeclaredTypeNameEndingWithNone(Iterable<String> suffixes) {
+  HeimdallRule<ClassMember> haveDeclaredFieldTypeNameEndingWithNoneOf(Iterable<String> suffixes) {
     final valueList = suffixes.toNonEmptyList('suffixes');
     return satisfy(
       HeimdallCondition.noneOf(

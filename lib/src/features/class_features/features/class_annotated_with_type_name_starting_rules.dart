@@ -3,12 +3,12 @@ import 'package:heimdall_test/heimdall_test.dart';
 /// Predicate-side DSL for class annotation prefix rules.
 extension ClassAnnotatedWithTypeNameStartingPredicateRules on ClassPredicateBuilder {
   /// Selects declarations annotated with a type name starting with [prefix].
-  ClassPredicateBuilder areAnnotatedWithTypeNameStarting(String prefix) {
+  ClassPredicateBuilder areAnnotatedWithTypeNameStartingWith(String prefix) {
     return satisfy(_classAnnotatedWithTypeNameStarting(prefix));
   }
 
   /// Selects declarations not annotated with a type name starting with [prefix].
-  ClassPredicateBuilder noAreAnnotatedWithTypeNameStarting(String prefix) {
+  ClassPredicateBuilder areNotAnnotatedWithTypeNameStartingWith(String prefix) {
     return satisfy(
       HeimdallPredicate(
         'are not annotated with type name starting with $prefix',
@@ -18,7 +18,7 @@ extension ClassAnnotatedWithTypeNameStartingPredicateRules on ClassPredicateBuil
   }
 
   /// Selects declarations annotated with a type name starting with any prefix in [prefixes].
-  ClassPredicateBuilder areAnnotatedWithTypeNameStartingAny(
+  ClassPredicateBuilder areAnnotatedWithTypeNameStartingWithAnyOf(
     Iterable<String> prefixes,
   ) {
     final prefixList = prefixes.toNonEmptyList('prefixes');
@@ -31,7 +31,7 @@ extension ClassAnnotatedWithTypeNameStartingPredicateRules on ClassPredicateBuil
   }
 
   /// Selects declarations annotated with type names starting with every prefix in [prefixes].
-  ClassPredicateBuilder areAnnotatedWithTypeNameStartingAll(
+  ClassPredicateBuilder areAnnotatedWithTypeNameStartingWithAllOf(
     Iterable<String> prefixes,
   ) {
     final prefixList = prefixes.toNonEmptyList('prefixes');
@@ -44,7 +44,7 @@ extension ClassAnnotatedWithTypeNameStartingPredicateRules on ClassPredicateBuil
   }
 
   /// Selects declarations annotated with no name starting with [prefixes].
-  ClassPredicateBuilder areAnnotatedWithTypeNameStartingNone(
+  ClassPredicateBuilder areAnnotatedWithTypeNameStartingWithNoneOf(
     Iterable<String> prefixes,
   ) {
     final prefixList = prefixes.toNonEmptyList('prefixes');
@@ -60,21 +60,21 @@ extension ClassAnnotatedWithTypeNameStartingPredicateRules on ClassPredicateBuil
 /// Condition-side DSL for class annotation prefix rules.
 extension ClassAnnotatedWithTypeNameStartingShouldRules on ClassShouldBuilder {
   /// Requires matching classes to be annotated with a type name starting with [prefix].
-  HeimdallRule<CompilationUnitMember> beAnnotatedWithTypeNameStarting(
+  HeimdallRule<CompilationUnitMember> beAnnotatedWithTypeNameStartingWith(
     String prefix,
   ) {
     return satisfy(_classShouldBeAnnotatedWithTypeNameStarting(prefix));
   }
 
   /// Requires matching classes to not be annotated with a type name starting with [prefix].
-  HeimdallRule<CompilationUnitMember> noBeAnnotatedWithTypeNameStarting(
+  HeimdallRule<CompilationUnitMember> notBeAnnotatedWithTypeNameStartingWith(
     String prefix,
   ) {
     return satisfy(_classShouldNotBeAnnotatedWithTypeNameStarting(prefix));
   }
 
   /// Requires matching classes to be annotated with a type name starting with any prefix in [prefixes].
-  HeimdallRule<CompilationUnitMember> beAnnotatedWithTypeNameStartingAny(
+  HeimdallRule<CompilationUnitMember> beAnnotatedWithTypeNameStartingWithAnyOf(
     Iterable<String> prefixes,
   ) {
     final prefixList = prefixes.toNonEmptyList('prefixes');
@@ -87,7 +87,7 @@ extension ClassAnnotatedWithTypeNameStartingShouldRules on ClassShouldBuilder {
   }
 
   /// Requires matching classes to be annotated with type names starting with every prefix in [prefixes].
-  HeimdallRule<CompilationUnitMember> beAnnotatedWithTypeNameStartingAll(
+  HeimdallRule<CompilationUnitMember> beAnnotatedWithTypeNameStartingWithAllOf(
     Iterable<String> prefixes,
   ) {
     final prefixList = prefixes.toNonEmptyList('prefixes');
@@ -100,7 +100,7 @@ extension ClassAnnotatedWithTypeNameStartingShouldRules on ClassShouldBuilder {
   }
 
   /// Requires matching classes to be annotated with no name starting with [prefixes].
-  HeimdallRule<CompilationUnitMember> beAnnotatedWithTypeNameStartingNone(
+  HeimdallRule<CompilationUnitMember> beAnnotatedWithTypeNameStartingWithNoneOf(
     Iterable<String> prefixes,
   ) {
     final prefixList = prefixes.toNonEmptyList('prefixes');

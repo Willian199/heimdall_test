@@ -7,13 +7,13 @@ extension ClassHaveFinalFieldsPredicateRules on ClassPredicateBuilder {
     return satisfy(_classHasOnlyFinalFields());
   }
 
-  /// Selects classes that declare at least one non-final field.
-  ClassPredicateBuilder noHaveOnlyFinalFields() {
+  /// Selects classes with no fields or at least one non-final field.
+  ClassPredicateBuilder notHaveOnlyFinalFields() {
     return satisfy(_classDoesNotHaveOnlyFinalFields());
   }
 
   /// Selects classes where every field in [fieldNames] is final.
-  ClassPredicateBuilder haveAllFinalFields(Iterable<String> fieldNames) {
+  ClassPredicateBuilder haveFinalFieldsNamedAllOf(Iterable<String> fieldNames) {
     final fieldList = fieldNames.toNonEmptyList('fieldNames');
     return satisfy(
       HeimdallPredicate.allOf(
@@ -24,7 +24,7 @@ extension ClassHaveFinalFieldsPredicateRules on ClassPredicateBuilder {
   }
 
   /// Selects classes where at least one field in [fieldNames] is final.
-  ClassPredicateBuilder haveAnyFinalFields(Iterable<String> fieldNames) {
+  ClassPredicateBuilder haveFinalFieldNamedAnyOf(Iterable<String> fieldNames) {
     final fieldList = fieldNames.toNonEmptyList('fieldNames');
     return satisfy(
       HeimdallPredicate.anyOf(
@@ -35,7 +35,7 @@ extension ClassHaveFinalFieldsPredicateRules on ClassPredicateBuilder {
   }
 
   /// Selects classes where none of [fieldNames] is final.
-  ClassPredicateBuilder haveNoFinalFields(Iterable<String> fieldNames) {
+  ClassPredicateBuilder haveNoFinalFieldsNamed(Iterable<String> fieldNames) {
     final fieldList = fieldNames.toNonEmptyList('fieldNames');
     return satisfy(
       HeimdallPredicate.noneOf(
@@ -53,13 +53,13 @@ extension ClassHaveFinalFieldsShouldRules on ClassShouldBuilder {
     return satisfy(_classShouldHaveOnlyFinalFields());
   }
 
-  /// Requires matching classes to declare at least one non-final field.
-  HeimdallRule<CompilationUnitMember> noHaveOnlyFinalFields() {
+  /// Requires no fields or at least one non-final field.
+  HeimdallRule<CompilationUnitMember> notHaveOnlyFinalFields() {
     return satisfy(_classShouldNotHaveOnlyFinalFields());
   }
 
   /// Requires every field in [fieldNames] to be final.
-  HeimdallRule<CompilationUnitMember> haveAllFinalFields(
+  HeimdallRule<CompilationUnitMember> haveFinalFieldsNamedAllOf(
     Iterable<String> fieldNames,
   ) {
     final fieldList = fieldNames.toNonEmptyList('fieldNames');
@@ -72,7 +72,7 @@ extension ClassHaveFinalFieldsShouldRules on ClassShouldBuilder {
   }
 
   /// Requires at least one field in [fieldNames] to be final.
-  HeimdallRule<CompilationUnitMember> haveAnyFinalFields(
+  HeimdallRule<CompilationUnitMember> haveFinalFieldNamedAnyOf(
     Iterable<String> fieldNames,
   ) {
     final fieldList = fieldNames.toNonEmptyList('fieldNames');
@@ -85,7 +85,7 @@ extension ClassHaveFinalFieldsShouldRules on ClassShouldBuilder {
   }
 
   /// Requires none of [fieldNames] to be final.
-  HeimdallRule<CompilationUnitMember> haveNoFinalFields(
+  HeimdallRule<CompilationUnitMember> haveNoFinalFieldsNamed(
     Iterable<String> fieldNames,
   ) {
     final fieldList = fieldNames.toNonEmptyList('fieldNames');

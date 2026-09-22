@@ -9,12 +9,12 @@ extension MemberHaveNameMatchingPredicateRules on MemberPredicateBuilder {
   }
 
   /// Selects members that do not satisfy `haveNameMatching`.
-  MemberPredicateBuilder noHaveNameMatching(RegExp pattern) {
+  MemberPredicateBuilder notHaveNameMatching(RegExp pattern) {
     return satisfy(_memberDoesNotHaveNameMatching(pattern));
   }
 
   /// Selects members whose names match at least one pattern in [patterns].
-  MemberPredicateBuilder haveNameMatchingAny(Iterable<RegExp> patterns) {
+  MemberPredicateBuilder haveNameMatchingAnyOf(Iterable<RegExp> patterns) {
     final patternList = patterns.toNonEmptyList('patterns');
     return satisfy(
       HeimdallPredicate.anyOf(
@@ -25,7 +25,7 @@ extension MemberHaveNameMatchingPredicateRules on MemberPredicateBuilder {
   }
 
   /// Selects members whose names match every pattern in [patterns].
-  MemberPredicateBuilder haveNameMatchingAll(Iterable<RegExp> patterns) {
+  MemberPredicateBuilder haveNameMatchingAllOf(Iterable<RegExp> patterns) {
     final patternList = patterns.toNonEmptyList('patterns');
     return satisfy(
       HeimdallPredicate.allOf(
@@ -36,7 +36,7 @@ extension MemberHaveNameMatchingPredicateRules on MemberPredicateBuilder {
   }
 
   /// Selects members whose names match none of [patterns].
-  MemberPredicateBuilder haveNameMatchingNone(Iterable<RegExp> patterns) {
+  MemberPredicateBuilder haveNameMatchingNoneOf(Iterable<RegExp> patterns) {
     final patternList = patterns.toNonEmptyList('patterns');
     return satisfy(
       HeimdallPredicate.noneOf(
@@ -55,12 +55,12 @@ extension MemberHaveNameMatchingShouldRules on MemberShouldBuilder {
   }
 
   /// Requires members not to satisfy `haveNameMatching`.
-  HeimdallRule<ClassMember> noHaveNameMatching(RegExp pattern) {
+  HeimdallRule<ClassMember> notHaveNameMatching(RegExp pattern) {
     return satisfy(_memberShouldNotHaveNameMatching(pattern));
   }
 
   /// Requires member names to match at least one pattern in [patterns].
-  HeimdallRule<ClassMember> haveNameMatchingAny(Iterable<RegExp> patterns) {
+  HeimdallRule<ClassMember> haveNameMatchingAnyOf(Iterable<RegExp> patterns) {
     final patternList = patterns.toNonEmptyList('patterns');
     return satisfy(
       HeimdallCondition.anyOf(
@@ -71,7 +71,7 @@ extension MemberHaveNameMatchingShouldRules on MemberShouldBuilder {
   }
 
   /// Requires member names to match every pattern in [patterns].
-  HeimdallRule<ClassMember> haveNameMatchingAll(Iterable<RegExp> patterns) {
+  HeimdallRule<ClassMember> haveNameMatchingAllOf(Iterable<RegExp> patterns) {
     final patternList = patterns.toNonEmptyList('patterns');
     return satisfy(
       HeimdallCondition.allOf(
@@ -82,7 +82,7 @@ extension MemberHaveNameMatchingShouldRules on MemberShouldBuilder {
   }
 
   /// Requires member names to match none of [patterns].
-  HeimdallRule<ClassMember> haveNameMatchingNone(Iterable<RegExp> patterns) {
+  HeimdallRule<ClassMember> haveNameMatchingNoneOf(Iterable<RegExp> patterns) {
     final patternList = patterns.toNonEmptyList('patterns');
     return satisfy(
       HeimdallCondition.noneOf(

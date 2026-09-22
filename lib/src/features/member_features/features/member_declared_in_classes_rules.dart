@@ -5,6 +5,7 @@ import 'package:heimdall_test/src/core/heimdall_predicate.dart';
 import 'package:heimdall_test/src/core/member_rules/member_predicate_builder.dart';
 import 'package:heimdall_test/src/core/member_rules/member_should_builder.dart';
 import 'package:heimdall_test/src/core/non_empty_iterable.dart';
+import 'package:heimdall_test/src/features/member_features/helpers/member_owner_rule_helpers.dart';
 import 'package:heimdall_test/src/features/queries/member_queries.dart';
 import 'package:heimdall_test/src/mapper/model/heimdall_member.dart';
 
@@ -18,14 +19,14 @@ extension MemberDeclaredInClassesPredicateRules on MemberPredicateBuilder {
   }
 
   /// Selects members that do not satisfy `areDeclaredInClassesThat`.
-  MemberPredicateBuilder noAreDeclaredInClassesThat(
+  MemberPredicateBuilder areNotDeclaredInClassesThat(
     HeimdallPredicate<CompilationUnitMember> classPredicate,
   ) {
     return satisfy(_memberDoesNotBeDeclaredInClassesThat(classPredicate));
   }
 
   /// Selects members whose owner declaration matches at least one predicate in [classPredicates].
-  MemberPredicateBuilder areDeclaredInAnyClassesThat(
+  MemberPredicateBuilder areDeclaredInClassesMatchingAnyOf(
     Iterable<HeimdallPredicate<CompilationUnitMember>> classPredicates,
   ) {
     final predicateList = classPredicates.toNonEmptyList('classPredicates');
@@ -38,7 +39,7 @@ extension MemberDeclaredInClassesPredicateRules on MemberPredicateBuilder {
   }
 
   /// Selects members whose owner declaration matches every predicate in [classPredicates].
-  MemberPredicateBuilder areDeclaredInAllClassesThat(
+  MemberPredicateBuilder areDeclaredInClassesMatchingAllOf(
     Iterable<HeimdallPredicate<CompilationUnitMember>> classPredicates,
   ) {
     final predicateList = classPredicates.toNonEmptyList('classPredicates');
@@ -51,7 +52,7 @@ extension MemberDeclaredInClassesPredicateRules on MemberPredicateBuilder {
   }
 
   /// Selects members whose owner declaration matches none of [classPredicates].
-  MemberPredicateBuilder areDeclaredInNoClassesThat(
+  MemberPredicateBuilder areDeclaredInClassesMatchingNoneOf(
     Iterable<HeimdallPredicate<CompilationUnitMember>> classPredicates,
   ) {
     final predicateList = classPredicates.toNonEmptyList('classPredicates');
@@ -70,50 +71,50 @@ extension MemberDeclaredInClassesShouldRules on MemberShouldBuilder {
   HeimdallRule<ClassMember> beDeclaredInClassesThat(
     HeimdallPredicate<CompilationUnitMember> classPredicate,
   ) {
-    return satisfy(_memberShouldBeDeclaredInClassesThat(classPredicate));
+    return satisfy(memberShouldBeDeclaredInClassesThat(classPredicate));
   }
 
   /// Requires members not to satisfy `beDeclaredInClassesThat`.
-  HeimdallRule<ClassMember> noBeDeclaredInClassesThat(
+  HeimdallRule<ClassMember> notBeDeclaredInClassesThat(
     HeimdallPredicate<CompilationUnitMember> classPredicate,
   ) {
     return satisfy(_memberShouldNotBeDeclaredInClassesThat(classPredicate));
   }
 
   /// Requires members to be declared in classes that match at least one predicate in [classPredicates].
-  HeimdallRule<ClassMember> beDeclaredInAnyClassesThat(
+  HeimdallRule<ClassMember> beDeclaredInClassesMatchingAnyOf(
     Iterable<HeimdallPredicate<CompilationUnitMember>> classPredicates,
   ) {
     final predicateList = classPredicates.toNonEmptyList('classPredicates');
     return satisfy(
       HeimdallCondition.anyOf(
-        predicateList.map(_memberShouldBeDeclaredInClassesThat),
+        predicateList.map(memberShouldBeDeclaredInClassesThat),
         description: 'match any of ${predicateList.map((predicate) => predicate.description).join(', ')}',
       ),
     );
   }
 
   /// Requires members to be declared in classes that match every predicate in [classPredicates].
-  HeimdallRule<ClassMember> beDeclaredInAllClassesThat(
+  HeimdallRule<ClassMember> beDeclaredInClassesMatchingAllOf(
     Iterable<HeimdallPredicate<CompilationUnitMember>> classPredicates,
   ) {
     final predicateList = classPredicates.toNonEmptyList('classPredicates');
     return satisfy(
       HeimdallCondition.allOf(
-        predicateList.map(_memberShouldBeDeclaredInClassesThat),
+        predicateList.map(memberShouldBeDeclaredInClassesThat),
         description: 'match all of ${predicateList.map((predicate) => predicate.description).join(', ')}',
       ),
     );
   }
 
   /// Requires members to be declared in classes that match none of [classPredicates].
-  HeimdallRule<ClassMember> beDeclaredInNoClassesThat(
+  HeimdallRule<ClassMember> beDeclaredInClassesMatchingNoneOf(
     Iterable<HeimdallPredicate<CompilationUnitMember>> classPredicates,
   ) {
     final predicateList = classPredicates.toNonEmptyList('classPredicates');
     return satisfy(
       HeimdallCondition.noneOf(
-        predicateList.map(_memberShouldBeDeclaredInClassesThat),
+        predicateList.map(memberShouldBeDeclaredInClassesThat),
         description: 'match none of ${predicateList.map((predicate) => predicate.description).join(', ')}',
       ),
     );
@@ -125,15 +126,6 @@ HeimdallPredicate<ClassMember> _memberDeclaredInClassesThat(
 ) {
   return HeimdallPredicate(
     'are declared in classes that ${classPredicate.description}',
-    (item, project) => classPredicate.test(item.owner, project),
-  );
-}
-
-HeimdallCondition<ClassMember> _memberShouldBeDeclaredInClassesThat(
-  HeimdallPredicate<CompilationUnitMember> classPredicate,
-) {
-  return memberCondition(
-    'be declared in classes that ${classPredicate.description}',
     (item, project) => classPredicate.test(item.owner, project),
   );
 }

@@ -16,7 +16,7 @@ extension MemberAnnotatedWithPredicateRules on MemberPredicateBuilder {
   }
 
   /// Selects members that do not satisfy `areAnnotatedWith`.
-  MemberPredicateBuilder noAreAnnotatedWith(String annotation) {
+  MemberPredicateBuilder areNotAnnotatedWith(String annotation) {
     return satisfy(
       HeimdallPredicate(
         'not be annotated with $annotation',
@@ -26,7 +26,7 @@ extension MemberAnnotatedWithPredicateRules on MemberPredicateBuilder {
   }
 
   /// Selects members annotated with every annotation in [annotations].
-  MemberPredicateBuilder areAnnotatedWithAll(Iterable<String> annotations) {
+  MemberPredicateBuilder areAnnotatedWithAllOf(Iterable<String> annotations) {
     final annotationList = annotations.toNonEmptyList('annotations');
     return satisfy(
       HeimdallPredicate.allOf(
@@ -37,7 +37,7 @@ extension MemberAnnotatedWithPredicateRules on MemberPredicateBuilder {
   }
 
   /// Selects members annotated with at least one annotation in [annotations].
-  MemberPredicateBuilder areAnnotatedWithAny(Iterable<String> annotations) {
+  MemberPredicateBuilder areAnnotatedWithAnyOf(Iterable<String> annotations) {
     final annotationList = annotations.toNonEmptyList('annotations');
     return satisfy(
       HeimdallPredicate.anyOf(
@@ -48,7 +48,7 @@ extension MemberAnnotatedWithPredicateRules on MemberPredicateBuilder {
   }
 
   /// Selects members annotated with none of [annotations].
-  MemberPredicateBuilder areAnnotatedWithNone(Iterable<String> annotations) {
+  MemberPredicateBuilder areAnnotatedWithNoneOf(Iterable<String> annotations) {
     final annotationList = annotations.toNonEmptyList('annotations');
     return satisfy(
       HeimdallPredicate.noneOf(
@@ -67,7 +67,7 @@ extension MemberAnnotatedWithShouldRules on MemberShouldBuilder {
   }
 
   /// Requires members not to satisfy `beAnnotatedWith`.
-  HeimdallRule<ClassMember> noBeAnnotatedWith(String annotation) {
+  HeimdallRule<ClassMember> notBeAnnotatedWith(String annotation) {
     return satisfy(
       prohibitedMemberCondition(
         'be annotated with $annotation',
@@ -77,7 +77,7 @@ extension MemberAnnotatedWithShouldRules on MemberShouldBuilder {
   }
 
   /// Requires members to be annotated with every annotation in [annotations].
-  HeimdallRule<ClassMember> beAnnotatedWithAll(Iterable<String> annotations) {
+  HeimdallRule<ClassMember> beAnnotatedWithAllOf(Iterable<String> annotations) {
     final annotationList = annotations.toNonEmptyList('annotations');
     return satisfy(
       HeimdallCondition.allOf(
@@ -88,7 +88,7 @@ extension MemberAnnotatedWithShouldRules on MemberShouldBuilder {
   }
 
   /// Requires members to be annotated with at least one annotation in [annotations].
-  HeimdallRule<ClassMember> beAnnotatedWithAny(Iterable<String> annotations) {
+  HeimdallRule<ClassMember> beAnnotatedWithAnyOf(Iterable<String> annotations) {
     final annotationList = annotations.toNonEmptyList('annotations');
     return satisfy(
       HeimdallCondition.anyOf(
@@ -99,7 +99,7 @@ extension MemberAnnotatedWithShouldRules on MemberShouldBuilder {
   }
 
   /// Requires members to be annotated with none of [annotations].
-  HeimdallRule<ClassMember> beAnnotatedWithNone(Iterable<String> annotations) {
+  HeimdallRule<ClassMember> beAnnotatedWithNoneOf(Iterable<String> annotations) {
     final annotationList = annotations.toNonEmptyList('annotations');
     return satisfy(
       HeimdallCondition.noneOf(

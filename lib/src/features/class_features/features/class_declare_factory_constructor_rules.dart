@@ -1,4 +1,5 @@
 import 'package:heimdall_test/heimdall_test.dart';
+import 'package:heimdall_test/src/features/queries/declaration_location_queries.dart';
 
 /// Predicate-side DSL for factory constructor rules.
 extension ClassDeclareFactoryConstructorPredicateRules on ClassPredicateBuilder {
@@ -10,7 +11,7 @@ extension ClassDeclareFactoryConstructorPredicateRules on ClassPredicateBuilder 
   }
 
   /// Selects classes that do not declare a `factory` constructor named [name].
-  ClassPredicateBuilder noDeclareFactoryConstructor({String name = 'new'}) {
+  ClassPredicateBuilder notDeclareFactoryConstructor({String name = 'new'}) {
     return satisfy(
       HeimdallPredicate(
         'not declare factory constructor $name',
@@ -65,7 +66,7 @@ extension ClassDeclareFactoryConstructorShouldRules on ClassShouldBuilder {
   }
 
   /// Requires matching classes to not declare a `factory` constructor named [name].
-  HeimdallRule<CompilationUnitMember> noDeclareFactoryConstructor({
+  HeimdallRule<CompilationUnitMember> notDeclareFactoryConstructor({
     String name = 'new',
   }) {
     return satisfy(_classShouldNotDeclareFactoryConstructor(name: name));
@@ -139,7 +140,7 @@ HeimdallCondition<CompilationUnitMember> _classShouldNotDeclareFactoryConstructo
   return HeimdallCondition('not declare factory constructor $name', (item, _) {
     final findings = _matchingFactoryConstructors(item, name).map(
       (constructor) {
-        final location = _constructorLocation(constructor);
+        final location = constructorLocation(constructor);
         return HeimdallValidationInfo(
           filePath: item.sourcePath,
           line: location.line,
@@ -179,11 +180,4 @@ Iterable<ConstructorDeclaration> _matchingFactoryConstructors(
   return item.constructors.where(
     (constructor) => constructor.isFactory && (constructor as ClassMember).name == name,
   );
-}
-
-({int line, int column}) _constructorLocation(
-  ConstructorDeclaration constructor,
-) {
-  final offset = constructor.name?.offset ?? constructor.offset;
-  return constructor.sourceLocationAt(offset);
 }

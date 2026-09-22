@@ -8,7 +8,7 @@ extension ClassAnnotatedWithTypeNameMatchingPredicateRules on ClassPredicateBuil
   }
 
   /// Selects declarations not annotated with a type name matching [pattern].
-  ClassPredicateBuilder noAreAnnotatedWithTypeNameMatching(RegExp pattern) {
+  ClassPredicateBuilder areNotAnnotatedWithTypeNameMatching(RegExp pattern) {
     return satisfy(
       HeimdallPredicate(
         'are not annotated with type name matching ${pattern.pattern}',
@@ -18,7 +18,7 @@ extension ClassAnnotatedWithTypeNameMatchingPredicateRules on ClassPredicateBuil
   }
 
   /// Selects declarations annotated with a type name matching at least one regex in [patterns].
-  ClassPredicateBuilder areAnnotatedWithTypeNameMatchingAny(
+  ClassPredicateBuilder areAnnotatedWithTypeNameMatchingAnyOf(
     Iterable<RegExp> patterns,
   ) {
     final patternList = patterns.toNonEmptyList('patterns');
@@ -31,7 +31,7 @@ extension ClassAnnotatedWithTypeNameMatchingPredicateRules on ClassPredicateBuil
   }
 
   /// Selects declarations annotated with type names matching every regex in [patterns].
-  ClassPredicateBuilder areAnnotatedWithTypeNameMatchingAll(
+  ClassPredicateBuilder areAnnotatedWithTypeNameMatchingAllOf(
     Iterable<RegExp> patterns,
   ) {
     final patternList = patterns.toNonEmptyList('patterns');
@@ -44,7 +44,7 @@ extension ClassAnnotatedWithTypeNameMatchingPredicateRules on ClassPredicateBuil
   }
 
   /// Selects declarations annotated with no name matching [patterns].
-  ClassPredicateBuilder areAnnotatedWithTypeNameMatchingNone(
+  ClassPredicateBuilder areAnnotatedWithTypeNameMatchingNoneOf(
     Iterable<RegExp> patterns,
   ) {
     final patternList = patterns.toNonEmptyList('patterns');
@@ -67,14 +67,14 @@ extension ClassAnnotatedWithTypeNameMatchingShouldRules on ClassShouldBuilder {
   }
 
   /// Requires matching classes to not be annotated with a type name matching [pattern].
-  HeimdallRule<CompilationUnitMember> noBeAnnotatedWithTypeNameMatching(
+  HeimdallRule<CompilationUnitMember> notBeAnnotatedWithTypeNameMatching(
     RegExp pattern,
   ) {
     return satisfy(_classShouldNotBeAnnotatedWithTypeNameMatching(pattern));
   }
 
   /// Requires matching classes to be annotated with a type name matching at least one regex in [patterns].
-  HeimdallRule<CompilationUnitMember> beAnnotatedWithTypeNameMatchingAny(
+  HeimdallRule<CompilationUnitMember> beAnnotatedWithTypeNameMatchingAnyOf(
     Iterable<RegExp> patterns,
   ) {
     final patternList = patterns.toNonEmptyList('patterns');
@@ -87,7 +87,7 @@ extension ClassAnnotatedWithTypeNameMatchingShouldRules on ClassShouldBuilder {
   }
 
   /// Requires matching classes to be annotated with type names matching every regex in [patterns].
-  HeimdallRule<CompilationUnitMember> beAnnotatedWithTypeNameMatchingAll(
+  HeimdallRule<CompilationUnitMember> beAnnotatedWithTypeNameMatchingAllOf(
     Iterable<RegExp> patterns,
   ) {
     final patternList = patterns.toNonEmptyList('patterns');
@@ -100,7 +100,7 @@ extension ClassAnnotatedWithTypeNameMatchingShouldRules on ClassShouldBuilder {
   }
 
   /// Requires matching classes to be annotated with no name matching [patterns].
-  HeimdallRule<CompilationUnitMember> beAnnotatedWithTypeNameMatchingNone(
+  HeimdallRule<CompilationUnitMember> beAnnotatedWithTypeNameMatchingNoneOf(
     Iterable<RegExp> patterns,
   ) {
     final patternList = patterns.toNonEmptyList('patterns');

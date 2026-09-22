@@ -10,7 +10,7 @@ import 'package:heimdall_test/src/features/member_features/helpers/member_declar
 /// Predicate-side DSL for exact field declared type-name rules.
 extension MemberHaveDeclaredTypeNamePredicateRules on MemberPredicateBuilder {
   /// Selects fields whose declared type name equals [typeName].
-  MemberPredicateBuilder haveDeclaredTypeName(String typeName) {
+  MemberPredicateBuilder haveDeclaredFieldTypeName(String typeName) {
     return satisfy(
       memberDeclaredTypeNamePredicate(
         'have declared type name $typeName',
@@ -19,8 +19,8 @@ extension MemberHaveDeclaredTypeNamePredicateRules on MemberPredicateBuilder {
     );
   }
 
-  /// Selects members that do not satisfy `haveDeclaredTypeName`.
-  MemberPredicateBuilder noHaveDeclaredTypeName(String typeName) {
+  /// Selects members that do not satisfy `haveDeclaredFieldTypeName`.
+  MemberPredicateBuilder notHaveDeclaredFieldTypeName(String typeName) {
     return satisfy(
       memberDoesNotHaveDeclaredTypeNamePredicate(
         'have declared type name $typeName',
@@ -30,7 +30,7 @@ extension MemberHaveDeclaredTypeNamePredicateRules on MemberPredicateBuilder {
   }
 
   /// Selects fields whose declared type name equals at least one value in [typeNames].
-  MemberPredicateBuilder haveDeclaredTypeNameAny(Iterable<String> typeNames) {
+  MemberPredicateBuilder haveDeclaredFieldTypeNameEqualToAnyOf(Iterable<String> typeNames) {
     final valueList = typeNames.toNonEmptyList('typeNames');
     return satisfy(
       HeimdallPredicate.anyOf(
@@ -46,7 +46,7 @@ extension MemberHaveDeclaredTypeNamePredicateRules on MemberPredicateBuilder {
   }
 
   /// Selects fields whose declared type name equals every value in [typeNames].
-  MemberPredicateBuilder haveDeclaredTypeNameAll(Iterable<String> typeNames) {
+  MemberPredicateBuilder haveDeclaredFieldTypeNameEqualToAllOf(Iterable<String> typeNames) {
     final valueList = typeNames.toNonEmptyList('typeNames');
     return satisfy(
       HeimdallPredicate.allOf(
@@ -62,7 +62,7 @@ extension MemberHaveDeclaredTypeNamePredicateRules on MemberPredicateBuilder {
   }
 
   /// Selects fields whose declared type name equals none of [typeNames].
-  MemberPredicateBuilder haveDeclaredTypeNameNone(Iterable<String> typeNames) {
+  MemberPredicateBuilder haveDeclaredFieldTypeNameEqualToNoneOf(Iterable<String> typeNames) {
     final valueList = typeNames.toNonEmptyList('typeNames');
     return satisfy(
       HeimdallPredicate.noneOf(
@@ -81,7 +81,7 @@ extension MemberHaveDeclaredTypeNamePredicateRules on MemberPredicateBuilder {
 /// Condition-side DSL for exact field declared type-name rules.
 extension MemberHaveDeclaredTypeNameShouldRules on MemberShouldBuilder {
   /// Requires fields to have a declared type name equal to [typeName].
-  HeimdallRule<ClassMember> haveDeclaredTypeName(String typeName) {
+  HeimdallRule<ClassMember> haveDeclaredFieldTypeName(String typeName) {
     return satisfy(
       memberDeclaredTypeNameCondition(
         'have declared type name $typeName',
@@ -90,8 +90,8 @@ extension MemberHaveDeclaredTypeNameShouldRules on MemberShouldBuilder {
     );
   }
 
-  /// Requires members not to satisfy `haveDeclaredTypeName`.
-  HeimdallRule<ClassMember> noHaveDeclaredTypeName(String typeName) {
+  /// Requires members not to satisfy `haveDeclaredFieldTypeName`.
+  HeimdallRule<ClassMember> notHaveDeclaredFieldTypeName(String typeName) {
     return satisfy(
       memberMustNotHaveDeclaredTypeNameCondition(
         'have declared type name $typeName',
@@ -101,7 +101,7 @@ extension MemberHaveDeclaredTypeNameShouldRules on MemberShouldBuilder {
   }
 
   /// Requires fields to have a declared type name equal to at least one value in [typeNames].
-  HeimdallRule<ClassMember> haveDeclaredTypeNameAny(Iterable<String> typeNames) {
+  HeimdallRule<ClassMember> haveDeclaredFieldTypeNameEqualToAnyOf(Iterable<String> typeNames) {
     final valueList = typeNames.toNonEmptyList('typeNames');
     return satisfy(
       HeimdallCondition.anyOf(
@@ -117,7 +117,7 @@ extension MemberHaveDeclaredTypeNameShouldRules on MemberShouldBuilder {
   }
 
   /// Requires fields to have a declared type name equal to every value in [typeNames].
-  HeimdallRule<ClassMember> haveDeclaredTypeNameAll(Iterable<String> typeNames) {
+  HeimdallRule<ClassMember> haveDeclaredFieldTypeNameEqualToAllOf(Iterable<String> typeNames) {
     final valueList = typeNames.toNonEmptyList('typeNames');
     return satisfy(
       HeimdallCondition.allOf(
@@ -133,7 +133,7 @@ extension MemberHaveDeclaredTypeNameShouldRules on MemberShouldBuilder {
   }
 
   /// Requires fields to have a declared type name equal to none of [typeNames].
-  HeimdallRule<ClassMember> haveDeclaredTypeNameNone(Iterable<String> typeNames) {
+  HeimdallRule<ClassMember> haveDeclaredFieldTypeNameEqualToNoneOf(Iterable<String> typeNames) {
     final valueList = typeNames.toNonEmptyList('typeNames');
     return satisfy(
       HeimdallCondition.noneOf(

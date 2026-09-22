@@ -8,7 +8,7 @@ extension FileContainSourceMatchingPredicateRules on FilePredicateBuilder {
   }
 
   /// Selects files that do not contain source matching [pattern].
-  FilePredicateBuilder noContainSourceMatching(RegExp pattern) {
+  FilePredicateBuilder notContainSourceMatching(RegExp pattern) {
     return satisfy(_fileDoesNotContainSourceMatching(pattern));
   }
 
@@ -54,7 +54,7 @@ extension FileContainSourceMatchingShouldRules on FileShouldBuilder {
   }
 
   /// Requires matching files to not contain source matching [pattern].
-  HeimdallRule<HeimdallSourceFile> noContainSourceMatching(RegExp pattern) {
+  HeimdallRule<HeimdallSourceFile> notContainSourceMatching(RegExp pattern) {
     return satisfy(_fileShouldNotContainSourceMatching(pattern));
   }
 

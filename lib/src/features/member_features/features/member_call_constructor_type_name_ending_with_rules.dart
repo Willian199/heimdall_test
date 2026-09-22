@@ -16,7 +16,7 @@ extension MemberCallConstructorTypeNameEndingWithPredicateRules on MemberPredica
   }
 
   /// Selects members that do not satisfy `callConstructorTypeNameEndingWith`.
-  MemberPredicateBuilder noCallConstructorTypeNameEndingWith(String suffix) {
+  MemberPredicateBuilder notCallConstructorTypeNameEndingWith(String suffix) {
     return satisfy(
       HeimdallPredicate(
         'not call constructor type name ending with $suffix',
@@ -26,7 +26,7 @@ extension MemberCallConstructorTypeNameEndingWithPredicateRules on MemberPredica
   }
 
   /// Selects members that call constructor type name ending with every value in [suffixes].
-  MemberPredicateBuilder callConstructorTypeNameEndingWithAll(Iterable<String> suffixes) {
+  MemberPredicateBuilder callConstructorTypeNameEndingWithAllOf(Iterable<String> suffixes) {
     final valueList = suffixes.toNonEmptyList('suffixes');
     return satisfy(
       HeimdallPredicate.allOf(
@@ -37,7 +37,7 @@ extension MemberCallConstructorTypeNameEndingWithPredicateRules on MemberPredica
   }
 
   /// Selects members that call constructor type name ending with at least one value in [suffixes].
-  MemberPredicateBuilder callConstructorTypeNameEndingWithAny(Iterable<String> suffixes) {
+  MemberPredicateBuilder callConstructorTypeNameEndingWithAnyOf(Iterable<String> suffixes) {
     final valueList = suffixes.toNonEmptyList('suffixes');
     return satisfy(
       HeimdallPredicate.anyOf(
@@ -48,7 +48,7 @@ extension MemberCallConstructorTypeNameEndingWithPredicateRules on MemberPredica
   }
 
   /// Selects members that call constructor type name ending with none of [suffixes].
-  MemberPredicateBuilder callConstructorTypeNameEndingWithNone(Iterable<String> suffixes) {
+  MemberPredicateBuilder callConstructorTypeNameEndingWithNoneOf(Iterable<String> suffixes) {
     final valueList = suffixes.toNonEmptyList('suffixes');
     return satisfy(
       HeimdallPredicate.noneOf(
@@ -67,7 +67,7 @@ extension MemberCallConstructorTypeNameEndingWithShouldRules on MemberShouldBuil
   }
 
   /// Requires members not to satisfy `callConstructorTypeNameEndingWith`.
-  HeimdallRule<ClassMember> noCallConstructorTypeNameEndingWith(String suffix) {
+  HeimdallRule<ClassMember> notCallConstructorTypeNameEndingWith(String suffix) {
     return satisfy(
       prohibitedMemberCondition(
         'call constructor type name ending with $suffix',
@@ -77,7 +77,7 @@ extension MemberCallConstructorTypeNameEndingWithShouldRules on MemberShouldBuil
   }
 
   /// Requires members to call constructor type name ending with every value in [suffixes].
-  HeimdallRule<ClassMember> callConstructorTypeNameEndingWithAll(Iterable<String> suffixes) {
+  HeimdallRule<ClassMember> callConstructorTypeNameEndingWithAllOf(Iterable<String> suffixes) {
     final valueList = suffixes.toNonEmptyList('suffixes');
     return satisfy(
       HeimdallCondition.allOf(
@@ -88,7 +88,7 @@ extension MemberCallConstructorTypeNameEndingWithShouldRules on MemberShouldBuil
   }
 
   /// Requires members to call constructor type name ending with at least one value in [suffixes].
-  HeimdallRule<ClassMember> callConstructorTypeNameEndingWithAny(Iterable<String> suffixes) {
+  HeimdallRule<ClassMember> callConstructorTypeNameEndingWithAnyOf(Iterable<String> suffixes) {
     final valueList = suffixes.toNonEmptyList('suffixes');
     return satisfy(
       HeimdallCondition.anyOf(
@@ -99,7 +99,7 @@ extension MemberCallConstructorTypeNameEndingWithShouldRules on MemberShouldBuil
   }
 
   /// Requires members to call constructor type name ending with none of [suffixes].
-  HeimdallRule<ClassMember> callConstructorTypeNameEndingWithNone(Iterable<String> suffixes) {
+  HeimdallRule<ClassMember> callConstructorTypeNameEndingWithNoneOf(Iterable<String> suffixes) {
     final valueList = suffixes.toNonEmptyList('suffixes');
     return satisfy(
       HeimdallCondition.noneOf(

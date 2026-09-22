@@ -1,4 +1,5 @@
 import 'package:heimdall_test/heimdall_test.dart';
+import 'package:heimdall_test/src/features/queries/declaration_location_queries.dart';
 
 /// Predicate-side DSL for exact class type name rules.
 extension ClassHaveTypeNamePredicateRules on ClassPredicateBuilder {
@@ -6,12 +7,12 @@ extension ClassHaveTypeNamePredicateRules on ClassPredicateBuilder {
   ClassPredicateBuilder haveTypeName(String name) => satisfy(_classHasTypeName(name));
 
   /// Selects declarations whose type name is not [name].
-  ClassPredicateBuilder noHaveTypeName(String name) {
+  ClassPredicateBuilder haveTypeNameDifferentFrom(String name) {
     return satisfy(_classDoesNotHaveTypeName(name));
   }
 
   /// Selects declarations with any name in [names].
-  ClassPredicateBuilder haveTypeNameAny(Iterable<String> names) {
+  ClassPredicateBuilder haveTypeNameEqualToAnyOf(Iterable<String> names) {
     final nameList = names.toNonEmptyList('names');
     return satisfy(
       HeimdallPredicate.anyOf(
@@ -22,7 +23,7 @@ extension ClassHaveTypeNamePredicateRules on ClassPredicateBuilder {
   }
 
   /// Selects declarations with every name in [names].
-  ClassPredicateBuilder haveTypeNameAll(Iterable<String> names) {
+  ClassPredicateBuilder haveTypeNameEqualToAllOf(Iterable<String> names) {
     final nameList = names.toNonEmptyList('names');
     return satisfy(
       HeimdallPredicate.allOf(
@@ -33,7 +34,7 @@ extension ClassHaveTypeNamePredicateRules on ClassPredicateBuilder {
   }
 
   /// Selects declarations with none of [names].
-  ClassPredicateBuilder haveTypeNameNone(Iterable<String> names) {
+  ClassPredicateBuilder haveTypeNameEqualToNoneOf(Iterable<String> names) {
     final nameList = names.toNonEmptyList('names');
     return satisfy(
       HeimdallPredicate.noneOf(
@@ -52,12 +53,12 @@ extension ClassHaveTypeNameShouldRules on ClassShouldBuilder {
   }
 
   /// Requires matching class type names to not equal [name].
-  HeimdallRule<CompilationUnitMember> noHaveTypeName(String name) {
+  HeimdallRule<CompilationUnitMember> haveTypeNameDifferentFrom(String name) {
     return satisfy(_classShouldNotHaveTypeName(name));
   }
 
   /// Requires matching class type names to equal at least one name in [names].
-  HeimdallRule<CompilationUnitMember> haveTypeNameAny(Iterable<String> names) {
+  HeimdallRule<CompilationUnitMember> haveTypeNameEqualToAnyOf(Iterable<String> names) {
     final nameList = names.toNonEmptyList('names');
     return satisfy(
       HeimdallCondition.anyOf(
@@ -68,7 +69,7 @@ extension ClassHaveTypeNameShouldRules on ClassShouldBuilder {
   }
 
   /// Requires matching class type names to equal every name in [names].
-  HeimdallRule<CompilationUnitMember> haveTypeNameAll(Iterable<String> names) {
+  HeimdallRule<CompilationUnitMember> haveTypeNameEqualToAllOf(Iterable<String> names) {
     final nameList = names.toNonEmptyList('names');
     return satisfy(
       HeimdallCondition.allOf(
@@ -79,7 +80,7 @@ extension ClassHaveTypeNameShouldRules on ClassShouldBuilder {
   }
 
   /// Requires matching class type names to equal none of [names].
-  HeimdallRule<CompilationUnitMember> haveTypeNameNone(Iterable<String> names) {
+  HeimdallRule<CompilationUnitMember> haveTypeNameEqualToNoneOf(Iterable<String> names) {
     final nameList = names.toNonEmptyList('names');
     return satisfy(
       HeimdallCondition.noneOf(
@@ -120,7 +121,7 @@ HeimdallCondition<CompilationUnitMember> _classShouldHaveTypeName(String name) {
 HeimdallCondition<CompilationUnitMember> _classShouldNotHaveTypeName(String name) {
   return HeimdallCondition('not have type name $name', (item, _) {
     final matches = item.name == name;
-    final location = matches ? item.sourceLocationAt(_declarationNameOffset(item)) : null;
+    final location = matches ? item.sourceLocationAt(declarationNameOffset(item)) : null;
     final findings = location == null
         ? const <HeimdallValidationInfo>[]
         : [
@@ -137,18 +138,4 @@ HeimdallCondition<CompilationUnitMember> _classShouldNotHaveTypeName(String name
       findings: findings,
     );
   });
-}
-
-int _declarationNameOffset(CompilationUnitMember item) {
-  return switch (item) {
-    ClassDeclaration(:final namePart) => namePart.offset,
-    MixinDeclaration(:final name) => name.offset,
-    EnumDeclaration(:final namePart) => namePart.offset,
-    ExtensionDeclaration(:final name?) => name.offset,
-    ExtensionTypeDeclaration(:final primaryConstructor) => primaryConstructor.typeName.offset,
-    TypeAlias(:final name) => name.offset,
-    FunctionDeclaration(:final name) => name.offset,
-    TopLevelVariableDeclaration(:final variables) => variables.variables.first.name.offset,
-    _ => item.offset,
-  };
 }

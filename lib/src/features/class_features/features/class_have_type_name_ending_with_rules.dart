@@ -1,4 +1,5 @@
 import 'package:heimdall_test/heimdall_test.dart';
+import 'package:heimdall_test/src/features/queries/declaration_location_queries.dart';
 
 /// Predicate-side DSL for class type name suffix rules.
 extension ClassHaveTypeNameEndingWithPredicateRules on ClassPredicateBuilder {
@@ -8,12 +9,12 @@ extension ClassHaveTypeNameEndingWithPredicateRules on ClassPredicateBuilder {
   }
 
   /// Selects declarations whose names do not end with [suffix].
-  ClassPredicateBuilder noHaveTypeNameEndingWith(String suffix) {
+  ClassPredicateBuilder notHaveTypeNameEndingWith(String suffix) {
     return satisfy(HeimdallPredicate('not have type name ending with $suffix', (item, _) => !item.name.endsWith(suffix)));
   }
 
   /// Selects declarations whose names end with at least one suffix in [suffixes].
-  ClassPredicateBuilder haveTypeNameEndingWithAny(Iterable<String> suffixes) {
+  ClassPredicateBuilder haveTypeNameEndingWithAnyOf(Iterable<String> suffixes) {
     final suffixList = suffixes.toNonEmptyList('suffixes');
     return satisfy(
       HeimdallPredicate.anyOf(
@@ -26,7 +27,7 @@ extension ClassHaveTypeNameEndingWithPredicateRules on ClassPredicateBuilder {
   }
 
   /// Selects declarations whose names end with every suffix in [suffixes].
-  ClassPredicateBuilder haveTypeNameEndingWithAll(Iterable<String> suffixes) {
+  ClassPredicateBuilder haveTypeNameEndingWithAllOf(Iterable<String> suffixes) {
     final suffixList = suffixes.toNonEmptyList('suffixes');
     return satisfy(
       HeimdallPredicate.allOf(
@@ -39,7 +40,7 @@ extension ClassHaveTypeNameEndingWithPredicateRules on ClassPredicateBuilder {
   }
 
   /// Selects declarations whose names end with none of [suffixes].
-  ClassPredicateBuilder haveTypeNameEndingWithNone(Iterable<String> suffixes) {
+  ClassPredicateBuilder haveTypeNameEndingWithNoneOf(Iterable<String> suffixes) {
     final suffixList = suffixes.toNonEmptyList('suffixes');
     return satisfy(
       HeimdallPredicate.noneOf(
@@ -60,12 +61,12 @@ extension ClassHaveTypeNameEndingWithShouldRules on ClassShouldBuilder {
   }
 
   /// Requires matching class type names to not end with [suffix].
-  HeimdallRule<CompilationUnitMember> noHaveTypeNameEndingWith(String suffix) {
+  HeimdallRule<CompilationUnitMember> notHaveTypeNameEndingWith(String suffix) {
     return satisfy(_classShouldNotHaveTypeNameEndingWith(suffix));
   }
 
   /// Requires matching class type names to end with at least one suffix in [suffixes].
-  HeimdallRule<CompilationUnitMember> haveTypeNameEndingWithAny(
+  HeimdallRule<CompilationUnitMember> haveTypeNameEndingWithAnyOf(
     Iterable<String> suffixes,
   ) {
     final suffixList = suffixes.toNonEmptyList('suffixes');
@@ -78,7 +79,7 @@ extension ClassHaveTypeNameEndingWithShouldRules on ClassShouldBuilder {
   }
 
   /// Requires matching class type names to end with every suffix in [suffixes].
-  HeimdallRule<CompilationUnitMember> haveTypeNameEndingWithAll(
+  HeimdallRule<CompilationUnitMember> haveTypeNameEndingWithAllOf(
     Iterable<String> suffixes,
   ) {
     final suffixList = suffixes.toNonEmptyList('suffixes');
@@ -91,7 +92,7 @@ extension ClassHaveTypeNameEndingWithShouldRules on ClassShouldBuilder {
   }
 
   /// Requires matching class type names to end with none of [suffixes].
-  HeimdallRule<CompilationUnitMember> haveTypeNameEndingWithNone(
+  HeimdallRule<CompilationUnitMember> haveTypeNameEndingWithNoneOf(
     Iterable<String> suffixes,
   ) {
     final suffixList = suffixes.toNonEmptyList('suffixes');
@@ -130,7 +131,7 @@ HeimdallCondition<CompilationUnitMember> _classShouldNotHaveTypeNameEndingWith(
 ) {
   return HeimdallCondition('not have type name ending with $suffix', (item, _) {
     final matches = item.name.endsWith(suffix);
-    final location = matches ? item.sourceLocationAt(_declarationNameOffset(item)) : null;
+    final location = matches ? item.sourceLocationAt(declarationNameOffset(item)) : null;
     final findings = location == null
         ? const <HeimdallValidationInfo>[]
         : [
@@ -147,18 +148,4 @@ HeimdallCondition<CompilationUnitMember> _classShouldNotHaveTypeNameEndingWith(
       findings: findings,
     );
   });
-}
-
-int _declarationNameOffset(CompilationUnitMember item) {
-  return switch (item) {
-    ClassDeclaration(:final namePart) => namePart.offset,
-    MixinDeclaration(:final name) => name.offset,
-    EnumDeclaration(:final namePart) => namePart.offset,
-    ExtensionDeclaration(:final name?) => name.offset,
-    ExtensionTypeDeclaration(:final primaryConstructor) => primaryConstructor.typeName.offset,
-    TypeAlias(:final name) => name.offset,
-    FunctionDeclaration(:final name) => name.offset,
-    TopLevelVariableDeclaration(:final variables) => variables.variables.first.name.offset,
-    _ => item.offset,
-  };
 }

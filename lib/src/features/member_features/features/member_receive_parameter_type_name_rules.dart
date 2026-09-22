@@ -25,7 +25,7 @@ extension MemberReceiveParameterTypeNamePredicateRules on MemberPredicateBuilder
   }
 
   /// Selects members that do not satisfy `receiveParameterTypeName`.
-  MemberPredicateBuilder noReceiveParameterTypeName(String typeName) {
+  MemberPredicateBuilder notReceiveParameterTypeName(String typeName) {
     return satisfy(
       HeimdallPredicate(
         'not receive parameter type name $typeName',
@@ -39,7 +39,7 @@ extension MemberReceiveParameterTypeNamePredicateRules on MemberPredicateBuilder
   }
 
   /// Selects executable members that receive parameter type name every value in [typeNames].
-  MemberPredicateBuilder receiveParameterTypeNameAll(Iterable<String> typeNames) {
+  MemberPredicateBuilder receiveParameterTypeNameAllOf(Iterable<String> typeNames) {
     final valueList = typeNames.toNonEmptyList('typeNames');
     return satisfy(
       HeimdallPredicate.allOf(
@@ -59,7 +59,7 @@ extension MemberReceiveParameterTypeNamePredicateRules on MemberPredicateBuilder
   }
 
   /// Selects executable members that receive parameter type name at least one value in [typeNames].
-  MemberPredicateBuilder receiveParameterTypeNameAny(Iterable<String> typeNames) {
+  MemberPredicateBuilder receiveParameterTypeNameAnyOf(Iterable<String> typeNames) {
     final valueList = typeNames.toNonEmptyList('typeNames');
     return satisfy(
       HeimdallPredicate.anyOf(
@@ -79,7 +79,7 @@ extension MemberReceiveParameterTypeNamePredicateRules on MemberPredicateBuilder
   }
 
   /// Selects executable members that receive none of the parameter type names in [typeNames].
-  MemberPredicateBuilder receiveParameterTypeNameNone(Iterable<String> typeNames) {
+  MemberPredicateBuilder receiveParameterTypeNameNoneOf(Iterable<String> typeNames) {
     final valueList = typeNames.toNonEmptyList('typeNames');
     return satisfy(
       HeimdallPredicate.noneOf(
@@ -116,7 +116,7 @@ extension MemberReceiveParameterTypeNameShouldRules on MemberShouldBuilder {
   }
 
   /// Requires members not to satisfy `receiveParameterTypeName`.
-  HeimdallRule<ClassMember> noReceiveParameterTypeName(String typeName) {
+  HeimdallRule<ClassMember> notReceiveParameterTypeName(String typeName) {
     return satisfy(
       prohibitedMemberCondition(
         'receive parameter type name $typeName',
@@ -130,7 +130,7 @@ extension MemberReceiveParameterTypeNameShouldRules on MemberShouldBuilder {
   }
 
   /// Requires executable members to receive parameter type name every value in [typeNames].
-  HeimdallRule<ClassMember> receiveParameterTypeNameAll(Iterable<String> typeNames) {
+  HeimdallRule<ClassMember> receiveParameterTypeNameAllOf(Iterable<String> typeNames) {
     final valueList = typeNames.toNonEmptyList('typeNames');
     return satisfy(
       HeimdallCondition.allOf(
@@ -150,7 +150,7 @@ extension MemberReceiveParameterTypeNameShouldRules on MemberShouldBuilder {
   }
 
   /// Requires executable members to receive parameter type name at least one value in [typeNames].
-  HeimdallRule<ClassMember> receiveParameterTypeNameAny(Iterable<String> typeNames) {
+  HeimdallRule<ClassMember> receiveParameterTypeNameAnyOf(Iterable<String> typeNames) {
     final valueList = typeNames.toNonEmptyList('typeNames');
     return satisfy(
       HeimdallCondition.anyOf(
@@ -170,7 +170,7 @@ extension MemberReceiveParameterTypeNameShouldRules on MemberShouldBuilder {
   }
 
   /// Requires executable members to receive none of the parameter type names in [typeNames].
-  HeimdallRule<ClassMember> receiveParameterTypeNameNone(Iterable<String> typeNames) {
+  HeimdallRule<ClassMember> receiveParameterTypeNameNoneOf(Iterable<String> typeNames) {
     final valueList = typeNames.toNonEmptyList('typeNames');
     return satisfy(
       HeimdallCondition.noneOf(

@@ -13,7 +13,7 @@ extension FilePartDirectivePredicateRules on FilePredicateBuilder {
   }
 
   /// Selects files that do not declare a `library` directive.
-  FilePredicateBuilder noHaveLibraryDirective() {
+  FilePredicateBuilder haveNoLibraryDirective() {
     return satisfy(
       HeimdallPredicate(
         'not have library directive',
@@ -33,7 +33,7 @@ extension FilePartDirectivePredicateRules on FilePredicateBuilder {
   }
 
   /// Selects files that do not declare a `part of` directive.
-  FilePredicateBuilder notUsePartOfDirective() {
+  FilePredicateBuilder haveNoPartOfDirective() {
     return satisfy(
       HeimdallPredicate(
         'not use part of directive',
@@ -68,7 +68,7 @@ extension FilePartDirectiveShouldRules on FileShouldBuilder {
   }
 
   /// Requires matching files to not declare a `library` directive.
-  HeimdallRule<HeimdallSourceFile> noHaveLibraryDirective() {
+  HeimdallRule<HeimdallSourceFile> haveNoLibraryDirective() {
     return satisfy(
       HeimdallCondition('not have library directive', (item, _) {
         final directive = item.libraryDirective;
@@ -115,7 +115,7 @@ extension FilePartDirectiveShouldRules on FileShouldBuilder {
   }
 
   /// Requires matching files not to declare a `part of` directive.
-  HeimdallRule<HeimdallSourceFile> notUsePartOfDirective() {
+  HeimdallRule<HeimdallSourceFile> haveNoPartOfDirective() {
     return satisfy(
       HeimdallCondition('not use part of directive', (item, _) {
         final findings = item.partOfDirectives

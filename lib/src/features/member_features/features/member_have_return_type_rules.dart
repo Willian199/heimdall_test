@@ -5,28 +5,28 @@ import 'package:heimdall_test/src/core/heimdall_predicate.dart';
 import 'package:heimdall_test/src/core/member_rules/member_predicate_builder.dart';
 import 'package:heimdall_test/src/core/member_rules/member_should_builder.dart';
 import 'package:heimdall_test/src/core/non_empty_iterable.dart';
+import 'package:heimdall_test/src/features/member_features/helpers/member_return_type_rule_helpers.dart';
 import 'package:heimdall_test/src/features/queries/member_queries.dart';
-import 'package:heimdall_test/src/mapper/model/heimdall_member.dart';
 
-/// Predicate-side DSL for raw return or field type rules.
+/// Predicate-side DSL for raw method return type rules.
 extension MemberHaveReturnTypePredicateRules on MemberPredicateBuilder {
-  /// Selects members with textual return or field type [type].
+  /// Selects members with textual method return type [type].
   MemberPredicateBuilder haveReturnType(String type) {
     return satisfy(_memberHasReturnType(type));
   }
 
   /// Selects members that do not satisfy `haveReturnType`.
-  MemberPredicateBuilder noHaveReturnType(String type) {
+  MemberPredicateBuilder notHaveReturnType(String type) {
     return satisfy(
       HeimdallPredicate(
         'not have return type $type',
-        (item, project) => item.type != type,
+        (item, project) => memberReturnTypeName(item) != type,
       ),
     );
   }
 
-  /// Selects members with any raw return or field type in [types].
-  MemberPredicateBuilder haveReturnTypeAny(Iterable<String> types) {
+  /// Selects members with any raw method return type in [types].
+  MemberPredicateBuilder haveReturnTypeEqualToAnyOf(Iterable<String> types) {
     final typeList = types.toNonEmptyList('types');
     return satisfy(
       HeimdallPredicate.anyOf(
@@ -36,8 +36,8 @@ extension MemberHaveReturnTypePredicateRules on MemberPredicateBuilder {
     );
   }
 
-  /// Selects members with every raw return or field type in [types].
-  MemberPredicateBuilder haveReturnTypeAll(Iterable<String> types) {
+  /// Selects members with every raw method return type in [types].
+  MemberPredicateBuilder haveReturnTypeEqualToAllOf(Iterable<String> types) {
     final typeList = types.toNonEmptyList('types');
     return satisfy(
       HeimdallPredicate.allOf(
@@ -47,8 +47,8 @@ extension MemberHaveReturnTypePredicateRules on MemberPredicateBuilder {
     );
   }
 
-  /// Selects members with none of the raw return or field types in [types].
-  MemberPredicateBuilder haveReturnTypeNone(Iterable<String> types) {
+  /// Selects members with none of the raw method return types in [types].
+  MemberPredicateBuilder haveReturnTypeEqualToNoneOf(Iterable<String> types) {
     final typeList = types.toNonEmptyList('types');
     return satisfy(
       HeimdallPredicate.noneOf(
@@ -59,25 +59,25 @@ extension MemberHaveReturnTypePredicateRules on MemberPredicateBuilder {
   }
 }
 
-/// Condition-side DSL for raw return or field type rules.
+/// Condition-side DSL for raw method return type rules.
 extension MemberHaveReturnTypeShouldRules on MemberShouldBuilder {
-  /// Requires members to have textual return or field type [type].
+  /// Requires members to have textual method return type [type].
   HeimdallRule<ClassMember> haveReturnType(String type) {
     return satisfy(_memberShouldHaveReturnType(type));
   }
 
   /// Requires members not to satisfy `haveReturnType`.
-  HeimdallRule<ClassMember> noHaveReturnType(String type) {
+  HeimdallRule<ClassMember> notHaveReturnType(String type) {
     return satisfy(
       prohibitedMemberCondition(
         'have return type $type',
-        (item, project) => item.type == type,
+        (item, project) => memberReturnTypeName(item) == type,
       ),
     );
   }
 
-  /// Requires members to have any raw return or field type in [types].
-  HeimdallRule<ClassMember> haveReturnTypeAny(Iterable<String> types) {
+  /// Requires members to have any raw method return type in [types].
+  HeimdallRule<ClassMember> haveReturnTypeEqualToAnyOf(Iterable<String> types) {
     final typeList = types.toNonEmptyList('types');
     return satisfy(
       HeimdallCondition.anyOf(
@@ -87,8 +87,8 @@ extension MemberHaveReturnTypeShouldRules on MemberShouldBuilder {
     );
   }
 
-  /// Requires members to have every raw return or field type in [types].
-  HeimdallRule<ClassMember> haveReturnTypeAll(Iterable<String> types) {
+  /// Requires members to have every raw method return type in [types].
+  HeimdallRule<ClassMember> haveReturnTypeEqualToAllOf(Iterable<String> types) {
     final typeList = types.toNonEmptyList('types');
     return satisfy(
       HeimdallCondition.allOf(
@@ -98,8 +98,8 @@ extension MemberHaveReturnTypeShouldRules on MemberShouldBuilder {
     );
   }
 
-  /// Requires members to have none of the raw return or field types in [types].
-  HeimdallRule<ClassMember> haveReturnTypeNone(Iterable<String> types) {
+  /// Requires members to have none of the raw method return types in [types].
+  HeimdallRule<ClassMember> haveReturnTypeEqualToNoneOf(Iterable<String> types) {
     final typeList = types.toNonEmptyList('types');
     return satisfy(
       HeimdallCondition.noneOf(
@@ -113,13 +113,13 @@ extension MemberHaveReturnTypeShouldRules on MemberShouldBuilder {
 HeimdallPredicate<ClassMember> _memberHasReturnType(String type) {
   return HeimdallPredicate(
     'have raw return type $type',
-    (item, _) => item.type == type,
+    (item, _) => memberReturnTypeName(item) == type,
   );
 }
 
 HeimdallCondition<ClassMember> _memberShouldHaveReturnType(String type) {
   return memberCondition(
     'have raw return type $type',
-    (item, _) => item.type == type,
+    (item, _) => memberReturnTypeName(item) == type,
   );
 }

@@ -1,20 +1,21 @@
 import 'package:heimdall_test/heimdall_test.dart';
+import 'package:heimdall_test/src/features/member_features/helpers/member_return_type_rule_helpers.dart';
 import 'package:heimdall_test/src/features/queries/member_queries.dart';
 
-/// Predicate-side DSL for member return or field type-name rules.
+/// Predicate-side DSL for member method return type-name rules.
 extension MemberHaveReturnTypeNameMatchingPredicateRules on MemberPredicateBuilder {
-  /// Selects members whose return or field type name matches [pattern].
+  /// Selects members whose method return type name matches [pattern].
   MemberPredicateBuilder haveReturnTypeNameMatching(RegExp pattern) {
     return satisfy(_memberReturnTypeName(pattern));
   }
 
   /// Selects members that do not satisfy `haveReturnTypeNameMatching`.
-  MemberPredicateBuilder noHaveReturnTypeNameMatching(RegExp pattern) {
+  MemberPredicateBuilder notHaveReturnTypeNameMatching(RegExp pattern) {
     return satisfy(_memberDoesNotHaveReturnTypeNameMatching(pattern));
   }
 
-  /// Selects members whose return or field type name matches any value in [patterns].
-  MemberPredicateBuilder haveReturnTypeNameMatchingAny(Iterable<RegExp> patterns) {
+  /// Selects members whose method return type name matches any value in [patterns].
+  MemberPredicateBuilder haveReturnTypeNameMatchingAnyOf(Iterable<RegExp> patterns) {
     final valueList = patterns.toNonEmptyList('patterns');
     return satisfy(
       HeimdallPredicate.anyOf(
@@ -24,8 +25,8 @@ extension MemberHaveReturnTypeNameMatchingPredicateRules on MemberPredicateBuild
     );
   }
 
-  /// Selects members whose return or field type name matches every value in [patterns].
-  MemberPredicateBuilder haveReturnTypeNameMatchingAll(Iterable<RegExp> patterns) {
+  /// Selects members whose method return type name matches every value in [patterns].
+  MemberPredicateBuilder haveReturnTypeNameMatchingAllOf(Iterable<RegExp> patterns) {
     final valueList = patterns.toNonEmptyList('patterns');
     return satisfy(
       HeimdallPredicate.allOf(
@@ -35,8 +36,8 @@ extension MemberHaveReturnTypeNameMatchingPredicateRules on MemberPredicateBuild
     );
   }
 
-  /// Selects members whose return or field type name matches none of [patterns].
-  MemberPredicateBuilder haveReturnTypeNameMatchingNone(Iterable<RegExp> patterns) {
+  /// Selects members whose method return type name matches none of [patterns].
+  MemberPredicateBuilder haveReturnTypeNameMatchingNoneOf(Iterable<RegExp> patterns) {
     final valueList = patterns.toNonEmptyList('patterns');
     return satisfy(
       HeimdallPredicate.noneOf(
@@ -47,20 +48,20 @@ extension MemberHaveReturnTypeNameMatchingPredicateRules on MemberPredicateBuild
   }
 }
 
-/// Condition-side DSL for member return or field type-name rules.
+/// Condition-side DSL for member method return type-name rules.
 extension MemberHaveReturnTypeNameMatchingShouldRules on MemberShouldBuilder {
-  /// Requires members to have a return or field type name matching [pattern].
+  /// Requires members to have a method return type name matching [pattern].
   HeimdallRule<ClassMember> haveReturnTypeNameMatching(RegExp pattern) {
     return satisfy(_memberShouldHaveReturnTypeName(pattern));
   }
 
   /// Requires members not to satisfy `haveReturnTypeNameMatching`.
-  HeimdallRule<ClassMember> noHaveReturnTypeNameMatching(RegExp pattern) {
+  HeimdallRule<ClassMember> notHaveReturnTypeNameMatching(RegExp pattern) {
     return satisfy(_memberShouldNotHaveReturnTypeNameMatching(pattern));
   }
 
-  /// Requires members to have a return or field type name matching any value in [patterns].
-  HeimdallRule<ClassMember> haveReturnTypeNameMatchingAny(Iterable<RegExp> patterns) {
+  /// Requires members to have a method return type name matching any value in [patterns].
+  HeimdallRule<ClassMember> haveReturnTypeNameMatchingAnyOf(Iterable<RegExp> patterns) {
     final valueList = patterns.toNonEmptyList('patterns');
     return satisfy(
       HeimdallCondition.anyOf(
@@ -70,8 +71,8 @@ extension MemberHaveReturnTypeNameMatchingShouldRules on MemberShouldBuilder {
     );
   }
 
-  /// Requires members to have a return or field type name matching every value in [patterns].
-  HeimdallRule<ClassMember> haveReturnTypeNameMatchingAll(Iterable<RegExp> patterns) {
+  /// Requires members to have a method return type name matching every value in [patterns].
+  HeimdallRule<ClassMember> haveReturnTypeNameMatchingAllOf(Iterable<RegExp> patterns) {
     final valueList = patterns.toNonEmptyList('patterns');
     return satisfy(
       HeimdallCondition.allOf(
@@ -81,8 +82,8 @@ extension MemberHaveReturnTypeNameMatchingShouldRules on MemberShouldBuilder {
     );
   }
 
-  /// Requires members to have a return or field type name matching none of [patterns].
-  HeimdallRule<ClassMember> haveReturnTypeNameMatchingNone(Iterable<RegExp> patterns) {
+  /// Requires members to have a method return type name matching none of [patterns].
+  HeimdallRule<ClassMember> haveReturnTypeNameMatchingNoneOf(Iterable<RegExp> patterns) {
     final valueList = patterns.toNonEmptyList('patterns');
     return satisfy(
       HeimdallCondition.noneOf(
@@ -96,13 +97,13 @@ extension MemberHaveReturnTypeNameMatchingShouldRules on MemberShouldBuilder {
 HeimdallPredicate<ClassMember> _memberReturnTypeName(RegExp pattern) {
   return HeimdallPredicate(
     'have return type name matching ${pattern.pattern}',
-    (item, _) => item.type != null && pattern.hasMatch(item.type!),
+    (item, _) => memberReturnTypeName(item) != null && pattern.hasMatch(memberReturnTypeName(item)!),
   );
 }
 
 HeimdallCondition<ClassMember> _memberShouldHaveReturnTypeName(RegExp pattern) {
   return HeimdallCondition('have return type name matching ${pattern.pattern}', (item, _) {
-    final type = item.type;
+    final type = memberReturnTypeName(item);
     final matches = type != null && pattern.hasMatch(type);
     final location = item.location;
     final findings = [
@@ -132,13 +133,13 @@ HeimdallCondition<ClassMember> _memberShouldHaveReturnTypeName(RegExp pattern) {
 HeimdallCondition<ClassMember> _memberShouldNotHaveReturnTypeNameMatching(RegExp pattern) {
   return prohibitedMemberCondition(
     'have return type name matching ${pattern.pattern}',
-    (item, _) => item.type != null && pattern.hasMatch(item.type!),
+    (item, _) => memberReturnTypeName(item) != null && pattern.hasMatch(memberReturnTypeName(item)!),
   );
 }
 
 HeimdallPredicate<ClassMember> _memberDoesNotHaveReturnTypeNameMatching(RegExp pattern) {
   return HeimdallPredicate(
     'not have return type name matching ${pattern.pattern}',
-    (item, project) => item.type == null || !pattern.hasMatch(item.type!),
+    (item, project) => memberReturnTypeName(item) == null || !pattern.hasMatch(memberReturnTypeName(item)!),
   );
 }

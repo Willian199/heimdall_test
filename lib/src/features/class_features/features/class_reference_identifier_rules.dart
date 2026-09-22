@@ -1,5 +1,6 @@
 import 'package:analyzer/dart/ast/visitor.dart';
 import 'package:heimdall_test/heimdall_test.dart';
+import 'package:heimdall_test/src/features/class_features/helpers/declaration_condition.dart';
 
 /// Predicate-side DSL for raw identifier reference rules.
 extension ClassReferenceIdentifierPredicateRules on ClassPredicateBuilder {
@@ -14,7 +15,7 @@ extension ClassReferenceIdentifierPredicateRules on ClassPredicateBuilder {
   }
 
   /// Selects classes that do not reference an identifier named [identifierName].
-  ClassPredicateBuilder noReferenceIdentifier(String identifierName) {
+  ClassPredicateBuilder notReferenceIdentifier(String identifierName) {
     return satisfy(
       HeimdallPredicate(
         'not reference identifier $identifierName',
@@ -31,7 +32,7 @@ extension ClassReferenceIdentifierShouldRules on ClassShouldBuilder {
     String identifierName,
   ) {
     return satisfy(
-      _referenceIdentifierCondition(
+      declarationCondition(
         'reference identifier $identifierName',
         (item) => _referencesIdentifier(item, identifierName),
       ),
@@ -39,37 +40,16 @@ extension ClassReferenceIdentifierShouldRules on ClassShouldBuilder {
   }
 
   /// Requires classes not to reference an identifier named [identifierName].
-  HeimdallRule<CompilationUnitMember> noReferenceIdentifier(
+  HeimdallRule<CompilationUnitMember> notReferenceIdentifier(
     String identifierName,
   ) {
     return satisfy(
-      _referenceIdentifierCondition(
+      declarationCondition(
         'not reference identifier $identifierName',
         (item) => !_referencesIdentifier(item, identifierName),
       ),
     );
   }
-}
-
-HeimdallCondition<CompilationUnitMember> _referenceIdentifierCondition(
-  String description,
-  bool Function(CompilationUnitMember item) test,
-) {
-  return HeimdallCondition(description, (item, _) {
-    final passed = test(item);
-    return HeimdallFindings(
-      subject: item,
-      passed: passed,
-      findings: [
-        if (!passed)
-          HeimdallValidationInfo(
-            filePath: item.sourcePath,
-            line: item.line,
-            message: '${item.name} should $description',
-          ),
-      ],
-    );
-  });
 }
 
 bool _referencesIdentifier(CompilationUnitMember item, String identifierName) {

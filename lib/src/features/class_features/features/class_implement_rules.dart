@@ -1,46 +1,47 @@
 import 'package:heimdall_test/heimdall_test.dart';
+import 'package:heimdall_test/src/features/queries/declaration_rule_predicates.dart';
 import 'package:heimdall_test/src/features/queries/declaration_type_queries.dart';
 
 /// Predicate-side DSL for exact class implementation rules.
 extension ClassImplementPredicateRules on ClassPredicateBuilder {
   /// Selects classes that implement [typeName].
   ClassPredicateBuilder implement(String typeName) {
-    return satisfy(_classImplements(typeName));
+    return satisfy(classImplements(typeName));
   }
 
   /// Selects classes that do not implement [typeName].
-  ClassPredicateBuilder noImplement(String typeName) {
+  ClassPredicateBuilder notImplement(String typeName) {
     return satisfy(_classDoesNotImplement(typeName));
   }
 
   /// Selects classes that implement at least one type in [typeNames].
-  ClassPredicateBuilder implementAny(Iterable<String> typeNames) {
+  ClassPredicateBuilder implementAnyOf(Iterable<String> typeNames) {
     final typeList = typeNames.toNonEmptyList('typeNames');
     return satisfy(
       HeimdallPredicate.anyOf(
-        typeList.map(_classImplements),
+        typeList.map(classImplements),
         description: 'implement any of ${typeList.join(', ')}',
       ),
     );
   }
 
   /// Selects classes that implement every type in [typeNames].
-  ClassPredicateBuilder implementAll(Iterable<String> typeNames) {
+  ClassPredicateBuilder implementAllOf(Iterable<String> typeNames) {
     final typeList = typeNames.toNonEmptyList('typeNames');
     return satisfy(
       HeimdallPredicate.allOf(
-        typeList.map(_classImplements),
+        typeList.map(classImplements),
         description: 'implement all of ${typeList.join(', ')}',
       ),
     );
   }
 
   /// Selects classes that implement none of [typeNames].
-  ClassPredicateBuilder implementNone(Iterable<String> typeNames) {
+  ClassPredicateBuilder implementNoneOf(Iterable<String> typeNames) {
     final typeList = typeNames.toNonEmptyList('typeNames');
     return satisfy(
       HeimdallPredicate.noneOf(
-        typeList.map(_classImplements),
+        typeList.map(classImplements),
         description: 'implement none of ${typeList.join(', ')}',
       ),
     );
@@ -55,12 +56,12 @@ extension ClassImplementShouldRules on ClassShouldBuilder {
   }
 
   /// Requires matching classes to not implement [typeName].
-  HeimdallRule<CompilationUnitMember> noImplement(String typeName) {
+  HeimdallRule<CompilationUnitMember> notImplement(String typeName) {
     return satisfy(_classShouldNotImplement(typeName));
   }
 
   /// Requires matching classes to implement at least one type in [typeNames].
-  HeimdallRule<CompilationUnitMember> implementAny(Iterable<String> typeNames) {
+  HeimdallRule<CompilationUnitMember> implementAnyOf(Iterable<String> typeNames) {
     final typeList = typeNames.toNonEmptyList('typeNames');
     return satisfy(
       HeimdallCondition.anyOf(
@@ -71,7 +72,7 @@ extension ClassImplementShouldRules on ClassShouldBuilder {
   }
 
   /// Requires matching classes to implement every type in [typeNames].
-  HeimdallRule<CompilationUnitMember> implementAll(Iterable<String> typeNames) {
+  HeimdallRule<CompilationUnitMember> implementAllOf(Iterable<String> typeNames) {
     final typeList = typeNames.toNonEmptyList('typeNames');
     return satisfy(
       HeimdallCondition.allOf(
@@ -82,7 +83,7 @@ extension ClassImplementShouldRules on ClassShouldBuilder {
   }
 
   /// Requires matching classes to implement none of [typeNames].
-  HeimdallRule<CompilationUnitMember> implementNone(Iterable<String> typeNames) {
+  HeimdallRule<CompilationUnitMember> implementNoneOf(Iterable<String> typeNames) {
     final typeList = typeNames.toNonEmptyList('typeNames');
     return satisfy(
       HeimdallCondition.noneOf(
@@ -91,13 +92,6 @@ extension ClassImplementShouldRules on ClassShouldBuilder {
       ),
     );
   }
-}
-
-HeimdallPredicate<CompilationUnitMember> _classImplements(String typeName) {
-  return HeimdallPredicate(
-    'implement $typeName',
-    (item, project) => implementsType(item, typeName, project),
-  );
 }
 
 HeimdallPredicate<CompilationUnitMember> _classDoesNotImplement(String typeName) {

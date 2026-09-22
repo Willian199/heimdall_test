@@ -11,7 +11,7 @@ extension ClassDependOnClassesThatPredicateRules on ClassPredicateBuilder {
   }
 
   /// Selects declarations that do not depend on targets matching [targetPredicate].
-  ClassPredicateBuilder noDependOnClassesThat(
+  ClassPredicateBuilder notDependOnClassesThat(
     HeimdallPredicate<CompilationUnitMember> targetPredicate,
   ) {
     return satisfy(
@@ -26,7 +26,7 @@ extension ClassDependOnClassesThatPredicateRules on ClassPredicateBuilder {
   }
 
   /// Selects declarations that depend on all target predicate groups in [targetPredicates].
-  ClassPredicateBuilder dependOnAllClassesThat(
+  ClassPredicateBuilder dependOnClassesMatchingAllOf(
     Iterable<HeimdallPredicate<CompilationUnitMember>> targetPredicates,
   ) {
     final predicateList = targetPredicates.toNonEmptyList('targetPredicates');
@@ -49,7 +49,7 @@ extension ClassDependOnClassesThatPredicateRules on ClassPredicateBuilder {
   }
 
   /// Selects declarations that depend on at least one target predicate in [targetPredicates].
-  ClassPredicateBuilder dependOnAnyClassesThat(
+  ClassPredicateBuilder dependOnClassesMatchingAnyOf(
     Iterable<HeimdallPredicate<CompilationUnitMember>> targetPredicates,
   ) {
     final predicateList = targetPredicates.toNonEmptyList('targetPredicates');
@@ -72,7 +72,7 @@ extension ClassDependOnClassesThatPredicateRules on ClassPredicateBuilder {
   }
 
   /// Selects declarations that depend on none of [targetPredicates].
-  ClassPredicateBuilder dependOnNoClassesThat(
+  ClassPredicateBuilder dependOnClassesMatchingNoneOf(
     Iterable<HeimdallPredicate<CompilationUnitMember>> targetPredicates,
   ) {
     final predicateList = targetPredicates.toNonEmptyList('targetPredicates');
@@ -107,14 +107,14 @@ extension ClassDependOnClassesThatShouldRules on ClassShouldBuilder {
   }
 
   /// Requires matching classes to not depend on classes selected by [targetPredicate].
-  HeimdallRule<CompilationUnitMember> noDependOnClassesThat(
+  HeimdallRule<CompilationUnitMember> notDependOnClassesThat(
     HeimdallPredicate<CompilationUnitMember> targetPredicate,
   ) {
     return satisfy(_classShouldNotDependOnClassesThat(targetPredicate));
   }
 
   /// Requires matching classes to depend on all target predicate groups in [targetPredicates].
-  HeimdallRule<CompilationUnitMember> dependOnAllClassesThat(
+  HeimdallRule<CompilationUnitMember> dependOnClassesMatchingAllOf(
     Iterable<HeimdallPredicate<CompilationUnitMember>> targetPredicates,
   ) {
     final predicateList = targetPredicates.toNonEmptyList('targetPredicates');
@@ -127,7 +127,7 @@ extension ClassDependOnClassesThatShouldRules on ClassShouldBuilder {
   }
 
   /// Requires matching classes to depend on at least one target predicate in [targetPredicates].
-  HeimdallRule<CompilationUnitMember> dependOnAnyClassesThat(
+  HeimdallRule<CompilationUnitMember> dependOnClassesMatchingAnyOf(
     Iterable<HeimdallPredicate<CompilationUnitMember>> targetPredicates,
   ) {
     final predicateList = targetPredicates.toNonEmptyList('targetPredicates');
@@ -140,7 +140,7 @@ extension ClassDependOnClassesThatShouldRules on ClassShouldBuilder {
   }
 
   /// Requires matching classes to depend on none of [targetPredicates].
-  HeimdallRule<CompilationUnitMember> dependOnNoClassesThat(
+  HeimdallRule<CompilationUnitMember> dependOnClassesMatchingNoneOf(
     Iterable<HeimdallPredicate<CompilationUnitMember>> targetPredicates,
   ) {
     final predicateList = targetPredicates.toNonEmptyList('targetPredicates');

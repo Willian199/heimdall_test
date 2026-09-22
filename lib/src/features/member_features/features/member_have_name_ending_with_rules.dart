@@ -9,12 +9,12 @@ extension MemberHaveNameEndingWithPredicateRules on MemberPredicateBuilder {
   }
 
   /// Selects members that do not satisfy `haveNameEndingWith`.
-  MemberPredicateBuilder noHaveNameEndingWith(String suffix) {
+  MemberPredicateBuilder notHaveNameEndingWith(String suffix) {
     return satisfy(_memberDoesNotHaveNameEndingWith(suffix));
   }
 
   /// Selects members whose names end with at least one suffix in [suffixes].
-  MemberPredicateBuilder haveNameEndingWithAny(Iterable<String> suffixes) {
+  MemberPredicateBuilder haveNameEndingWithAnyOf(Iterable<String> suffixes) {
     final suffixList = suffixes.toNonEmptyList('suffixes');
     return satisfy(
       HeimdallPredicate.anyOf(
@@ -25,7 +25,7 @@ extension MemberHaveNameEndingWithPredicateRules on MemberPredicateBuilder {
   }
 
   /// Selects members whose names end with every suffix in [suffixes].
-  MemberPredicateBuilder haveNameEndingWithAll(Iterable<String> suffixes) {
+  MemberPredicateBuilder haveNameEndingWithAllOf(Iterable<String> suffixes) {
     final suffixList = suffixes.toNonEmptyList('suffixes');
     return satisfy(
       HeimdallPredicate.allOf(
@@ -36,7 +36,7 @@ extension MemberHaveNameEndingWithPredicateRules on MemberPredicateBuilder {
   }
 
   /// Selects members whose names end with none of [suffixes].
-  MemberPredicateBuilder haveNameEndingWithNone(Iterable<String> suffixes) {
+  MemberPredicateBuilder haveNameEndingWithNoneOf(Iterable<String> suffixes) {
     final suffixList = suffixes.toNonEmptyList('suffixes');
     return satisfy(
       HeimdallPredicate.noneOf(
@@ -55,12 +55,12 @@ extension MemberHaveNameEndingWithShouldRules on MemberShouldBuilder {
   }
 
   /// Requires members not to satisfy `haveNameEndingWith`.
-  HeimdallRule<ClassMember> noHaveNameEndingWith(String suffix) {
+  HeimdallRule<ClassMember> notHaveNameEndingWith(String suffix) {
     return satisfy(_memberShouldNotHaveNameEndingWith(suffix));
   }
 
   /// Requires member names to end with at least one suffix in [suffixes].
-  HeimdallRule<ClassMember> haveNameEndingWithAny(Iterable<String> suffixes) {
+  HeimdallRule<ClassMember> haveNameEndingWithAnyOf(Iterable<String> suffixes) {
     final suffixList = suffixes.toNonEmptyList('suffixes');
     return satisfy(
       HeimdallCondition.anyOf(
@@ -71,7 +71,7 @@ extension MemberHaveNameEndingWithShouldRules on MemberShouldBuilder {
   }
 
   /// Requires member names to end with every suffix in [suffixes].
-  HeimdallRule<ClassMember> haveNameEndingWithAll(Iterable<String> suffixes) {
+  HeimdallRule<ClassMember> haveNameEndingWithAllOf(Iterable<String> suffixes) {
     final suffixList = suffixes.toNonEmptyList('suffixes');
     return satisfy(
       HeimdallCondition.allOf(
@@ -82,7 +82,7 @@ extension MemberHaveNameEndingWithShouldRules on MemberShouldBuilder {
   }
 
   /// Requires member names to end with none of [suffixes].
-  HeimdallRule<ClassMember> haveNameEndingWithNone(Iterable<String> suffixes) {
+  HeimdallRule<ClassMember> haveNameEndingWithNoneOf(Iterable<String> suffixes) {
     final suffixList = suffixes.toNonEmptyList('suffixes');
     return satisfy(
       HeimdallCondition.noneOf(

@@ -9,7 +9,7 @@ extension MemberCallConstructorPredicateRules on MemberPredicateBuilder {
   }
 
   /// Selects members that do not satisfy `callConstructor`.
-  MemberPredicateBuilder noCallConstructor(String typeName) {
+  MemberPredicateBuilder notCallConstructor(String typeName) {
     return satisfy(
       HeimdallPredicate(
         'not call constructor $typeName',
@@ -58,7 +58,7 @@ extension MemberCallConstructorShouldRules on MemberShouldBuilder {
   HeimdallRule<ClassMember> callConstructor(String typeName) => satisfy(_memberShouldCallConstructor(typeName));
 
   /// Requires members not to satisfy `callConstructor`.
-  HeimdallRule<ClassMember> noCallConstructor(String typeName) {
+  HeimdallRule<ClassMember> notCallConstructor(String typeName) {
     return satisfy(
       prohibitedMemberCondition(
         'call constructor $typeName',

@@ -1,20 +1,21 @@
 import 'package:heimdall_test/heimdall_test.dart';
+import 'package:heimdall_test/src/features/member_features/helpers/member_return_type_rule_helpers.dart';
 import 'package:heimdall_test/src/features/queries/member_queries.dart';
 
-/// Predicate-side DSL for member return or field type-name rules.
+/// Predicate-side DSL for member method return type-name rules.
 extension MemberHaveReturnTypeNameStartingWithPredicateRules on MemberPredicateBuilder {
-  /// Selects members whose return or field type name matches [prefix].
+  /// Selects members whose method return type name matches [prefix].
   MemberPredicateBuilder haveReturnTypeNameStartingWith(String prefix) {
     return satisfy(_memberReturnTypeName(prefix));
   }
 
   /// Selects members that do not satisfy `haveReturnTypeNameStartingWith`.
-  MemberPredicateBuilder noHaveReturnTypeNameStartingWith(String prefix) {
+  MemberPredicateBuilder notHaveReturnTypeNameStartingWith(String prefix) {
     return satisfy(_memberDoesNotHaveReturnTypeNameStartingWith(prefix));
   }
 
-  /// Selects members whose return or field type name matches any value in [prefixes].
-  MemberPredicateBuilder haveReturnTypeNameStartingWithAny(Iterable<String> prefixes) {
+  /// Selects members whose method return type name matches any value in [prefixes].
+  MemberPredicateBuilder haveReturnTypeNameStartingWithAnyOf(Iterable<String> prefixes) {
     final valueList = prefixes.toNonEmptyList('prefixes');
     return satisfy(
       HeimdallPredicate.anyOf(
@@ -24,8 +25,8 @@ extension MemberHaveReturnTypeNameStartingWithPredicateRules on MemberPredicateB
     );
   }
 
-  /// Selects members whose return or field type name matches every value in [prefixes].
-  MemberPredicateBuilder haveReturnTypeNameStartingWithAll(Iterable<String> prefixes) {
+  /// Selects members whose method return type name matches every value in [prefixes].
+  MemberPredicateBuilder haveReturnTypeNameStartingWithAllOf(Iterable<String> prefixes) {
     final valueList = prefixes.toNonEmptyList('prefixes');
     return satisfy(
       HeimdallPredicate.allOf(
@@ -35,8 +36,8 @@ extension MemberHaveReturnTypeNameStartingWithPredicateRules on MemberPredicateB
     );
   }
 
-  /// Selects members whose return or field type name matches none of [prefixes].
-  MemberPredicateBuilder haveReturnTypeNameStartingWithNone(Iterable<String> prefixes) {
+  /// Selects members whose method return type name matches none of [prefixes].
+  MemberPredicateBuilder haveReturnTypeNameStartingWithNoneOf(Iterable<String> prefixes) {
     final valueList = prefixes.toNonEmptyList('prefixes');
     return satisfy(
       HeimdallPredicate.noneOf(
@@ -47,20 +48,20 @@ extension MemberHaveReturnTypeNameStartingWithPredicateRules on MemberPredicateB
   }
 }
 
-/// Condition-side DSL for member return or field type-name rules.
+/// Condition-side DSL for member method return type-name rules.
 extension MemberHaveReturnTypeNameStartingWithShouldRules on MemberShouldBuilder {
-  /// Requires members to have a return or field type name matching [prefix].
+  /// Requires members to have a method return type name matching [prefix].
   HeimdallRule<ClassMember> haveReturnTypeNameStartingWith(String prefix) {
     return satisfy(_memberShouldHaveReturnTypeName(prefix));
   }
 
   /// Requires members not to satisfy `haveReturnTypeNameStartingWith`.
-  HeimdallRule<ClassMember> noHaveReturnTypeNameStartingWith(String prefix) {
+  HeimdallRule<ClassMember> notHaveReturnTypeNameStartingWith(String prefix) {
     return satisfy(_memberShouldNotHaveReturnTypeNameStartingWith(prefix));
   }
 
-  /// Requires members to have a return or field type name matching any value in [prefixes].
-  HeimdallRule<ClassMember> haveReturnTypeNameStartingWithAny(Iterable<String> prefixes) {
+  /// Requires members to have a method return type name matching any value in [prefixes].
+  HeimdallRule<ClassMember> haveReturnTypeNameStartingWithAnyOf(Iterable<String> prefixes) {
     final valueList = prefixes.toNonEmptyList('prefixes');
     return satisfy(
       HeimdallCondition.anyOf(
@@ -70,8 +71,8 @@ extension MemberHaveReturnTypeNameStartingWithShouldRules on MemberShouldBuilder
     );
   }
 
-  /// Requires members to have a return or field type name matching every value in [prefixes].
-  HeimdallRule<ClassMember> haveReturnTypeNameStartingWithAll(Iterable<String> prefixes) {
+  /// Requires members to have a method return type name matching every value in [prefixes].
+  HeimdallRule<ClassMember> haveReturnTypeNameStartingWithAllOf(Iterable<String> prefixes) {
     final valueList = prefixes.toNonEmptyList('prefixes');
     return satisfy(
       HeimdallCondition.allOf(
@@ -81,8 +82,8 @@ extension MemberHaveReturnTypeNameStartingWithShouldRules on MemberShouldBuilder
     );
   }
 
-  /// Requires members to have a return or field type name matching none of [prefixes].
-  HeimdallRule<ClassMember> haveReturnTypeNameStartingWithNone(Iterable<String> prefixes) {
+  /// Requires members to have a method return type name matching none of [prefixes].
+  HeimdallRule<ClassMember> haveReturnTypeNameStartingWithNoneOf(Iterable<String> prefixes) {
     final valueList = prefixes.toNonEmptyList('prefixes');
     return satisfy(
       HeimdallCondition.noneOf(
@@ -96,13 +97,13 @@ extension MemberHaveReturnTypeNameStartingWithShouldRules on MemberShouldBuilder
 HeimdallPredicate<ClassMember> _memberReturnTypeName(String prefix) {
   return HeimdallPredicate(
     'have return type name starting with $prefix',
-    (item, _) => item.type != null && item.type!.startsWith(prefix),
+    (item, _) => memberReturnTypeName(item) != null && memberReturnTypeName(item)!.startsWith(prefix),
   );
 }
 
 HeimdallCondition<ClassMember> _memberShouldHaveReturnTypeName(String prefix) {
   return HeimdallCondition('have return type name starting with $prefix', (item, _) {
-    final type = item.type;
+    final type = memberReturnTypeName(item);
     final findings = type != null && type.startsWith(prefix)
         ? const <HeimdallValidationInfo>[]
         : [
@@ -123,13 +124,13 @@ HeimdallCondition<ClassMember> _memberShouldHaveReturnTypeName(String prefix) {
 HeimdallCondition<ClassMember> _memberShouldNotHaveReturnTypeNameStartingWith(String prefix) {
   return prohibitedMemberCondition(
     'have return type name starting with $prefix',
-    (item, _) => item.type != null && item.type!.startsWith(prefix),
+    (item, _) => memberReturnTypeName(item) != null && memberReturnTypeName(item)!.startsWith(prefix),
   );
 }
 
 HeimdallPredicate<ClassMember> _memberDoesNotHaveReturnTypeNameStartingWith(String prefix) {
   return HeimdallPredicate(
     'not have return type name starting with $prefix',
-    (item, project) => item.type == null || !item.type!.startsWith(prefix),
+    (item, project) => memberReturnTypeName(item) == null || !memberReturnTypeName(item)!.startsWith(prefix),
   );
 }

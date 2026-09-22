@@ -1,4 +1,5 @@
 import 'package:heimdall_test/heimdall_test.dart';
+import 'package:heimdall_test/src/features/queries/declaration_location_queries.dart';
 
 /// Predicate-side DSL for declared constructor rules.
 extension ClassDeclareConstructorPredicateRules on ClassPredicateBuilder {
@@ -8,7 +9,7 @@ extension ClassDeclareConstructorPredicateRules on ClassPredicateBuilder {
   }
 
   /// Selects classes that do not declare a constructor named [name].
-  ClassPredicateBuilder noDeclareConstructor({String name = 'new'}) {
+  ClassPredicateBuilder notDeclareConstructor({String name = 'new'}) {
     return satisfy(
       HeimdallPredicate(
         'not declare constructor $name',
@@ -61,7 +62,7 @@ extension ClassDeclareConstructorShouldRules on ClassShouldBuilder {
   }
 
   /// Requires matching classes to not declare a constructor named [name].
-  HeimdallRule<CompilationUnitMember> noDeclareConstructor({
+  HeimdallRule<CompilationUnitMember> notDeclareConstructor({
     String name = 'new',
   }) {
     return satisfy(_classShouldNotDeclareConstructor(name: name));
@@ -135,7 +136,7 @@ HeimdallCondition<CompilationUnitMember> _classShouldNotDeclareConstructor({
   return HeimdallCondition('not declare constructor $name', (item, _) {
     final findings = _matchingConstructors(item, name).map(
       (constructor) {
-        final location = _constructorLocation(constructor);
+        final location = constructorLocation(constructor);
         return HeimdallValidationInfo(
           filePath: item.sourcePath,
           line: location.line,
@@ -175,11 +176,4 @@ Iterable<ConstructorDeclaration> _matchingConstructors(
   return item.constructors.where(
     (constructor) => (constructor as ClassMember).name == name,
   );
-}
-
-({int line, int column}) _constructorLocation(
-  ConstructorDeclaration constructor,
-) {
-  final offset = constructor.name?.offset ?? constructor.offset;
-  return constructor.sourceLocationAt(offset);
 }

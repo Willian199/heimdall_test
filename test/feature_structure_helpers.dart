@@ -68,11 +68,11 @@ HeimdallCondition<HeimdallSourceFile> extensionsDeclareSingularBaseInverse({
 }) {
   return HeimdallCondition(
     'declare a singular inverse for the base $ruleGroupName rule method',
-    (file, _) {
+    (file, project) {
       final findings = [
         for (final builderName in builderNames)
           for (final extension in _extensionsOn(file, builderName))
-            if (!_hasSingularBaseInverse(extension))
+            if (!_hasSingularBaseInverse(extension, project))
               HeimdallValidationInfo(
                 filePath: file.absolutePath,
                 line: extension.line,
@@ -188,51 +188,48 @@ void assertFeatureExtensionVariantCallsStaticMethods({
   required String builderName,
   required String targetType,
 }) {
-  _assertFeatureExtensionVariantCallsStaticMethod(
-    project: project,
-    featurePathPattern: featurePathPattern,
-    builderName: builderName,
-    methodNamePattern: RegExp(r'All([A-Z]|$)'),
-    targetType: targetType,
-    staticMethodName: 'allOf',
-  );
-  _assertFeatureExtensionVariantCallsStaticMethod(
-    project: project,
-    featurePathPattern: featurePathPattern,
-    builderName: builderName,
-    methodNamePattern: RegExp(r'Any([A-Z]|$)'),
-    targetType: targetType,
-    staticMethodName: 'anyOf',
-  );
-  _assertFeatureExtensionVariantCallsStaticMethod(
-    project: project,
-    featurePathPattern: featurePathPattern,
-    builderName: builderName,
-    methodNamePattern: RegExp(r'None([A-Z]|$)'),
-    targetType: targetType,
-    staticMethodName: 'noneOf',
-  );
-}
-
-void _assertFeatureExtensionVariantCallsStaticMethod({
-  required HeimdallProject project,
-  required String featurePathPattern,
-  required String builderName,
-  required RegExp methodNamePattern,
-  required String targetType,
-  required String staticMethodName,
-}) {
-  Heimdall.members()
-      .that()
-      .resideInPath(featurePathPattern)
-      .and()
-      .areDeclaredInExtensions(builderName)
-      .and()
-      .haveNameMatching(methodNamePattern)
-      .should()
-      .callStaticMethod(targetType, staticMethodName)
-      .check(project)
-      .assertNoFindings();
+  for (final file in featureFiles(project, featurePathPattern)) {
+    final helpers = {
+      for (final function in file.declarations.whereType<FunctionDeclaration>()) function.name.lexeme: function.functionExpression.toSource(),
+    };
+    for (final extension in _extensionsOn(file, builderName)) {
+      for (final method in extension.body.members.whereType<MethodDeclaration>()) {
+        final name = method.name.lexeme;
+        // Quantifiers over negative atoms or over targets cannot be inferred
+        // from the first All/Any/None word in the English method name.
+        final operation = switch (name) {
+          'notHaveParseErrorsMatchingAllOf' => 'anyOf',
+          'resideOutsideOfAllPathsMatching' => 'noneOf',
+          'haveAllImportsShareAnyPrefix' => 'anyOf',
+          'haveNoPrefixSharedByAllImports' => 'noneOf',
+          _ when RegExp(r'All([A-Z]|$)').hasMatch(name) => 'allOf',
+          _ when RegExp(r'Any([A-Z]|$)').hasMatch(name) => 'anyOf',
+          _ when RegExp(r'None([A-Z]|$)').hasMatch(name) => 'noneOf',
+          _ => null,
+        };
+        if (operation == null) continue;
+        var source = method.body.toSource();
+        final visited = <String>{};
+        // Follow private helpers rather than requiring redundant combinator
+        // wrappers solely to make this structural test pass.
+        var expanded = true;
+        while (expanded) {
+          expanded = false;
+          for (final entry in helpers.entries) {
+            if (!visited.contains(entry.key) && RegExp('\\b${RegExp.escape(entry.key)}\\b').hasMatch(source)) {
+              visited.add(entry.key);
+              source += '\n${entry.value}';
+              expanded = true;
+            }
+          }
+        }
+        final combinatorType = name.startsWith('onlyDependOnClassesMatching') && name.endsWith('NoneOf') ? 'HeimdallPredicate' : targetType;
+        if (!source.contains('$combinatorType.$operation(')) {
+          throw StateError('${file.relativePath}: $builderName.$name must use $combinatorType.$operation');
+        }
+      }
+    }
+  }
 }
 
 Iterable<ExtensionDeclaration> _extensionsOn(
@@ -264,7 +261,23 @@ Iterable<HeimdallValidationInfo> extensionMethodFindings(
   }
 }
 
-bool _hasSingularBaseInverse(ExtensionDeclaration extension) {
+bool _hasSingularBaseInverse(ExtensionDeclaration extension, HeimdallProject project) {
+  final builder = extension.onClause?.extendedType.toSource();
+  final firstName = extension.body.members.whereType<MethodDeclaration>().firstOrNull?.name.lexeme;
+  // Path inverses live in separate features after removing duplicate aliases.
+  final sibling = switch (firstName) {
+    'resideInPath' => 'resideOutsideOfPath',
+    'resideOutsideOfPath' => 'resideInPath',
+    'onlyImportFrom' => 'importFromOutside',
+    _ => null,
+  };
+  if (sibling != null && builder != null) {
+    return project.files.any(
+      (file) => _extensionsOn(file, builder).any(
+        (extension) => extension.body.members.whereType<MethodDeclaration>().any((method) => method.name.lexeme == sibling),
+      ),
+    );
+  }
   final methods = extension.body.members.whereType<MethodDeclaration>().toList();
   if (methods.length < 2) return false;
 
@@ -273,13 +286,9 @@ bool _hasSingularBaseInverse(ExtensionDeclaration extension) {
 
   return methods.skip(1).any((method) {
     final methodName = method.name.lexeme;
-    if (methodName == baseName || _isVariantMethod(methodName)) return false;
+    if (methodName == baseName || (method.parameters?.toSource().contains('Iterable<') ?? false)) return false;
     return !_callsForbiddenNegation(method.body);
   });
-}
-
-bool _isVariantMethod(String methodName) {
-  return RegExp('(All|Any|None|No)[A-Z]').hasMatch(methodName);
 }
 
 bool _callsForbiddenNegation(AstNode node) {

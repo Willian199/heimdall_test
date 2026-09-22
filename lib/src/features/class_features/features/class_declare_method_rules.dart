@@ -8,7 +8,7 @@ extension ClassDeclareMethodPredicateRules on ClassPredicateBuilder {
   }
 
   /// Selects classes that do not declare a method named [methodName].
-  ClassPredicateBuilder noDeclareMethod(String methodName) {
+  ClassPredicateBuilder notDeclareMethod(String methodName) {
     return satisfy(
       HeimdallPredicate(
         'not declare method $methodName',
@@ -59,7 +59,7 @@ extension ClassDeclareMethodShouldRules on ClassShouldBuilder {
   }
 
   /// Requires matching classes to not declare a method named [methodName].
-  HeimdallRule<CompilationUnitMember> noDeclareMethod(String methodName) {
+  HeimdallRule<CompilationUnitMember> notDeclareMethod(String methodName) {
     return satisfy(_classShouldNotDeclareMethod(methodName));
   }
 

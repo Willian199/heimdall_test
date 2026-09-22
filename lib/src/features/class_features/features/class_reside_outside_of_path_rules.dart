@@ -7,18 +7,8 @@ extension ClassResideOutsideOfPathPredicateRules on ClassPredicateBuilder {
     return satisfy(_classResideOutsideOfPath(pattern));
   }
 
-  /// Selects declarations whose relative path matches [pattern].
-  ClassPredicateBuilder noResideOutsideOfPath(String pattern) {
-    return satisfy(
-      HeimdallPredicate(
-        'reside in path $pattern',
-        (item, _) => pathMatches(item.relativePath, pattern),
-      ),
-    );
-  }
-
   /// Selects declarations that reside outside at least one path matching [patterns].
-  ClassPredicateBuilder resideOutsideOfAnyPath(Iterable<String> patterns) {
+  ClassPredicateBuilder resideOutsideOfAtLeastOnePath(Iterable<String> patterns) {
     final patternList = patterns.toNonEmptyList('patterns');
     return satisfy(
       HeimdallPredicate.anyOf(
@@ -38,17 +28,6 @@ extension ClassResideOutsideOfPathPredicateRules on ClassPredicateBuilder {
       ),
     );
   }
-
-  /// Selects declarations that reside outside none of the paths matching [patterns].
-  ClassPredicateBuilder resideOutsideOfNoPaths(Iterable<String> patterns) {
-    final patternList = patterns.toNonEmptyList('patterns');
-    return satisfy(
-      HeimdallPredicate.noneOf(
-        patternList.map(_classResideOutsideOfPath),
-        description: 'reside outside of no paths ${patternList.join(', ')}',
-      ),
-    );
-  }
 }
 
 /// Condition-side DSL for declaration path exclusion rules.
@@ -58,13 +37,8 @@ extension ClassResideOutsideOfPathShouldRules on ClassShouldBuilder {
     return satisfy(_classShouldResideOutsideOfPath(pattern));
   }
 
-  /// Requires matching classes to reside in a path matching [pattern].
-  HeimdallRule<CompilationUnitMember> noResideOutsideOfPath(String pattern) {
-    return satisfy(_classShouldNotResideOutsideOfPath(pattern));
-  }
-
   /// Requires matching classes to reside outside at least one path matching [patterns].
-  HeimdallRule<CompilationUnitMember> resideOutsideOfAnyPath(
+  HeimdallRule<CompilationUnitMember> resideOutsideOfAtLeastOnePath(
     Iterable<String> patterns,
   ) {
     final patternList = patterns.toNonEmptyList('patterns');
@@ -88,19 +62,6 @@ extension ClassResideOutsideOfPathShouldRules on ClassShouldBuilder {
       ),
     );
   }
-
-  /// Requires matching classes to reside outside none of the paths matching [patterns].
-  HeimdallRule<CompilationUnitMember> resideOutsideOfNoPaths(
-    Iterable<String> patterns,
-  ) {
-    final patternList = patterns.toNonEmptyList('patterns');
-    return satisfy(
-      HeimdallCondition.noneOf(
-        patternList.map(_classShouldResideOutsideOfPath),
-        description: 'reside outside of no paths ${patternList.join(', ')}',
-      ),
-    );
-  }
 }
 
 HeimdallPredicate<CompilationUnitMember> _classResideOutsideOfPath(String pattern) {
@@ -121,27 +82,6 @@ HeimdallCondition<CompilationUnitMember> _classShouldResideOutsideOfPath(
               filePath: item.sourcePath,
               line: item.line,
               message: '${item.name} should reside outside of path $pattern (actual: ${item.relativePath})',
-            ),
-          ];
-    return HeimdallFindings(
-      subject: item,
-      passed: findings.isEmpty,
-      findings: findings,
-    );
-  });
-}
-
-HeimdallCondition<CompilationUnitMember> _classShouldNotResideOutsideOfPath(
-  String pattern,
-) {
-  return HeimdallCondition('not reside outside of path $pattern', (item, _) {
-    final findings = pathMatches(item.relativePath, pattern)
-        ? const <HeimdallValidationInfo>[]
-        : [
-            HeimdallValidationInfo(
-              filePath: item.sourcePath,
-              line: item.line,
-              message: '${item.name} must not reside outside of path $pattern (actual: ${item.relativePath})',
             ),
           ];
     return HeimdallFindings(

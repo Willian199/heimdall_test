@@ -8,7 +8,7 @@ extension FileContainSourcePredicateRules on FilePredicateBuilder {
   }
 
   /// Selects files that do not contain [source].
-  FilePredicateBuilder noContainSource(String source) {
+  FilePredicateBuilder notContainSource(String source) {
     return satisfy(_fileDoesNotContainSource(source));
   }
 
@@ -54,7 +54,7 @@ extension FileContainSourceShouldRules on FileShouldBuilder {
   }
 
   /// Requires matching files to not contain [source].
-  HeimdallRule<HeimdallSourceFile> noContainSource(String source) {
+  HeimdallRule<HeimdallSourceFile> notContainSource(String source) {
     return satisfy(_fileShouldNotContainSource(source));
   }
 

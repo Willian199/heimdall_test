@@ -9,7 +9,7 @@ extension FileDeclareExtensionOnPredicateRules on FilePredicateBuilder {
   }
 
   /// Selects files that do not declare an extension on [extendedType].
-  FilePredicateBuilder noDeclareExtensionOn(String extendedType) {
+  FilePredicateBuilder notDeclareExtensionOn(String extendedType) {
     return satisfy(_fileDoesNotDeclareExtensionOn(extendedType));
   }
 
@@ -55,7 +55,7 @@ extension FileDeclareExtensionOnShouldRules on FileShouldBuilder {
   }
 
   /// Requires matching files to not declare an extension on [extendedType].
-  HeimdallRule<HeimdallSourceFile> noDeclareExtensionOn(String extendedType) {
+  HeimdallRule<HeimdallSourceFile> notDeclareExtensionOn(String extendedType) {
     return satisfy(_fileShouldNotDeclareExtensionOn(extendedType));
   }
 

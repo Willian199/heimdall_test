@@ -65,32 +65,32 @@ void main() {
         ..exportUri('domain/user.dart')
         ..exportAllUris(['domain/user.dart'])
         ..exportAnyUri(['missing.dart', 'domain/user.dart'])
-        ..exportNoneUris(['missing.dart'])
+        ..exportNoUris(['missing.dart'])
         ..exportUriMatching(RegExp(r'\.dart$'))
         ..exportAllUrisMatching([RegExp(r'\.dart$')])
         ..exportAnyUriMatching([RegExp('missing'), RegExp(r'\.dart$')])
-        ..exportNoneUrisMatching([RegExp('missing')])
+        ..exportNoUrisMatching([RegExp('missing')])
         ..importUriMatching(RegExp('^package:'))
         ..importAllUrisMatching([RegExp('^dart:'), RegExp('^package:')])
         ..importAnyUriMatching([RegExp('^dart:'), RegExp('^package:')])
         ..importNoUrisMatching([RegExp(r'\.g\.dart$')])
-        ..useOnlyPackageImports()
+        ..useOnlyPackageOrSdkImports()
         ..notUseRelativeImports()
         ..onlyImportFrom(['dart:', 'package:heimdall_test/']);
       should
         ..exportUri('domain/user.dart')
         ..exportAllUris(['domain/user.dart'])
         ..exportAnyUri(['missing.dart', 'domain/user.dart'])
-        ..exportNoneUris(['missing.dart'])
+        ..exportNoUris(['missing.dart'])
         ..exportUriMatching(RegExp(r'\.dart$'))
         ..exportAllUrisMatching([RegExp(r'\.dart$')])
         ..exportAnyUriMatching([RegExp('missing'), RegExp(r'\.dart$')])
-        ..exportNoneUrisMatching([RegExp('missing')])
+        ..exportNoUrisMatching([RegExp('missing')])
         ..importUriMatching(RegExp('^package:'))
         ..importAllUrisMatching([RegExp('^dart:'), RegExp('^package:')])
         ..importAnyUriMatching([RegExp('^dart:'), RegExp('^package:')])
         ..importNoUrisMatching([RegExp(r'\.g\.dart$')])
-        ..useOnlyPackageImports()
+        ..useOnlyPackageOrSdkImports()
         ..notUseRelativeImports()
         ..onlyImportFrom(['dart:', 'package:heimdall_test/']);
     });
@@ -108,8 +108,8 @@ void main() {
         ..callAllStaticMethods('HeimdallPredicate', ['allOf'])
         ..callAnyStaticMethod('HeimdallPredicate', ['missing', 'allOf'])
         ..callNoStaticMethods('HeimdallPredicate', ['missing'])
-        ..haveAtMostOneTopLevelClass()
-        ..haveMoreThanOneTopLevelClass()
+        ..haveAtMostTopLevelClasses(1)
+        ..haveMoreThanTopLevelClasses(1)
         ..haveAtMostTopLevelClasses(2)
         ..haveMoreThanTopLevelClasses(1)
         ..haveAtMostOnePublicClassNamed('User')
@@ -122,10 +122,10 @@ void main() {
         ..haveParseErrorsMatching(RegExp('syntax'))
         ..haveLibraryDirective()
         ..havePartOfDirective()
-        ..notUsePartOfDirective()
+        ..haveNoPartOfDirective()
         ..beEmpty()
         ..haveDocumentationComment()
-        ..noHaveDocumentationComment();
+        ..haveNoDocumentationComment();
       should
         ..declareExtensionOn('FilePredicateBuilder')
         ..declareAllExtensionsOn(['FilePredicateBuilder'])
@@ -135,8 +135,8 @@ void main() {
         ..callAllStaticMethods('HeimdallPredicate', ['allOf'])
         ..callAnyStaticMethod('HeimdallPredicate', ['missing', 'allOf'])
         ..callNoStaticMethods('HeimdallPredicate', ['missing'])
-        ..haveAtMostOneTopLevelClass()
-        ..haveMoreThanOneTopLevelClass()
+        ..haveAtMostTopLevelClasses(1)
+        ..haveMoreThanTopLevelClasses(1)
         ..haveAtMostTopLevelClasses(2)
         ..haveMoreThanTopLevelClasses(1)
         ..haveAtMostOnePublicClassNamed('User')
@@ -149,10 +149,10 @@ void main() {
         ..haveParseErrorsMatching(RegExp('syntax'))
         ..haveLibraryDirective()
         ..havePartOfDirective()
-        ..notUsePartOfDirective()
+        ..haveNoPartOfDirective()
         ..beEmpty()
         ..haveDocumentationComment()
-        ..noHaveDocumentationComment();
+        ..haveNoDocumentationComment();
     });
   });
 }

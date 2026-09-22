@@ -16,12 +16,12 @@ extension MemberReceiveParameterAssignableToPredicateRules on MemberPredicateBui
   }
 
   /// Selects members that do not satisfy `receiveParameterAssignableTo`.
-  MemberPredicateBuilder noReceiveParameterAssignableTo(String typeName) {
+  MemberPredicateBuilder notReceiveParameterAssignableTo(String typeName) {
     return satisfy(_memberDoesNotReceiveParameterAssignableTo(typeName));
   }
 
   /// Selects executable members that receive a parameter assignable to at least one value in [typeNames].
-  MemberPredicateBuilder receiveParameterAssignableToAny(Iterable<String> typeNames) {
+  MemberPredicateBuilder receiveParameterAssignableToAnyOf(Iterable<String> typeNames) {
     final valueList = typeNames.toNonEmptyList('typeNames');
     return satisfy(
       HeimdallPredicate.anyOf(
@@ -32,7 +32,7 @@ extension MemberReceiveParameterAssignableToPredicateRules on MemberPredicateBui
   }
 
   /// Selects executable members that receive parameters assignable to every value in [typeNames].
-  MemberPredicateBuilder receiveParameterAssignableToAll(Iterable<String> typeNames) {
+  MemberPredicateBuilder receiveParameterAssignableToAllOf(Iterable<String> typeNames) {
     final valueList = typeNames.toNonEmptyList('typeNames');
     return satisfy(
       HeimdallPredicate.allOf(
@@ -43,7 +43,7 @@ extension MemberReceiveParameterAssignableToPredicateRules on MemberPredicateBui
   }
 
   /// Selects executable members that receive no parameter assignable to [typeNames].
-  MemberPredicateBuilder receiveParameterAssignableToNone(Iterable<String> typeNames) {
+  MemberPredicateBuilder receiveParameterAssignableToNoneOf(Iterable<String> typeNames) {
     final valueList = typeNames.toNonEmptyList('typeNames');
     return satisfy(
       HeimdallPredicate.noneOf(
@@ -62,12 +62,12 @@ extension MemberReceiveParameterAssignableToShouldRules on MemberShouldBuilder {
   }
 
   /// Requires members not to satisfy `receiveParameterAssignableTo`.
-  HeimdallRule<ClassMember> noReceiveParameterAssignableTo(String typeName) {
+  HeimdallRule<ClassMember> notReceiveParameterAssignableTo(String typeName) {
     return satisfy(_memberShouldNotReceiveParameterAssignableTo(typeName));
   }
 
   /// Requires executable members to receive a parameter assignable to at least one value in [typeNames].
-  HeimdallRule<ClassMember> receiveParameterAssignableToAny(Iterable<String> typeNames) {
+  HeimdallRule<ClassMember> receiveParameterAssignableToAnyOf(Iterable<String> typeNames) {
     final valueList = typeNames.toNonEmptyList('typeNames');
     return satisfy(
       HeimdallCondition.anyOf(
@@ -78,7 +78,7 @@ extension MemberReceiveParameterAssignableToShouldRules on MemberShouldBuilder {
   }
 
   /// Requires executable members to receive parameters assignable to every value in [typeNames].
-  HeimdallRule<ClassMember> receiveParameterAssignableToAll(Iterable<String> typeNames) {
+  HeimdallRule<ClassMember> receiveParameterAssignableToAllOf(Iterable<String> typeNames) {
     final valueList = typeNames.toNonEmptyList('typeNames');
     return satisfy(
       HeimdallCondition.allOf(
@@ -89,7 +89,7 @@ extension MemberReceiveParameterAssignableToShouldRules on MemberShouldBuilder {
   }
 
   /// Requires executable members to receive no parameter assignable to [typeNames].
-  HeimdallRule<ClassMember> receiveParameterAssignableToNone(Iterable<String> typeNames) {
+  HeimdallRule<ClassMember> receiveParameterAssignableToNoneOf(Iterable<String> typeNames) {
     final valueList = typeNames.toNonEmptyList('typeNames');
     return satisfy(
       HeimdallCondition.noneOf(

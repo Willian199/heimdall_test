@@ -16,12 +16,12 @@ extension MemberReceiveParameterTypeNameMatchingPredicateRules on MemberPredicat
   }
 
   /// Selects members that do not satisfy `receiveParameterTypeNameMatching`.
-  MemberPredicateBuilder noReceiveParameterTypeNameMatching(RegExp pattern) {
+  MemberPredicateBuilder notReceiveParameterTypeNameMatching(RegExp pattern) {
     return satisfy(_memberDoesNotReceiveParameterTypeNameMatching(pattern));
   }
 
   /// Selects executable members that receive a parameter type name matching any pattern in [patterns].
-  MemberPredicateBuilder receiveParameterTypeNameMatchingAny(Iterable<RegExp> patterns) {
+  MemberPredicateBuilder receiveParameterTypeNameMatchingAnyOf(Iterable<RegExp> patterns) {
     final valueList = patterns.toNonEmptyList('patterns');
     return satisfy(
       HeimdallPredicate.anyOf(
@@ -32,7 +32,7 @@ extension MemberReceiveParameterTypeNameMatchingPredicateRules on MemberPredicat
   }
 
   /// Selects executable members that receive parameter type names matching every pattern in [patterns].
-  MemberPredicateBuilder receiveParameterTypeNameMatchingAll(Iterable<RegExp> patterns) {
+  MemberPredicateBuilder receiveParameterTypeNameMatchingAllOf(Iterable<RegExp> patterns) {
     final valueList = patterns.toNonEmptyList('patterns');
     return satisfy(
       HeimdallPredicate.allOf(
@@ -43,7 +43,7 @@ extension MemberReceiveParameterTypeNameMatchingPredicateRules on MemberPredicat
   }
 
   /// Selects executable members that receive no parameter type name matching [patterns].
-  MemberPredicateBuilder receiveParameterTypeNameMatchingNone(Iterable<RegExp> patterns) {
+  MemberPredicateBuilder receiveParameterTypeNameMatchingNoneOf(Iterable<RegExp> patterns) {
     final valueList = patterns.toNonEmptyList('patterns');
     return satisfy(
       HeimdallPredicate.noneOf(
@@ -62,12 +62,12 @@ extension MemberReceiveParameterTypeNameMatchingShouldRules on MemberShouldBuild
   }
 
   /// Requires members not to satisfy `receiveParameterTypeNameMatching`.
-  HeimdallRule<ClassMember> noReceiveParameterTypeNameMatching(RegExp pattern) {
+  HeimdallRule<ClassMember> notReceiveParameterTypeNameMatching(RegExp pattern) {
     return satisfy(_memberShouldNotReceiveParameterTypeNameMatching(pattern));
   }
 
   /// Requires executable members to receive a parameter type name matching any pattern in [patterns].
-  HeimdallRule<ClassMember> receiveParameterTypeNameMatchingAny(Iterable<RegExp> patterns) {
+  HeimdallRule<ClassMember> receiveParameterTypeNameMatchingAnyOf(Iterable<RegExp> patterns) {
     final valueList = patterns.toNonEmptyList('patterns');
     return satisfy(
       HeimdallCondition.anyOf(
@@ -78,7 +78,7 @@ extension MemberReceiveParameterTypeNameMatchingShouldRules on MemberShouldBuild
   }
 
   /// Requires executable members to receive parameter type names matching every pattern in [patterns].
-  HeimdallRule<ClassMember> receiveParameterTypeNameMatchingAll(Iterable<RegExp> patterns) {
+  HeimdallRule<ClassMember> receiveParameterTypeNameMatchingAllOf(Iterable<RegExp> patterns) {
     final valueList = patterns.toNonEmptyList('patterns');
     return satisfy(
       HeimdallCondition.allOf(
@@ -89,7 +89,7 @@ extension MemberReceiveParameterTypeNameMatchingShouldRules on MemberShouldBuild
   }
 
   /// Requires executable members to receive no parameter type name matching [patterns].
-  HeimdallRule<ClassMember> receiveParameterTypeNameMatchingNone(Iterable<RegExp> patterns) {
+  HeimdallRule<ClassMember> receiveParameterTypeNameMatchingNoneOf(Iterable<RegExp> patterns) {
     final valueList = patterns.toNonEmptyList('patterns');
     return satisfy(
       HeimdallCondition.noneOf(

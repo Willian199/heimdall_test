@@ -15,12 +15,12 @@ extension MemberCallMethodNameStartingWithPredicateRules on MemberPredicateBuild
   }
 
   /// Selects members that do not satisfy `callMethodNameStartingWith`.
-  MemberPredicateBuilder noCallMethodNameStartingWith(String prefix) {
+  MemberPredicateBuilder notCallMethodNameStartingWith(String prefix) {
     return satisfy(_memberDoesNotCallMethodNameStartingWith(prefix));
   }
 
   /// Selects members that call method name starting with every value in [prefixes].
-  MemberPredicateBuilder callMethodNameStartingWithAll(Iterable<String> prefixes) {
+  MemberPredicateBuilder callMethodNameStartingWithAllOf(Iterable<String> prefixes) {
     final valueList = prefixes.toNonEmptyList('prefixes');
     return satisfy(
       HeimdallPredicate.allOf(
@@ -31,7 +31,7 @@ extension MemberCallMethodNameStartingWithPredicateRules on MemberPredicateBuild
   }
 
   /// Selects members that call method name starting with at least one value in [prefixes].
-  MemberPredicateBuilder callMethodNameStartingWithAny(Iterable<String> prefixes) {
+  MemberPredicateBuilder callMethodNameStartingWithAnyOf(Iterable<String> prefixes) {
     final valueList = prefixes.toNonEmptyList('prefixes');
     return satisfy(
       HeimdallPredicate.anyOf(
@@ -42,7 +42,7 @@ extension MemberCallMethodNameStartingWithPredicateRules on MemberPredicateBuild
   }
 
   /// Selects members that call method name starting with none of [prefixes].
-  MemberPredicateBuilder callMethodNameStartingWithNone(Iterable<String> prefixes) {
+  MemberPredicateBuilder callMethodNameStartingWithNoneOf(Iterable<String> prefixes) {
     final valueList = prefixes.toNonEmptyList('prefixes');
     return satisfy(
       HeimdallPredicate.noneOf(
@@ -61,12 +61,12 @@ extension MemberCallMethodNameStartingWithShouldRules on MemberShouldBuilder {
   }
 
   /// Requires members not to satisfy `callMethodNameStartingWith`.
-  HeimdallRule<ClassMember> noCallMethodNameStartingWith(String prefix) {
+  HeimdallRule<ClassMember> notCallMethodNameStartingWith(String prefix) {
     return satisfy(_memberShouldNotCallMethodNameStartingWith(prefix));
   }
 
   /// Requires members to call method name starting with every value in [prefixes].
-  HeimdallRule<ClassMember> callMethodNameStartingWithAll(Iterable<String> prefixes) {
+  HeimdallRule<ClassMember> callMethodNameStartingWithAllOf(Iterable<String> prefixes) {
     final valueList = prefixes.toNonEmptyList('prefixes');
     return satisfy(
       HeimdallCondition.allOf(
@@ -77,7 +77,7 @@ extension MemberCallMethodNameStartingWithShouldRules on MemberShouldBuilder {
   }
 
   /// Requires members to call method name starting with at least one value in [prefixes].
-  HeimdallRule<ClassMember> callMethodNameStartingWithAny(Iterable<String> prefixes) {
+  HeimdallRule<ClassMember> callMethodNameStartingWithAnyOf(Iterable<String> prefixes) {
     final valueList = prefixes.toNonEmptyList('prefixes');
     return satisfy(
       HeimdallCondition.anyOf(
@@ -88,7 +88,7 @@ extension MemberCallMethodNameStartingWithShouldRules on MemberShouldBuilder {
   }
 
   /// Requires members to call method name starting with none of [prefixes].
-  HeimdallRule<ClassMember> callMethodNameStartingWithNone(Iterable<String> prefixes) {
+  HeimdallRule<ClassMember> callMethodNameStartingWithNoneOf(Iterable<String> prefixes) {
     final valueList = prefixes.toNonEmptyList('prefixes');
     return satisfy(
       HeimdallCondition.noneOf(

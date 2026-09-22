@@ -8,7 +8,7 @@ extension ClassAnnotatedWithPredicateRules on ClassPredicateBuilder {
   }
 
   /// Selects declarations not annotated with [annotation].
-  ClassPredicateBuilder noAreAnnotatedWith(String annotation) {
+  ClassPredicateBuilder areNotAnnotatedWith(String annotation) {
     return satisfy(
       HeimdallPredicate(
         'are not annotated with $annotation',
@@ -18,7 +18,7 @@ extension ClassAnnotatedWithPredicateRules on ClassPredicateBuilder {
   }
 
   /// Selects declarations annotated with at least one annotation in [annotations].
-  ClassPredicateBuilder areAnnotatedWithAny(Iterable<String> annotations) {
+  ClassPredicateBuilder areAnnotatedWithAnyOf(Iterable<String> annotations) {
     final annotationList = annotations.toNonEmptyList('annotations');
     return satisfy(
       HeimdallPredicate.anyOf(
@@ -29,7 +29,7 @@ extension ClassAnnotatedWithPredicateRules on ClassPredicateBuilder {
   }
 
   /// Selects declarations annotated with every annotation in [annotations].
-  ClassPredicateBuilder areAnnotatedWithAll(Iterable<String> annotations) {
+  ClassPredicateBuilder areAnnotatedWithAllOf(Iterable<String> annotations) {
     final annotationList = annotations.toNonEmptyList('annotations');
     return satisfy(
       HeimdallPredicate.allOf(
@@ -40,7 +40,7 @@ extension ClassAnnotatedWithPredicateRules on ClassPredicateBuilder {
   }
 
   /// Selects declarations annotated with none of [annotations].
-  ClassPredicateBuilder areAnnotatedWithNone(Iterable<String> annotations) {
+  ClassPredicateBuilder areAnnotatedWithNoneOf(Iterable<String> annotations) {
     final annotationList = annotations.toNonEmptyList('annotations');
     return satisfy(
       HeimdallPredicate.noneOf(
@@ -59,12 +59,12 @@ extension ClassAnnotatedWithShouldRules on ClassShouldBuilder {
   }
 
   /// Requires matching classes to not be annotated with [annotation].
-  HeimdallRule<CompilationUnitMember> noBeAnnotatedWith(String annotation) {
+  HeimdallRule<CompilationUnitMember> notBeAnnotatedWith(String annotation) {
     return satisfy(_classShouldNotBeAnnotatedWith(annotation));
   }
 
   /// Requires matching classes to be annotated with at least one annotation in [annotations].
-  HeimdallRule<CompilationUnitMember> beAnnotatedWithAny(
+  HeimdallRule<CompilationUnitMember> beAnnotatedWithAnyOf(
     Iterable<String> annotations,
   ) {
     final annotationList = annotations.toNonEmptyList('annotations');
@@ -77,7 +77,7 @@ extension ClassAnnotatedWithShouldRules on ClassShouldBuilder {
   }
 
   /// Requires matching classes to be annotated with every annotation in [annotations].
-  HeimdallRule<CompilationUnitMember> beAnnotatedWithAll(
+  HeimdallRule<CompilationUnitMember> beAnnotatedWithAllOf(
     Iterable<String> annotations,
   ) {
     final annotationList = annotations.toNonEmptyList('annotations');
@@ -90,7 +90,7 @@ extension ClassAnnotatedWithShouldRules on ClassShouldBuilder {
   }
 
   /// Requires matching classes to be annotated with none of [annotations].
-  HeimdallRule<CompilationUnitMember> beAnnotatedWithNone(
+  HeimdallRule<CompilationUnitMember> beAnnotatedWithNoneOf(
     Iterable<String> annotations,
   ) {
     final annotationList = annotations.toNonEmptyList('annotations');

@@ -9,12 +9,12 @@ extension MemberHaveNameStartingWithPredicateRules on MemberPredicateBuilder {
   }
 
   /// Selects members that do not satisfy `haveNameStartingWith`.
-  MemberPredicateBuilder noHaveNameStartingWith(String prefix) {
+  MemberPredicateBuilder notHaveNameStartingWith(String prefix) {
     return satisfy(_memberDoesNotHaveNameStartingWith(prefix));
   }
 
   /// Selects members whose names start with at least one prefix in [prefixes].
-  MemberPredicateBuilder haveNameStartingWithAny(Iterable<String> prefixes) {
+  MemberPredicateBuilder haveNameStartingWithAnyOf(Iterable<String> prefixes) {
     final prefixList = prefixes.toNonEmptyList('prefixes');
     return satisfy(
       HeimdallPredicate.anyOf(
@@ -25,7 +25,7 @@ extension MemberHaveNameStartingWithPredicateRules on MemberPredicateBuilder {
   }
 
   /// Selects members whose names start with every prefix in [prefixes].
-  MemberPredicateBuilder haveNameStartingWithAll(Iterable<String> prefixes) {
+  MemberPredicateBuilder haveNameStartingWithAllOf(Iterable<String> prefixes) {
     final prefixList = prefixes.toNonEmptyList('prefixes');
     return satisfy(
       HeimdallPredicate.allOf(
@@ -36,7 +36,7 @@ extension MemberHaveNameStartingWithPredicateRules on MemberPredicateBuilder {
   }
 
   /// Selects members whose names start with none of [prefixes].
-  MemberPredicateBuilder haveNameStartingWithNone(Iterable<String> prefixes) {
+  MemberPredicateBuilder haveNameStartingWithNoneOf(Iterable<String> prefixes) {
     final prefixList = prefixes.toNonEmptyList('prefixes');
     return satisfy(
       HeimdallPredicate.noneOf(
@@ -55,12 +55,12 @@ extension MemberHaveNameStartingWithShouldRules on MemberShouldBuilder {
   }
 
   /// Requires members not to satisfy `haveNameStartingWith`.
-  HeimdallRule<ClassMember> noHaveNameStartingWith(String prefix) {
+  HeimdallRule<ClassMember> notHaveNameStartingWith(String prefix) {
     return satisfy(_memberShouldNotHaveNameStartingWith(prefix));
   }
 
   /// Requires member names to start with at least one prefix in [prefixes].
-  HeimdallRule<ClassMember> haveNameStartingWithAny(
+  HeimdallRule<ClassMember> haveNameStartingWithAnyOf(
     Iterable<String> prefixes,
   ) {
     final prefixList = prefixes.toNonEmptyList('prefixes');
@@ -73,7 +73,7 @@ extension MemberHaveNameStartingWithShouldRules on MemberShouldBuilder {
   }
 
   /// Requires member names to start with every prefix in [prefixes].
-  HeimdallRule<ClassMember> haveNameStartingWithAll(
+  HeimdallRule<ClassMember> haveNameStartingWithAllOf(
     Iterable<String> prefixes,
   ) {
     final prefixList = prefixes.toNonEmptyList('prefixes');
@@ -86,7 +86,7 @@ extension MemberHaveNameStartingWithShouldRules on MemberShouldBuilder {
   }
 
   /// Requires member names to start with none of [prefixes].
-  HeimdallRule<ClassMember> haveNameStartingWithNone(
+  HeimdallRule<ClassMember> haveNameStartingWithNoneOf(
     Iterable<String> prefixes,
   ) {
     final prefixList = prefixes.toNonEmptyList('prefixes');

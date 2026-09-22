@@ -3,6 +3,8 @@
 > **Development status:** Heimdall Test is still under active development. The
 > public API may change between minor versions while the package is being shaped.
 
+See the [changelog](CHANGELOG.md) for release notes and breaking changes.
+
 Heimdall Test is an AST-first architecture testing package for Dart, inspired by
 ArchUnit. It imports Dart source files with `package:analyzer`, keeps the real
 AST nodes, enriches them with file and dependency metadata, and lets tests

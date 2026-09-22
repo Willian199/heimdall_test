@@ -3,12 +3,12 @@ import 'package:heimdall_test/heimdall_test.dart';
 /// Predicate-side DSL for class annotation suffix rules.
 extension ClassAnnotatedWithTypeNameEndingPredicateRules on ClassPredicateBuilder {
   /// Selects declarations annotated with a type name ending with [suffix].
-  ClassPredicateBuilder areAnnotatedWithTypeNameEnding(String suffix) {
+  ClassPredicateBuilder areAnnotatedWithTypeNameEndingWith(String suffix) {
     return satisfy(_classAnnotatedWithTypeNameEnding(suffix));
   }
 
   /// Selects declarations not annotated with a type name ending with [suffix].
-  ClassPredicateBuilder noAreAnnotatedWithTypeNameEnding(String suffix) {
+  ClassPredicateBuilder areNotAnnotatedWithTypeNameEndingWith(String suffix) {
     return satisfy(
       HeimdallPredicate(
         'are not annotated with type name ending with $suffix',
@@ -18,7 +18,7 @@ extension ClassAnnotatedWithTypeNameEndingPredicateRules on ClassPredicateBuilde
   }
 
   /// Selects declarations annotated with a type name ending with any suffix in [suffixes].
-  ClassPredicateBuilder areAnnotatedWithTypeNameEndingAny(
+  ClassPredicateBuilder areAnnotatedWithTypeNameEndingWithAnyOf(
     Iterable<String> suffixes,
   ) {
     final suffixList = suffixes.toNonEmptyList('suffixes');
@@ -31,7 +31,7 @@ extension ClassAnnotatedWithTypeNameEndingPredicateRules on ClassPredicateBuilde
   }
 
   /// Selects declarations annotated with type names ending with every suffix in [suffixes].
-  ClassPredicateBuilder areAnnotatedWithTypeNameEndingAll(
+  ClassPredicateBuilder areAnnotatedWithTypeNameEndingWithAllOf(
     Iterable<String> suffixes,
   ) {
     final suffixList = suffixes.toNonEmptyList('suffixes');
@@ -44,7 +44,7 @@ extension ClassAnnotatedWithTypeNameEndingPredicateRules on ClassPredicateBuilde
   }
 
   /// Selects declarations annotated with no name ending with [suffixes].
-  ClassPredicateBuilder areAnnotatedWithTypeNameEndingNone(
+  ClassPredicateBuilder areAnnotatedWithTypeNameEndingWithNoneOf(
     Iterable<String> suffixes,
   ) {
     final suffixList = suffixes.toNonEmptyList('suffixes');
@@ -60,17 +60,17 @@ extension ClassAnnotatedWithTypeNameEndingPredicateRules on ClassPredicateBuilde
 /// Condition-side DSL for class annotation suffix rules.
 extension ClassAnnotatedWithTypeNameEndingShouldRules on ClassShouldBuilder {
   /// Requires matching classes to be annotated with a type name ending with [suffix].
-  HeimdallRule<CompilationUnitMember> beAnnotatedWithTypeNameEnding(String suffix) {
+  HeimdallRule<CompilationUnitMember> beAnnotatedWithTypeNameEndingWith(String suffix) {
     return satisfy(_classShouldBeAnnotatedWithTypeNameEnding(suffix));
   }
 
   /// Requires matching classes to not be annotated with a type name ending with [suffix].
-  HeimdallRule<CompilationUnitMember> noBeAnnotatedWithTypeNameEnding(String suffix) {
+  HeimdallRule<CompilationUnitMember> notBeAnnotatedWithTypeNameEndingWith(String suffix) {
     return satisfy(_classShouldNotBeAnnotatedWithTypeNameEnding(suffix));
   }
 
   /// Requires matching classes to be annotated with a type name ending with any suffix in [suffixes].
-  HeimdallRule<CompilationUnitMember> beAnnotatedWithTypeNameEndingAny(
+  HeimdallRule<CompilationUnitMember> beAnnotatedWithTypeNameEndingWithAnyOf(
     Iterable<String> suffixes,
   ) {
     final suffixList = suffixes.toNonEmptyList('suffixes');
@@ -83,7 +83,7 @@ extension ClassAnnotatedWithTypeNameEndingShouldRules on ClassShouldBuilder {
   }
 
   /// Requires matching classes to be annotated with type names ending with every suffix in [suffixes].
-  HeimdallRule<CompilationUnitMember> beAnnotatedWithTypeNameEndingAll(
+  HeimdallRule<CompilationUnitMember> beAnnotatedWithTypeNameEndingWithAllOf(
     Iterable<String> suffixes,
   ) {
     final suffixList = suffixes.toNonEmptyList('suffixes');
@@ -96,7 +96,7 @@ extension ClassAnnotatedWithTypeNameEndingShouldRules on ClassShouldBuilder {
   }
 
   /// Requires matching classes to be annotated with no name ending with [suffixes].
-  HeimdallRule<CompilationUnitMember> beAnnotatedWithTypeNameEndingNone(
+  HeimdallRule<CompilationUnitMember> beAnnotatedWithTypeNameEndingWithNoneOf(
     Iterable<String> suffixes,
   ) {
     final suffixList = suffixes.toNonEmptyList('suffixes');

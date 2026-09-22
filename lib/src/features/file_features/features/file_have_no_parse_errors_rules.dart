@@ -12,41 +12,41 @@ extension FileHaveNoParseErrorsPredicateRules on FilePredicateBuilder {
     return satisfy(_fileHasParseErrorsMatching(pattern));
   }
 
-  /// Selects files that have no parse errors matching at least one pattern in [patterns].
-  FilePredicateBuilder haveNoParseErrorsMatchingAny(
+  /// Selects files that have at least one pattern in [patterns] that matches no parse errors.
+  FilePredicateBuilder notHaveParseErrorsMatchingAllOf(
     Iterable<RegExp> patterns,
   ) {
     final patternList = patterns.toNonEmptyList('patterns');
     return satisfy(
       HeimdallPredicate.anyOf(
         patternList.map(_fileHasNoParseErrorsMatching),
-        description: 'have no parse errors matching any of ${patternList.join(', ')}',
+        description: 'not have parse errors matching all of ${patternList.join(', ')}',
       ),
     );
   }
 
-  /// Selects files that have no parse errors matching every pattern in [patterns].
-  FilePredicateBuilder haveNoParseErrorsMatchingAll(
-    Iterable<RegExp> patterns,
-  ) {
-    final patternList = patterns.toNonEmptyList('patterns');
-    return satisfy(
-      HeimdallPredicate.allOf(
-        patternList.map(_fileHasNoParseErrorsMatching),
-        description: 'have no parse errors matching all of ${patternList.join(', ')}',
-      ),
-    );
-  }
-
-  /// Selects files that have no parse errors matching none of [patterns].
-  FilePredicateBuilder haveNoParseErrorsMatchingNone(
+  /// Selects files that have no parse errors matching any pattern in [patterns].
+  FilePredicateBuilder haveParseErrorsMatchingNoneOf(
     Iterable<RegExp> patterns,
   ) {
     final patternList = patterns.toNonEmptyList('patterns');
     return satisfy(
       HeimdallPredicate.noneOf(
-        patternList.map(_fileHasNoParseErrorsMatching),
-        description: 'have no parse errors matching none of ${patternList.join(', ')}',
+        patternList.map(_fileHasParseErrorsMatching),
+        description: 'have parse errors matching none of ${patternList.join(', ')}',
+      ),
+    );
+  }
+
+  /// Selects files that have at least one parse error matching each pattern in [patterns].
+  FilePredicateBuilder haveParseErrorsMatchingAllOf(
+    Iterable<RegExp> patterns,
+  ) {
+    final patternList = patterns.toNonEmptyList('patterns');
+    return satisfy(
+      HeimdallPredicate.allOf(
+        patternList.map(_fileHasParseErrorsMatching),
+        description: 'have parse errors matching all of ${patternList.join(', ')}',
       ),
     );
   }
@@ -64,41 +64,41 @@ extension FileHaveNoParseErrorsShouldRules on FileShouldBuilder {
     return satisfy(_fileShouldHaveParseErrorsMatching(pattern));
   }
 
-  /// Requires matching files to have no parse errors matching at least one pattern in [patterns].
-  HeimdallRule<HeimdallSourceFile> haveNoParseErrorsMatchingAny(
+  /// Requires matching files to have at least one pattern in [patterns] that matches no parse errors.
+  HeimdallRule<HeimdallSourceFile> notHaveParseErrorsMatchingAllOf(
     Iterable<RegExp> patterns,
   ) {
     final patternList = patterns.toNonEmptyList('patterns');
     return satisfy(
       HeimdallCondition.anyOf(
         patternList.map(_fileShouldHaveNoParseErrorsMatching),
-        description: 'have no parse errors matching any of ${patternList.join(', ')}',
+        description: 'not have parse errors matching all of ${patternList.join(', ')}',
       ),
     );
   }
 
-  /// Requires matching files to have no parse errors matching every pattern in [patterns].
-  HeimdallRule<HeimdallSourceFile> haveNoParseErrorsMatchingAll(
-    Iterable<RegExp> patterns,
-  ) {
-    final patternList = patterns.toNonEmptyList('patterns');
-    return satisfy(
-      HeimdallCondition.allOf(
-        patternList.map(_fileShouldHaveNoParseErrorsMatching),
-        description: 'have no parse errors matching all of ${patternList.join(', ')}',
-      ),
-    );
-  }
-
-  /// Requires matching files to have no parse errors matching none of [patterns].
-  HeimdallRule<HeimdallSourceFile> haveNoParseErrorsMatchingNone(
+  /// Requires matching files to have no parse errors matching any pattern in [patterns].
+  HeimdallRule<HeimdallSourceFile> haveParseErrorsMatchingNoneOf(
     Iterable<RegExp> patterns,
   ) {
     final patternList = patterns.toNonEmptyList('patterns');
     return satisfy(
       HeimdallCondition.noneOf(
-        patternList.map(_fileShouldHaveNoParseErrorsMatching),
-        description: 'have no parse errors matching none of ${patternList.join(', ')}',
+        patternList.map(_fileShouldHaveParseErrorsMatching),
+        description: 'have parse errors matching none of ${patternList.join(', ')}',
+      ),
+    );
+  }
+
+  /// Requires matching files to have at least one parse error matching each pattern in [patterns].
+  HeimdallRule<HeimdallSourceFile> haveParseErrorsMatchingAllOf(
+    Iterable<RegExp> patterns,
+  ) {
+    final patternList = patterns.toNonEmptyList('patterns');
+    return satisfy(
+      HeimdallCondition.allOf(
+        patternList.map(_fileShouldHaveParseErrorsMatching),
+        description: 'have parse errors matching all of ${patternList.join(', ')}',
       ),
     );
   }

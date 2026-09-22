@@ -131,8 +131,8 @@ String? _memberRuleMethodKey(String methodName) {
 }
 
 String _stripFluentPrefix(String methodName) {
-  if (methodName.startsWith('no') && methodName.length > 2 && _isUppercase(methodName.codeUnitAt(2))) {
-    return 'no${_stripFluentPrefix(_lowercaseFirst(methodName.substring(2)))}';
+  if (methodName.startsWith('not') && methodName.length > 3 && _isUppercase(methodName.codeUnitAt(3))) {
+    return 'not${_stripFluentPrefix(_lowercaseFirst(methodName.substring(3)))}';
   }
 
   for (final prefix in ['are', 'be']) {

@@ -16,12 +16,12 @@ extension MemberReceiveParameterTypeNameStartingWithPredicateRules on MemberPred
   }
 
   /// Selects members that do not satisfy `receiveParameterTypeNameStartingWith`.
-  MemberPredicateBuilder noReceiveParameterTypeNameStartingWith(String prefix) {
+  MemberPredicateBuilder notReceiveParameterTypeNameStartingWith(String prefix) {
     return satisfy(_memberDoesNotReceiveParameterTypeNameStartingWith(prefix));
   }
 
   /// Selects executable members that receive a parameter type name starting with any value in [prefixes].
-  MemberPredicateBuilder receiveParameterTypeNameStartingWithAny(Iterable<String> prefixes) {
+  MemberPredicateBuilder receiveParameterTypeNameStartingWithAnyOf(Iterable<String> prefixes) {
     final valueList = prefixes.toNonEmptyList('prefixes');
     return satisfy(
       HeimdallPredicate.anyOf(
@@ -32,7 +32,7 @@ extension MemberReceiveParameterTypeNameStartingWithPredicateRules on MemberPred
   }
 
   /// Selects executable members that receive parameter type names starting with every value in [prefixes].
-  MemberPredicateBuilder receiveParameterTypeNameStartingWithAll(Iterable<String> prefixes) {
+  MemberPredicateBuilder receiveParameterTypeNameStartingWithAllOf(Iterable<String> prefixes) {
     final valueList = prefixes.toNonEmptyList('prefixes');
     return satisfy(
       HeimdallPredicate.allOf(
@@ -43,7 +43,7 @@ extension MemberReceiveParameterTypeNameStartingWithPredicateRules on MemberPred
   }
 
   /// Selects executable members that receive no parameter type name starting with values in [prefixes].
-  MemberPredicateBuilder receiveParameterTypeNameStartingWithNone(Iterable<String> prefixes) {
+  MemberPredicateBuilder receiveParameterTypeNameStartingWithNoneOf(Iterable<String> prefixes) {
     final valueList = prefixes.toNonEmptyList('prefixes');
     return satisfy(
       HeimdallPredicate.noneOf(
@@ -62,12 +62,12 @@ extension MemberReceiveParameterTypeNameStartingWithShouldRules on MemberShouldB
   }
 
   /// Requires members not to satisfy `receiveParameterTypeNameStartingWith`.
-  HeimdallRule<ClassMember> noReceiveParameterTypeNameStartingWith(String prefix) {
+  HeimdallRule<ClassMember> notReceiveParameterTypeNameStartingWith(String prefix) {
     return satisfy(_memberShouldNotReceiveParameterTypeNameStartingWith(prefix));
   }
 
   /// Requires executable members to receive a parameter type name starting with any value in [prefixes].
-  HeimdallRule<ClassMember> receiveParameterTypeNameStartingWithAny(Iterable<String> prefixes) {
+  HeimdallRule<ClassMember> receiveParameterTypeNameStartingWithAnyOf(Iterable<String> prefixes) {
     final valueList = prefixes.toNonEmptyList('prefixes');
     return satisfy(
       HeimdallCondition.anyOf(
@@ -78,7 +78,7 @@ extension MemberReceiveParameterTypeNameStartingWithShouldRules on MemberShouldB
   }
 
   /// Requires executable members to receive parameter type names starting with every value in [prefixes].
-  HeimdallRule<ClassMember> receiveParameterTypeNameStartingWithAll(Iterable<String> prefixes) {
+  HeimdallRule<ClassMember> receiveParameterTypeNameStartingWithAllOf(Iterable<String> prefixes) {
     final valueList = prefixes.toNonEmptyList('prefixes');
     return satisfy(
       HeimdallCondition.allOf(
@@ -89,7 +89,7 @@ extension MemberReceiveParameterTypeNameStartingWithShouldRules on MemberShouldB
   }
 
   /// Requires executable members to receive no parameter type name starting with values in [prefixes].
-  HeimdallRule<ClassMember> receiveParameterTypeNameStartingWithNone(Iterable<String> prefixes) {
+  HeimdallRule<ClassMember> receiveParameterTypeNameStartingWithNoneOf(Iterable<String> prefixes) {
     final valueList = prefixes.toNonEmptyList('prefixes');
     return satisfy(
       HeimdallCondition.noneOf(

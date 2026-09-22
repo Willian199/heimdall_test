@@ -1,4 +1,5 @@
 import 'package:heimdall_test/heimdall_test.dart';
+import 'package:heimdall_test/src/features/class_features/helpers/declaration_condition.dart';
 
 /// Predicate-side DSL for class constructor-parameter count rules.
 extension ClassConstructorParameterCountPredicateRules on ClassPredicateBuilder {
@@ -13,7 +14,7 @@ extension ClassConstructorParameterCountPredicateRules on ClassPredicateBuilder 
   }
 
   /// Selects classes whose constructors do not declare exactly [count] total parameters.
-  ClassPredicateBuilder noHaveConstructorParameterCount(int count) {
+  ClassPredicateBuilder haveConstructorParameterCountOtherThan(int count) {
     return satisfy(
       HeimdallPredicate(
         'not have constructor parameter count $count',
@@ -33,10 +34,10 @@ extension ClassConstructorParameterCountPredicateRules on ClassPredicateBuilder 
   }
 
   /// Selects classes whose constructors declare [count] or fewer total parameters.
-  ClassPredicateBuilder noHaveMoreThanConstructorParameters(int count) {
+  ClassPredicateBuilder haveAtMostConstructorParameters(int count) {
     return satisfy(
       HeimdallPredicate(
-        'not have more than $count constructor parameters',
+        'have at most $count constructor parameters',
         (item, _) => _constructorParameterCount(item) <= count,
       ),
     );
@@ -48,7 +49,7 @@ extension ClassConstructorParameterCountShouldRules on ClassShouldBuilder {
   /// Requires classes whose constructors declare exactly [count] total parameters.
   HeimdallRule<CompilationUnitMember> haveConstructorParameterCount(int count) {
     return satisfy(
-      _constructorParameterCountCondition(
+      declarationCondition(
         'have constructor parameter count $count',
         (item) => _constructorParameterCount(item) == count,
       ),
@@ -56,11 +57,11 @@ extension ClassConstructorParameterCountShouldRules on ClassShouldBuilder {
   }
 
   /// Requires classes whose constructors do not declare exactly [count] total parameters.
-  HeimdallRule<CompilationUnitMember> noHaveConstructorParameterCount(
+  HeimdallRule<CompilationUnitMember> haveConstructorParameterCountOtherThan(
     int count,
   ) {
     return satisfy(
-      _constructorParameterCountCondition(
+      declarationCondition(
         'not have constructor parameter count $count',
         (item) => _constructorParameterCount(item) != count,
       ),
@@ -72,7 +73,7 @@ extension ClassConstructorParameterCountShouldRules on ClassShouldBuilder {
     int count,
   ) {
     return satisfy(
-      _constructorParameterCountCondition(
+      declarationCondition(
         'have more than $count constructor parameters',
         (item) => _constructorParameterCount(item) > count,
       ),
@@ -80,37 +81,16 @@ extension ClassConstructorParameterCountShouldRules on ClassShouldBuilder {
   }
 
   /// Requires classes whose constructors declare [count] or fewer total parameters.
-  HeimdallRule<CompilationUnitMember> noHaveMoreThanConstructorParameters(
+  HeimdallRule<CompilationUnitMember> haveAtMostConstructorParameters(
     int count,
   ) {
     return satisfy(
-      _constructorParameterCountCondition(
-        'not have more than $count constructor parameters',
+      declarationCondition(
+        'have at most $count constructor parameters',
         (item) => _constructorParameterCount(item) <= count,
       ),
     );
   }
-}
-
-HeimdallCondition<CompilationUnitMember> _constructorParameterCountCondition(
-  String description,
-  bool Function(CompilationUnitMember item) test,
-) {
-  return HeimdallCondition(description, (item, _) {
-    final passed = test(item);
-    return HeimdallFindings(
-      subject: item,
-      passed: passed,
-      findings: [
-        if (!passed)
-          HeimdallValidationInfo(
-            filePath: item.sourcePath,
-            line: item.line,
-            message: '${item.name} should $description',
-          ),
-      ],
-    );
-  });
 }
 
 int _constructorParameterCount(CompilationUnitMember item) {

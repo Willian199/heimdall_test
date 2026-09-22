@@ -10,7 +10,7 @@ import 'package:heimdall_test/src/features/member_features/helpers/member_declar
 /// Predicate-side DSL for field declared type-name prefix rules.
 extension MemberHaveDeclaredTypeNameStartingWithPredicateRules on MemberPredicateBuilder {
   /// Selects fields whose declared type name starts with [prefix].
-  MemberPredicateBuilder haveDeclaredTypeNameStartingWith(String prefix) {
+  MemberPredicateBuilder haveDeclaredFieldTypeNameStartingWith(String prefix) {
     return satisfy(
       memberDeclaredTypeNamePredicate(
         'have declared type name starting with $prefix',
@@ -19,8 +19,8 @@ extension MemberHaveDeclaredTypeNameStartingWithPredicateRules on MemberPredicat
     );
   }
 
-  /// Selects members that do not satisfy `haveDeclaredTypeNameStartingWith`.
-  MemberPredicateBuilder noHaveDeclaredTypeNameStartingWith(String prefix) {
+  /// Selects members that do not satisfy `haveDeclaredFieldTypeNameStartingWith`.
+  MemberPredicateBuilder notHaveDeclaredFieldTypeNameStartingWith(String prefix) {
     return satisfy(
       memberDoesNotHaveDeclaredTypeNamePredicate(
         'have declared type name starting with $prefix',
@@ -30,7 +30,7 @@ extension MemberHaveDeclaredTypeNameStartingWithPredicateRules on MemberPredicat
   }
 
   /// Selects fields whose declared type name starts with any value in [prefixes].
-  MemberPredicateBuilder haveDeclaredTypeNameStartingWithAny(Iterable<String> prefixes) {
+  MemberPredicateBuilder haveDeclaredFieldTypeNameStartingWithAnyOf(Iterable<String> prefixes) {
     final valueList = prefixes.toNonEmptyList('prefixes');
     return satisfy(
       HeimdallPredicate.anyOf(
@@ -46,7 +46,7 @@ extension MemberHaveDeclaredTypeNameStartingWithPredicateRules on MemberPredicat
   }
 
   /// Selects fields whose declared type name starts with every value in [prefixes].
-  MemberPredicateBuilder haveDeclaredTypeNameStartingWithAll(Iterable<String> prefixes) {
+  MemberPredicateBuilder haveDeclaredFieldTypeNameStartingWithAllOf(Iterable<String> prefixes) {
     final valueList = prefixes.toNonEmptyList('prefixes');
     return satisfy(
       HeimdallPredicate.allOf(
@@ -62,7 +62,7 @@ extension MemberHaveDeclaredTypeNameStartingWithPredicateRules on MemberPredicat
   }
 
   /// Selects fields whose declared type name starts with none of [prefixes].
-  MemberPredicateBuilder haveDeclaredTypeNameStartingWithNone(Iterable<String> prefixes) {
+  MemberPredicateBuilder haveDeclaredFieldTypeNameStartingWithNoneOf(Iterable<String> prefixes) {
     final valueList = prefixes.toNonEmptyList('prefixes');
     return satisfy(
       HeimdallPredicate.noneOf(
@@ -81,7 +81,7 @@ extension MemberHaveDeclaredTypeNameStartingWithPredicateRules on MemberPredicat
 /// Condition-side DSL for field declared type-name prefix rules.
 extension MemberHaveDeclaredTypeNameStartingWithShouldRules on MemberShouldBuilder {
   /// Requires fields to have a declared type name starting with [prefix].
-  HeimdallRule<ClassMember> haveDeclaredTypeNameStartingWith(String prefix) {
+  HeimdallRule<ClassMember> haveDeclaredFieldTypeNameStartingWith(String prefix) {
     return satisfy(
       memberDeclaredTypeNameCondition(
         'have declared type name starting with $prefix',
@@ -90,8 +90,8 @@ extension MemberHaveDeclaredTypeNameStartingWithShouldRules on MemberShouldBuild
     );
   }
 
-  /// Requires members not to satisfy `haveDeclaredTypeNameStartingWith`.
-  HeimdallRule<ClassMember> noHaveDeclaredTypeNameStartingWith(String prefix) {
+  /// Requires members not to satisfy `haveDeclaredFieldTypeNameStartingWith`.
+  HeimdallRule<ClassMember> notHaveDeclaredFieldTypeNameStartingWith(String prefix) {
     return satisfy(
       memberMustNotHaveDeclaredTypeNameCondition(
         'have declared type name starting with $prefix',
@@ -101,7 +101,7 @@ extension MemberHaveDeclaredTypeNameStartingWithShouldRules on MemberShouldBuild
   }
 
   /// Requires fields to have a declared type name starting with any value in [prefixes].
-  HeimdallRule<ClassMember> haveDeclaredTypeNameStartingWithAny(Iterable<String> prefixes) {
+  HeimdallRule<ClassMember> haveDeclaredFieldTypeNameStartingWithAnyOf(Iterable<String> prefixes) {
     final valueList = prefixes.toNonEmptyList('prefixes');
     return satisfy(
       HeimdallCondition.anyOf(
@@ -117,7 +117,7 @@ extension MemberHaveDeclaredTypeNameStartingWithShouldRules on MemberShouldBuild
   }
 
   /// Requires fields to have a declared type name starting with every value in [prefixes].
-  HeimdallRule<ClassMember> haveDeclaredTypeNameStartingWithAll(Iterable<String> prefixes) {
+  HeimdallRule<ClassMember> haveDeclaredFieldTypeNameStartingWithAllOf(Iterable<String> prefixes) {
     final valueList = prefixes.toNonEmptyList('prefixes');
     return satisfy(
       HeimdallCondition.allOf(
@@ -133,7 +133,7 @@ extension MemberHaveDeclaredTypeNameStartingWithShouldRules on MemberShouldBuild
   }
 
   /// Requires fields to have a declared type name starting with none of [prefixes].
-  HeimdallRule<ClassMember> haveDeclaredTypeNameStartingWithNone(Iterable<String> prefixes) {
+  HeimdallRule<ClassMember> haveDeclaredFieldTypeNameStartingWithNoneOf(Iterable<String> prefixes) {
     final valueList = prefixes.toNonEmptyList('prefixes');
     return satisfy(
       HeimdallCondition.noneOf(

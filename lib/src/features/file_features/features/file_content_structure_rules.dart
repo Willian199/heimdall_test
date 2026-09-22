@@ -3,18 +3,18 @@ import 'package:heimdall_test/src/features/file_features/helpers/source_file_loc
 
 /// Predicate-side DSL for documentation comment regex rules.
 extension FileContentStructurePredicateRules on FilePredicateBuilder {
-  /// Selects files whose top documentation comment matches [pattern].
+  /// Selects files with a directive or top-level declaration documentation comment matching [pattern].
   FilePredicateBuilder haveDocumentationCommentMatching(RegExp pattern) {
     return satisfy(_fileHasDocumentationCommentMatching(pattern));
   }
 
-  /// Selects files whose top documentation comments do not match [pattern].
-  FilePredicateBuilder noHaveDocumentationCommentMatching(RegExp pattern) {
+  /// Selects files with no directive or top-level declaration documentation comment matching [pattern].
+  FilePredicateBuilder haveNoDocumentationCommentMatching(RegExp pattern) {
     return satisfy(_fileDoesNotHaveDocumentationCommentMatching(pattern));
   }
 
-  /// Selects files whose top documentation comment matches every pattern in [patterns].
-  FilePredicateBuilder haveDocumentationCommentMatchingAll(
+  /// Selects files with a matching documentation comment for every pattern in [patterns] (possibly different comments).
+  FilePredicateBuilder haveDocumentationCommentMatchingAllOf(
     Iterable<RegExp> patterns,
   ) {
     final patternList = patterns.toNonEmptyList('patterns');
@@ -26,8 +26,8 @@ extension FileContentStructurePredicateRules on FilePredicateBuilder {
     );
   }
 
-  /// Selects files whose top documentation comment matches at least one pattern in [patterns].
-  FilePredicateBuilder haveDocumentationCommentMatchingAny(
+  /// Selects files with a documentation comment matching at least one pattern in [patterns].
+  FilePredicateBuilder haveDocumentationCommentMatchingAnyOf(
     Iterable<RegExp> patterns,
   ) {
     final patternList = patterns.toNonEmptyList('patterns');
@@ -39,8 +39,8 @@ extension FileContentStructurePredicateRules on FilePredicateBuilder {
     );
   }
 
-  /// Selects files whose top documentation comment matches none of [patterns].
-  FilePredicateBuilder haveDocumentationCommentMatchingNone(
+  /// Selects files with no documentation comment matching any of [patterns].
+  FilePredicateBuilder haveDocumentationCommentMatchingNoneOf(
     Iterable<RegExp> patterns,
   ) {
     final patternList = patterns.toNonEmptyList('patterns');
@@ -55,7 +55,7 @@ extension FileContentStructurePredicateRules on FilePredicateBuilder {
 
 /// Condition-side DSL for documentation comment regex rules.
 extension FileContentStructureShouldRules on FileShouldBuilder {
-  /// Requires matching files to have a top documentation comment matching [pattern].
+  /// Requires matching files to have a directive or top-level declaration documentation comment matching [pattern].
   HeimdallRule<HeimdallSourceFile> haveDocumentationCommentMatching(
     RegExp pattern,
   ) {
@@ -63,14 +63,14 @@ extension FileContentStructureShouldRules on FileShouldBuilder {
   }
 
   /// Requires matching files to have no documentation comment matching [pattern].
-  HeimdallRule<HeimdallSourceFile> noHaveDocumentationCommentMatching(
+  HeimdallRule<HeimdallSourceFile> haveNoDocumentationCommentMatching(
     RegExp pattern,
   ) {
     return satisfy(_fileShouldNotHaveDocumentationCommentMatching(pattern));
   }
 
-  /// Requires matching files to have a top documentation comment matching every pattern in [patterns].
-  HeimdallRule<HeimdallSourceFile> haveDocumentationCommentMatchingAll(
+  /// Requires matching files to have a matching documentation comment for every pattern (possibly different comments).
+  HeimdallRule<HeimdallSourceFile> haveDocumentationCommentMatchingAllOf(
     Iterable<RegExp> patterns,
   ) {
     final patternList = patterns.toNonEmptyList('patterns');
@@ -82,8 +82,8 @@ extension FileContentStructureShouldRules on FileShouldBuilder {
     );
   }
 
-  /// Requires matching files to have a top documentation comment matching at least one pattern in [patterns].
-  HeimdallRule<HeimdallSourceFile> haveDocumentationCommentMatchingAny(
+  /// Requires matching files to have a documentation comment matching at least one pattern in [patterns].
+  HeimdallRule<HeimdallSourceFile> haveDocumentationCommentMatchingAnyOf(
     Iterable<RegExp> patterns,
   ) {
     final patternList = patterns.toNonEmptyList('patterns');
@@ -95,8 +95,8 @@ extension FileContentStructureShouldRules on FileShouldBuilder {
     );
   }
 
-  /// Requires matching files to have a top documentation comment matching none of [patterns].
-  HeimdallRule<HeimdallSourceFile> haveDocumentationCommentMatchingNone(
+  /// Requires matching files to have no documentation comment matching any of [patterns].
+  HeimdallRule<HeimdallSourceFile> haveDocumentationCommentMatchingNoneOf(
     Iterable<RegExp> patterns,
   ) {
     final patternList = patterns.toNonEmptyList('patterns');

@@ -10,17 +10,17 @@ import 'package:heimdall_test/src/features/class_features/helpers/class_construc
 /// Predicate-side DSL for constructor name suffix rules.
 extension ClassHaveConstructorNameEndingWithPredicateRules on ClassPredicateBuilder {
   /// Selects classes that declare a constructor name ending with [suffix].
-  ClassPredicateBuilder haveConstructorNameEndingWith(String suffix) {
+  ClassPredicateBuilder declareConstructorWithNameEndingWith(String suffix) {
     return satisfy(classHasConstructorName('ends with $suffix', (item) => item.endsWith(suffix)));
   }
 
   /// Selects classes that do not declare a constructor name ending with [suffix].
-  ClassPredicateBuilder noHaveConstructorNameEndingWith(String suffix) {
+  ClassPredicateBuilder notDeclareConstructorWithNameEndingWith(String suffix) {
     return satisfy(classDoesNotHaveConstructorName('ends with $suffix', (item) => item.endsWith(suffix)));
   }
 
   /// Selects classes that declare constructor names ending with every suffix in [suffixes].
-  ClassPredicateBuilder haveConstructorNameEndingWithAll(
+  ClassPredicateBuilder declareConstructorWithNameEndingWithAllOf(
     Iterable<String> suffixes,
   ) {
     final suffixList = suffixes.toNonEmptyList('suffixes');
@@ -33,7 +33,7 @@ extension ClassHaveConstructorNameEndingWithPredicateRules on ClassPredicateBuil
   }
 
   /// Selects classes that declare at least one constructor name ending with [suffixes].
-  ClassPredicateBuilder haveConstructorNameEndingWithAny(
+  ClassPredicateBuilder declareConstructorWithNameEndingWithAnyOf(
     Iterable<String> suffixes,
   ) {
     final suffixList = suffixes.toNonEmptyList('suffixes');
@@ -46,7 +46,7 @@ extension ClassHaveConstructorNameEndingWithPredicateRules on ClassPredicateBuil
   }
 
   /// Selects classes that declare no constructor name ending with [suffixes].
-  ClassPredicateBuilder haveConstructorNameEndingWithNone(
+  ClassPredicateBuilder declareConstructorWithNameEndingWithNoneOf(
     Iterable<String> suffixes,
   ) {
     final suffixList = suffixes.toNonEmptyList('suffixes');
@@ -62,21 +62,21 @@ extension ClassHaveConstructorNameEndingWithPredicateRules on ClassPredicateBuil
 /// Condition-side DSL for constructor name suffix rules.
 extension ClassHaveConstructorNameEndingWithShouldRules on ClassShouldBuilder {
   /// Requires matching classes to declare a constructor name ending with [suffix].
-  HeimdallRule<CompilationUnitMember> haveConstructorNameEndingWith(
+  HeimdallRule<CompilationUnitMember> declareConstructorWithNameEndingWith(
     String suffix,
   ) {
     return satisfy(classShouldHaveConstructorName('ends with $suffix', (item) => item.endsWith(suffix)));
   }
 
   /// Requires matching classes to not declare a constructor name ending with [suffix].
-  HeimdallRule<CompilationUnitMember> noHaveConstructorNameEndingWith(
+  HeimdallRule<CompilationUnitMember> notDeclareConstructorWithNameEndingWith(
     String suffix,
   ) {
     return satisfy(classShouldNotHaveConstructorName('ends with $suffix', (item) => item.endsWith(suffix)));
   }
 
   /// Requires matching classes to declare constructor names ending with every suffix in [suffixes].
-  HeimdallRule<CompilationUnitMember> haveConstructorNameEndingWithAll(
+  HeimdallRule<CompilationUnitMember> declareConstructorWithNameEndingWithAllOf(
     Iterable<String> suffixes,
   ) {
     final suffixList = suffixes.toNonEmptyList('suffixes');
@@ -89,7 +89,7 @@ extension ClassHaveConstructorNameEndingWithShouldRules on ClassShouldBuilder {
   }
 
   /// Requires matching classes to declare at least one constructor name ending with [suffixes].
-  HeimdallRule<CompilationUnitMember> haveConstructorNameEndingWithAny(
+  HeimdallRule<CompilationUnitMember> declareConstructorWithNameEndingWithAnyOf(
     Iterable<String> suffixes,
   ) {
     final suffixList = suffixes.toNonEmptyList('suffixes');
@@ -102,7 +102,7 @@ extension ClassHaveConstructorNameEndingWithShouldRules on ClassShouldBuilder {
   }
 
   /// Requires matching classes to declare no constructor name ending with [suffixes].
-  HeimdallRule<CompilationUnitMember> haveConstructorNameEndingWithNone(
+  HeimdallRule<CompilationUnitMember> declareConstructorWithNameEndingWithNoneOf(
     Iterable<String> suffixes,
   ) {
     final suffixList = suffixes.toNonEmptyList('suffixes');

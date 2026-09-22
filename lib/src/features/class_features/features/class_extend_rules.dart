@@ -1,15 +1,16 @@
 import 'package:heimdall_test/heimdall_test.dart';
+import 'package:heimdall_test/src/features/queries/declaration_rule_predicates.dart';
 import 'package:heimdall_test/src/features/queries/declaration_type_queries.dart';
 
 /// Predicate-side DSL for class inheritance rules.
 extension ClassExtendPredicateRules on ClassPredicateBuilder {
   /// Selects classes that extend [typeName].
   ClassPredicateBuilder extend(String typeName) {
-    return satisfy(_classExtends(typeName));
+    return satisfy(classExtends(typeName));
   }
 
   /// Selects classes that do not extend [typeName].
-  ClassPredicateBuilder noExtend(String typeName) {
+  ClassPredicateBuilder notExtend(String typeName) {
     return satisfy(
       HeimdallPredicate(
         'not extend $typeName',
@@ -19,33 +20,33 @@ extension ClassExtendPredicateRules on ClassPredicateBuilder {
   }
 
   /// Selects classes that extend at least one type in [typeNames].
-  ClassPredicateBuilder extendAny(Iterable<String> typeNames) {
+  ClassPredicateBuilder extendAnyOf(Iterable<String> typeNames) {
     final typeList = typeNames.toNonEmptyList('typeNames');
     return satisfy(
       HeimdallPredicate.anyOf(
-        typeList.map(_classExtends),
+        typeList.map(classExtends),
         description: 'extend any of ${typeList.join(', ')}',
       ),
     );
   }
 
   /// Selects classes that extend every type in [typeNames].
-  ClassPredicateBuilder extendAll(Iterable<String> typeNames) {
+  ClassPredicateBuilder extendAllOf(Iterable<String> typeNames) {
     final typeList = typeNames.toNonEmptyList('typeNames');
     return satisfy(
       HeimdallPredicate.allOf(
-        typeList.map(_classExtends),
+        typeList.map(classExtends),
         description: 'extend all of ${typeList.join(', ')}',
       ),
     );
   }
 
   /// Selects classes that extend none of [typeNames].
-  ClassPredicateBuilder extendNone(Iterable<String> typeNames) {
+  ClassPredicateBuilder extendNoneOf(Iterable<String> typeNames) {
     final typeList = typeNames.toNonEmptyList('typeNames');
     return satisfy(
       HeimdallPredicate.noneOf(
-        typeList.map(_classExtends),
+        typeList.map(classExtends),
         description: 'extend none of ${typeList.join(', ')}',
       ),
     );
@@ -60,12 +61,12 @@ extension ClassExtendShouldRules on ClassShouldBuilder {
   }
 
   /// Requires matching classes to not extend [typeName].
-  HeimdallRule<CompilationUnitMember> noExtend(String typeName) {
+  HeimdallRule<CompilationUnitMember> notExtend(String typeName) {
     return satisfy(_classShouldNotExtend(typeName));
   }
 
   /// Requires matching classes to extend at least one type in [typeNames].
-  HeimdallRule<CompilationUnitMember> extendAny(Iterable<String> typeNames) {
+  HeimdallRule<CompilationUnitMember> extendAnyOf(Iterable<String> typeNames) {
     final typeList = typeNames.toNonEmptyList('typeNames');
     return satisfy(
       HeimdallCondition.anyOf(
@@ -76,7 +77,7 @@ extension ClassExtendShouldRules on ClassShouldBuilder {
   }
 
   /// Requires matching classes to extend every type in [typeNames].
-  HeimdallRule<CompilationUnitMember> extendAll(Iterable<String> typeNames) {
+  HeimdallRule<CompilationUnitMember> extendAllOf(Iterable<String> typeNames) {
     final typeList = typeNames.toNonEmptyList('typeNames');
     return satisfy(
       HeimdallCondition.allOf(
@@ -87,7 +88,7 @@ extension ClassExtendShouldRules on ClassShouldBuilder {
   }
 
   /// Requires matching classes to extend none of [typeNames].
-  HeimdallRule<CompilationUnitMember> extendNone(Iterable<String> typeNames) {
+  HeimdallRule<CompilationUnitMember> extendNoneOf(Iterable<String> typeNames) {
     final typeList = typeNames.toNonEmptyList('typeNames');
     return satisfy(
       HeimdallCondition.noneOf(
@@ -96,13 +97,6 @@ extension ClassExtendShouldRules on ClassShouldBuilder {
       ),
     );
   }
-}
-
-HeimdallPredicate<CompilationUnitMember> _classExtends(String typeName) {
-  return HeimdallPredicate(
-    'extend $typeName',
-    (item, project) => extendsType(item, typeName, project),
-  );
 }
 
 HeimdallCondition<CompilationUnitMember> _classShouldExtend(String typeName) {

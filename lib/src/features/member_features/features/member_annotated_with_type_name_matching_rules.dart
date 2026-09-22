@@ -9,12 +9,12 @@ extension MemberAnnotatedWithTypeNameMatchingPredicateRules on MemberPredicateBu
   }
 
   /// Selects members that do not satisfy `areAnnotatedWithTypeNameMatching`.
-  MemberPredicateBuilder noAreAnnotatedWithTypeNameMatching(RegExp pattern) {
+  MemberPredicateBuilder areNotAnnotatedWithTypeNameMatching(RegExp pattern) {
     return satisfy(_memberDoesNotBeAnnotatedWithTypeNameMatching(pattern));
   }
 
   /// Selects members that annotated with type name matching every value in [patterns].
-  MemberPredicateBuilder areAnnotatedWithTypeNameMatchingAll(Iterable<RegExp> patterns) {
+  MemberPredicateBuilder areAnnotatedWithTypeNameMatchingAllOf(Iterable<RegExp> patterns) {
     final valueList = patterns.toNonEmptyList('patterns');
     return satisfy(
       HeimdallPredicate.allOf(
@@ -25,7 +25,7 @@ extension MemberAnnotatedWithTypeNameMatchingPredicateRules on MemberPredicateBu
   }
 
   /// Selects members that annotated with type name matching at least one value in [patterns].
-  MemberPredicateBuilder areAnnotatedWithTypeNameMatchingAny(Iterable<RegExp> patterns) {
+  MemberPredicateBuilder areAnnotatedWithTypeNameMatchingAnyOf(Iterable<RegExp> patterns) {
     final valueList = patterns.toNonEmptyList('patterns');
     return satisfy(
       HeimdallPredicate.anyOf(
@@ -36,7 +36,7 @@ extension MemberAnnotatedWithTypeNameMatchingPredicateRules on MemberPredicateBu
   }
 
   /// Selects members that annotated with type name matching none of [patterns].
-  MemberPredicateBuilder areAnnotatedWithTypeNameMatchingNone(Iterable<RegExp> patterns) {
+  MemberPredicateBuilder areAnnotatedWithTypeNameMatchingNoneOf(Iterable<RegExp> patterns) {
     final valueList = patterns.toNonEmptyList('patterns');
     return satisfy(
       HeimdallPredicate.noneOf(
@@ -55,12 +55,12 @@ extension MemberAnnotatedWithTypeNameMatchingShouldRules on MemberShouldBuilder 
   }
 
   /// Requires members not to satisfy `beAnnotatedWithTypeNameMatching`.
-  HeimdallRule<ClassMember> noBeAnnotatedWithTypeNameMatching(RegExp pattern) {
+  HeimdallRule<ClassMember> notBeAnnotatedWithTypeNameMatching(RegExp pattern) {
     return satisfy(_memberShouldNotBeAnnotatedWithTypeNameMatching(pattern));
   }
 
   /// Requires members to annotated with type name matching every value in [patterns].
-  HeimdallRule<ClassMember> beAnnotatedWithTypeNameMatchingAll(Iterable<RegExp> patterns) {
+  HeimdallRule<ClassMember> beAnnotatedWithTypeNameMatchingAllOf(Iterable<RegExp> patterns) {
     final valueList = patterns.toNonEmptyList('patterns');
     return satisfy(
       HeimdallCondition.allOf(
@@ -71,7 +71,7 @@ extension MemberAnnotatedWithTypeNameMatchingShouldRules on MemberShouldBuilder 
   }
 
   /// Requires members to annotated with type name matching at least one value in [patterns].
-  HeimdallRule<ClassMember> beAnnotatedWithTypeNameMatchingAny(Iterable<RegExp> patterns) {
+  HeimdallRule<ClassMember> beAnnotatedWithTypeNameMatchingAnyOf(Iterable<RegExp> patterns) {
     final valueList = patterns.toNonEmptyList('patterns');
     return satisfy(
       HeimdallCondition.anyOf(
@@ -82,7 +82,7 @@ extension MemberAnnotatedWithTypeNameMatchingShouldRules on MemberShouldBuilder 
   }
 
   /// Requires members to annotated with type name matching none of [patterns].
-  HeimdallRule<ClassMember> beAnnotatedWithTypeNameMatchingNone(Iterable<RegExp> patterns) {
+  HeimdallRule<ClassMember> beAnnotatedWithTypeNameMatchingNoneOf(Iterable<RegExp> patterns) {
     final valueList = patterns.toNonEmptyList('patterns');
     return satisfy(
       HeimdallCondition.noneOf(

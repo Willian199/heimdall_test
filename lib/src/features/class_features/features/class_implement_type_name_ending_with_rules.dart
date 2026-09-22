@@ -1,46 +1,47 @@
 import 'package:heimdall_test/heimdall_test.dart';
+import 'package:heimdall_test/src/features/queries/declaration_rule_predicates.dart';
 import 'package:heimdall_test/src/features/queries/declaration_type_queries.dart';
 
 /// Predicate-side DSL for implemented type suffix rules.
 extension ClassImplementTypeNameEndingWithPredicateRules on ClassPredicateBuilder {
   /// Selects classes that implement a type whose name ends with [suffix].
   ClassPredicateBuilder implementTypeNameEndingWith(String suffix) {
-    return satisfy(_classImplementsTypeNameEndingWith(suffix));
+    return satisfy(classImplementsTypeNameEndingWith(suffix));
   }
 
   /// Selects classes that do not implement a type whose name ends with [suffix].
-  ClassPredicateBuilder noImplementTypeNameEndingWith(String suffix) {
+  ClassPredicateBuilder notImplementTypeNameEndingWith(String suffix) {
     return satisfy(_classDoesNotImplementTypeNameEndingWith(suffix));
   }
 
   /// Selects classes that implement a type name ending with at least one suffix in [suffixes].
-  ClassPredicateBuilder implementTypeNameEndingWithAny(Iterable<String> suffixes) {
+  ClassPredicateBuilder implementTypeNameEndingWithAnyOf(Iterable<String> suffixes) {
     final suffixList = suffixes.toNonEmptyList('suffixes');
     return satisfy(
       HeimdallPredicate.anyOf(
-        suffixList.map(_classImplementsTypeNameEndingWith),
+        suffixList.map(classImplementsTypeNameEndingWith),
         description: 'implement type name ending with any of ${suffixList.join(', ')}',
       ),
     );
   }
 
   /// Selects classes that implement type names ending with every suffix in [suffixes].
-  ClassPredicateBuilder implementTypeNameEndingWithAll(Iterable<String> suffixes) {
+  ClassPredicateBuilder implementTypeNameEndingWithAllOf(Iterable<String> suffixes) {
     final suffixList = suffixes.toNonEmptyList('suffixes');
     return satisfy(
       HeimdallPredicate.allOf(
-        suffixList.map(_classImplementsTypeNameEndingWith),
+        suffixList.map(classImplementsTypeNameEndingWith),
         description: 'implement type names ending with all of ${suffixList.join(', ')}',
       ),
     );
   }
 
   /// Selects classes that implement no type name ending with [suffixes].
-  ClassPredicateBuilder implementTypeNameEndingWithNone(Iterable<String> suffixes) {
+  ClassPredicateBuilder implementTypeNameEndingWithNoneOf(Iterable<String> suffixes) {
     final suffixList = suffixes.toNonEmptyList('suffixes');
     return satisfy(
       HeimdallPredicate.noneOf(
-        suffixList.map(_classImplementsTypeNameEndingWith),
+        suffixList.map(classImplementsTypeNameEndingWith),
         description: 'implement type name ending with none of ${suffixList.join(', ')}',
       ),
     );
@@ -55,12 +56,12 @@ extension ClassImplementTypeNameEndingWithShouldRules on ClassShouldBuilder {
   }
 
   /// Requires matching classes to not implement a type whose name ends with [suffix].
-  HeimdallRule<CompilationUnitMember> noImplementTypeNameEndingWith(String suffix) {
+  HeimdallRule<CompilationUnitMember> notImplementTypeNameEndingWith(String suffix) {
     return satisfy(_classShouldNotImplementTypeNameEndingWith(suffix));
   }
 
   /// Requires matching classes to implement a type name ending with at least one suffix in [suffixes].
-  HeimdallRule<CompilationUnitMember> implementTypeNameEndingWithAny(
+  HeimdallRule<CompilationUnitMember> implementTypeNameEndingWithAnyOf(
     Iterable<String> suffixes,
   ) {
     final suffixList = suffixes.toNonEmptyList('suffixes');
@@ -73,7 +74,7 @@ extension ClassImplementTypeNameEndingWithShouldRules on ClassShouldBuilder {
   }
 
   /// Requires matching classes to implement type names ending with every suffix in [suffixes].
-  HeimdallRule<CompilationUnitMember> implementTypeNameEndingWithAll(
+  HeimdallRule<CompilationUnitMember> implementTypeNameEndingWithAllOf(
     Iterable<String> suffixes,
   ) {
     final suffixList = suffixes.toNonEmptyList('suffixes');
@@ -86,7 +87,7 @@ extension ClassImplementTypeNameEndingWithShouldRules on ClassShouldBuilder {
   }
 
   /// Requires matching classes to implement no type name ending with [suffixes].
-  HeimdallRule<CompilationUnitMember> implementTypeNameEndingWithNone(
+  HeimdallRule<CompilationUnitMember> implementTypeNameEndingWithNoneOf(
     Iterable<String> suffixes,
   ) {
     final suffixList = suffixes.toNonEmptyList('suffixes');
@@ -97,19 +98,6 @@ extension ClassImplementTypeNameEndingWithShouldRules on ClassShouldBuilder {
       ),
     );
   }
-}
-
-HeimdallPredicate<CompilationUnitMember> _classImplementsTypeNameEndingWith(
-  String suffix,
-) {
-  return HeimdallPredicate(
-    'implement type name ending with $suffix',
-    (item, project) => implementsTypeNamedWhere(
-      item,
-      project,
-      (typeName) => typeName.endsWith(suffix),
-    ),
-  );
 }
 
 HeimdallPredicate<CompilationUnitMember> _classDoesNotImplementTypeNameEndingWith(

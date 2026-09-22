@@ -1,4 +1,5 @@
 import 'package:heimdall_test/heimdall_test.dart';
+import 'package:heimdall_test/src/features/class_features/helpers/declaration_condition.dart';
 
 /// Predicate-side DSL for class constructor-count rules.
 extension ClassConstructorCountPredicateRules on ClassPredicateBuilder {
@@ -13,7 +14,7 @@ extension ClassConstructorCountPredicateRules on ClassPredicateBuilder {
   }
 
   /// Selects classes that do not declare exactly [count] constructors.
-  ClassPredicateBuilder noHaveConstructorCount(int count) {
+  ClassPredicateBuilder haveConstructorCountOtherThan(int count) {
     return satisfy(
       HeimdallPredicate(
         'not have constructor count $count',
@@ -33,10 +34,10 @@ extension ClassConstructorCountPredicateRules on ClassPredicateBuilder {
   }
 
   /// Selects classes that declare [count] or fewer constructors.
-  ClassPredicateBuilder noHaveMoreThanConstructors(int count) {
+  ClassPredicateBuilder haveAtMostConstructors(int count) {
     return satisfy(
       HeimdallPredicate(
-        'not have more than $count constructors',
+        'have at most $count constructors',
         (item, _) => item.constructors.length <= count,
       ),
     );
@@ -48,7 +49,7 @@ extension ClassConstructorCountShouldRules on ClassShouldBuilder {
   /// Requires classes to declare exactly [count] constructors.
   HeimdallRule<CompilationUnitMember> haveConstructorCount(int count) {
     return satisfy(
-      _constructorCountCondition(
+      declarationCondition(
         'have constructor count $count',
         (item) => item.constructors.length == count,
       ),
@@ -56,9 +57,9 @@ extension ClassConstructorCountShouldRules on ClassShouldBuilder {
   }
 
   /// Requires classes not to declare exactly [count] constructors.
-  HeimdallRule<CompilationUnitMember> noHaveConstructorCount(int count) {
+  HeimdallRule<CompilationUnitMember> haveConstructorCountOtherThan(int count) {
     return satisfy(
-      _constructorCountCondition(
+      declarationCondition(
         'not have constructor count $count',
         (item) => item.constructors.length != count,
       ),
@@ -68,7 +69,7 @@ extension ClassConstructorCountShouldRules on ClassShouldBuilder {
   /// Requires classes to declare more than [count] constructors.
   HeimdallRule<CompilationUnitMember> haveMoreThanConstructors(int count) {
     return satisfy(
-      _constructorCountCondition(
+      declarationCondition(
         'have more than $count constructors',
         (item) => item.constructors.length > count,
       ),
@@ -76,33 +77,12 @@ extension ClassConstructorCountShouldRules on ClassShouldBuilder {
   }
 
   /// Requires classes to declare [count] or fewer constructors.
-  HeimdallRule<CompilationUnitMember> noHaveMoreThanConstructors(int count) {
+  HeimdallRule<CompilationUnitMember> haveAtMostConstructors(int count) {
     return satisfy(
-      _constructorCountCondition(
-        'not have more than $count constructors',
+      declarationCondition(
+        'have at most $count constructors',
         (item) => item.constructors.length <= count,
       ),
     );
   }
-}
-
-HeimdallCondition<CompilationUnitMember> _constructorCountCondition(
-  String description,
-  bool Function(CompilationUnitMember item) test,
-) {
-  return HeimdallCondition(description, (item, _) {
-    final passed = test(item);
-    return HeimdallFindings(
-      subject: item,
-      passed: passed,
-      findings: [
-        if (!passed)
-          HeimdallValidationInfo(
-            filePath: item.sourcePath,
-            line: item.line,
-            message: '${item.name} should $description',
-          ),
-      ],
-    );
-  });
 }

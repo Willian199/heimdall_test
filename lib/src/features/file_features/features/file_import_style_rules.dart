@@ -1,28 +1,32 @@
 import 'package:heimdall_test/heimdall_test.dart';
+import 'package:heimdall_test/src/features/file_features/helpers/import_style_conditions.dart';
 
-/// Predicate-side DSL for source-file import style rules.
+/// Predicate-side DSL for import URI style, independent of package ownership.
+///
+/// Every conditional branch is checked. Exports and parts are not checked.
+/// These rules inspect URI text; they do not validate syntax or resolve targets.
 extension FileImportStylePredicateRules on FilePredicateBuilder {
-  /// Selects files whose imports use only `package:` or `dart:` URIs.
-  FilePredicateBuilder useOnlyPackageImports() {
-    return satisfy(
-      HeimdallPredicate(
-        'use only package imports',
-        (item, _) => item.importDirectives.expand((directive) => directive.targetUris).every(_isPackageOrSdkUri),
-      ),
-    );
+  /// Selects files whose import targets all start with `package:` or `dart:`.
+  ///
+  /// Accepts both the project's package and external packages. Files without
+  /// imports also match. Equivalent to `onlyImportFrom(['package:', 'dart:'])`.
+  FilePredicateBuilder useOnlyPackageOrSdkImports() {
+    return onlyImportFrom(const ['package:', 'dart:']);
   }
 
-  /// Selects files that use at least one non-package import URI.
-  FilePredicateBuilder noUseOnlyPackageImports() {
-    return satisfy(
-      HeimdallPredicate(
-        'not use only package imports',
-        (item, _) => item.importDirectives.expand((directive) => directive.targetUris).any((uri) => !_isPackageOrSdkUri(uri)),
-      ),
-    );
+  /// Selects files with an import outside the `package:` and `dart:` prefixes.
+  ///
+  /// This is the inverse of [useOnlyPackageOrSdkImports]. Files without imports
+  /// do not match. SDK imports alone do not satisfy this rule.
+  FilePredicateBuilder notUseOnlyPackageOrSdkImports() {
+    return importFromOutside(const ['package:', 'dart:']);
   }
 
-  /// Selects files that do not use relative import URIs.
+  /// Selects files without relative import targets, including conditional ones.
+  ///
+  /// A relative target contains no colon. Other URI schemes are accepted;
+  /// use [useOnlyPackageOrSdkImports] to allow only `package:` and `dart:`.
+  /// Files without imports match. No project package-name filter is applied.
   FilePredicateBuilder notUseRelativeImports() {
     return satisfy(
       HeimdallPredicate(
@@ -33,85 +37,33 @@ extension FileImportStylePredicateRules on FilePredicateBuilder {
   }
 }
 
-/// Condition-side DSL for source-file import style rules.
+/// Condition-side DSL for import URI style, independent of package ownership.
+///
+/// Every conditional branch is checked. Exports and parts are not checked.
+/// These rules inspect URI text; they do not validate syntax or resolve targets.
 extension FileImportStyleShouldRules on FileShouldBuilder {
-  /// Requires matching files to use only `package:` or `dart:` imports.
-  HeimdallRule<HeimdallSourceFile> useOnlyPackageImports() {
-    return satisfy(
-      HeimdallCondition('use only package imports', (item, _) {
-        final findings = [
-          for (final directive in item.importDirectives)
-            for (final uri in directive.targetUris)
-              if (!_isPackageOrSdkUri(uri))
-                HeimdallValidationInfo(
-                  filePath: item.absolutePath,
-                  line: directive.line,
-                  message: 'imports $uri without a package URI',
-                ),
-        ];
-
-        return HeimdallFindings(
-          subject: item,
-          passed: findings.isEmpty,
-          findings: findings,
-        );
-      }),
-    );
+  /// Requires every import target to start with `package:` or `dart:`.
+  ///
+  /// Accepts both the project's package and external packages, and files without
+  /// imports. Equivalent to `onlyImportFrom(['package:', 'dart:'])`.
+  HeimdallRule<HeimdallSourceFile> useOnlyPackageOrSdkImports() {
+    return onlyImportFrom(const ['package:', 'dart:']);
   }
 
-  /// Requires matching files to use at least one non-package import URI.
-  HeimdallRule<HeimdallSourceFile> noUseOnlyPackageImports() {
-    return satisfy(
-      HeimdallCondition('not use only package imports', (item, _) {
-        final hasNonPackageImport = item.importDirectives
-            .expand((directive) => directive.targetUris)
-            .any(
-              (uri) => !_isPackageOrSdkUri(uri),
-            );
-        final findings = hasNonPackageImport
-            ? const <HeimdallValidationInfo>[]
-            : [
-                HeimdallValidationInfo(
-                  filePath: item.absolutePath,
-                  line: 1,
-                  column: 1,
-                  message: 'uses only package imports',
-                ),
-              ];
-
-        return HeimdallFindings(
-          subject: item,
-          passed: findings.isEmpty,
-          findings: findings,
-        );
-      }),
-    );
+  /// Requires an import outside the `package:` and `dart:` prefixes.
+  ///
+  /// This is the inverse of [useOnlyPackageOrSdkImports]. Files without imports
+  /// fail. SDK imports alone do not satisfy this rule.
+  HeimdallRule<HeimdallSourceFile> notUseOnlyPackageOrSdkImports() {
+    return importFromOutside(const ['package:', 'dart:']);
   }
 
-  /// Requires matching files not to use relative import URIs.
+  /// Rejects every relative import target, including conditional alternatives.
+  ///
+  /// A relative target contains no colon. Other URI schemes and files without
+  /// imports are accepted. No project package-name filter is applied.
+  /// [HeimdallCodeSight.preferPackageImports] uses this same check.
   HeimdallRule<HeimdallSourceFile> notUseRelativeImports() {
-    return satisfy(
-      HeimdallCondition('not use relative imports', (item, _) {
-        final findings = item.relativeImports
-            .map(
-              (directive) => HeimdallValidationInfo(
-                filePath: item.absolutePath,
-                line: directive.line,
-                message: 'uses relative import ${directive.targetUri}',
-              ),
-            )
-            .toList();
-
-        return HeimdallFindings(
-          subject: item,
-          passed: findings.isEmpty,
-          findings: findings,
-        );
-      }),
-    );
+    return satisfy(fileShouldNotUseRelativeImports());
   }
-}
-
-bool _isPackageOrSdkUri(String uri) {
-  return uri.startsWith('package:') || uri.startsWith('dart:');
 }

@@ -16,12 +16,12 @@ extension MemberAnnotatedWithTypeNameEndingWithPredicateRules on MemberPredicate
   }
 
   /// Selects members that do not satisfy `areAnnotatedWithTypeNameEndingWith`.
-  MemberPredicateBuilder noAreAnnotatedWithTypeNameEndingWith(String suffix) {
+  MemberPredicateBuilder areNotAnnotatedWithTypeNameEndingWith(String suffix) {
     return satisfy(_memberDoesNotBeAnnotatedWithTypeNameEndingWith(suffix));
   }
 
   /// Selects members that annotated with type name ending with every value in [suffixes].
-  MemberPredicateBuilder areAnnotatedWithTypeNameEndingWithAll(Iterable<String> suffixes) {
+  MemberPredicateBuilder areAnnotatedWithTypeNameEndingWithAllOf(Iterable<String> suffixes) {
     final valueList = suffixes.toNonEmptyList('suffixes');
     return satisfy(
       HeimdallPredicate.allOf(
@@ -32,7 +32,7 @@ extension MemberAnnotatedWithTypeNameEndingWithPredicateRules on MemberPredicate
   }
 
   /// Selects members that annotated with type name ending with at least one value in [suffixes].
-  MemberPredicateBuilder areAnnotatedWithTypeNameEndingWithAny(Iterable<String> suffixes) {
+  MemberPredicateBuilder areAnnotatedWithTypeNameEndingWithAnyOf(Iterable<String> suffixes) {
     final valueList = suffixes.toNonEmptyList('suffixes');
     return satisfy(
       HeimdallPredicate.anyOf(
@@ -43,7 +43,7 @@ extension MemberAnnotatedWithTypeNameEndingWithPredicateRules on MemberPredicate
   }
 
   /// Selects members that annotated with type name ending with none of [suffixes].
-  MemberPredicateBuilder areAnnotatedWithTypeNameEndingWithNone(Iterable<String> suffixes) {
+  MemberPredicateBuilder areAnnotatedWithTypeNameEndingWithNoneOf(Iterable<String> suffixes) {
     final valueList = suffixes.toNonEmptyList('suffixes');
     return satisfy(
       HeimdallPredicate.noneOf(
@@ -62,12 +62,12 @@ extension MemberAnnotatedWithTypeNameEndingWithShouldRules on MemberShouldBuilde
   }
 
   /// Requires members not to satisfy `beAnnotatedWithTypeNameEndingWith`.
-  HeimdallRule<ClassMember> noBeAnnotatedWithTypeNameEndingWith(String suffix) {
+  HeimdallRule<ClassMember> notBeAnnotatedWithTypeNameEndingWith(String suffix) {
     return satisfy(_memberShouldNotBeAnnotatedWithTypeNameEndingWith(suffix));
   }
 
   /// Requires members to annotated with type name ending with every value in [suffixes].
-  HeimdallRule<ClassMember> beAnnotatedWithTypeNameEndingWithAll(Iterable<String> suffixes) {
+  HeimdallRule<ClassMember> beAnnotatedWithTypeNameEndingWithAllOf(Iterable<String> suffixes) {
     final valueList = suffixes.toNonEmptyList('suffixes');
     return satisfy(
       HeimdallCondition.allOf(
@@ -78,7 +78,7 @@ extension MemberAnnotatedWithTypeNameEndingWithShouldRules on MemberShouldBuilde
   }
 
   /// Requires members to annotated with type name ending with at least one value in [suffixes].
-  HeimdallRule<ClassMember> beAnnotatedWithTypeNameEndingWithAny(Iterable<String> suffixes) {
+  HeimdallRule<ClassMember> beAnnotatedWithTypeNameEndingWithAnyOf(Iterable<String> suffixes) {
     final valueList = suffixes.toNonEmptyList('suffixes');
     return satisfy(
       HeimdallCondition.anyOf(
@@ -89,7 +89,7 @@ extension MemberAnnotatedWithTypeNameEndingWithShouldRules on MemberShouldBuilde
   }
 
   /// Requires members to annotated with type name ending with none of [suffixes].
-  HeimdallRule<ClassMember> beAnnotatedWithTypeNameEndingWithNone(Iterable<String> suffixes) {
+  HeimdallRule<ClassMember> beAnnotatedWithTypeNameEndingWithNoneOf(Iterable<String> suffixes) {
     final valueList = suffixes.toNonEmptyList('suffixes');
     return satisfy(
       HeimdallCondition.noneOf(

@@ -9,40 +9,40 @@ extension FileImportPolicyPredicateRules on FilePredicateBuilder {
   }
 
   /// Selects files with at least one import outside [allowedPrefixes].
-  FilePredicateBuilder noOnlyImportFrom(Iterable<String> allowedPrefixes) {
+  FilePredicateBuilder importFromOutside(Iterable<String> allowedPrefixes) {
     final prefixList = allowedPrefixes.toNonEmptyList('allowedPrefixes');
     return satisfy(_fileDoesNotOnlyImportFrom(prefixList));
   }
 
-  /// Selects files that satisfy every single-prefix import policy in [allowedPrefixes].
-  FilePredicateBuilder onlyImportFromAll(Iterable<String> allowedPrefixes) {
+  /// Selects files where every import matches every prefix in [allowedPrefixes].
+  FilePredicateBuilder haveEveryImportMatchAllPrefixes(Iterable<String> allowedPrefixes) {
     final prefixList = allowedPrefixes.toNonEmptyList('allowedPrefixes');
     return satisfy(
       HeimdallPredicate.allOf(
         prefixList.map(_fileOnlyImportsFromPrefix),
-        description: 'only import from all of ${prefixList.join(', ')}',
+        description: 'have every import match all prefixes ${prefixList.join(', ')}',
       ),
     );
   }
 
-  /// Selects files that satisfy at least one single-prefix import policy in [allowedPrefixes].
-  FilePredicateBuilder onlyImportFromAny(Iterable<String> allowedPrefixes) {
+  /// Selects files where at least one prefix in [allowedPrefixes] matches all imports.
+  FilePredicateBuilder haveAllImportsShareAnyPrefix(Iterable<String> allowedPrefixes) {
     final prefixList = allowedPrefixes.toNonEmptyList('allowedPrefixes');
     return satisfy(
       HeimdallPredicate.anyOf(
         prefixList.map(_fileOnlyImportsFromPrefix),
-        description: 'only import from any of ${prefixList.join(', ')}',
+        description: 'have all imports share at least one prefix in ${prefixList.join(', ')}',
       ),
     );
   }
 
-  /// Selects files that satisfy none of the single-prefix import policies in [allowedPrefixes].
-  FilePredicateBuilder onlyImportFromNone(Iterable<String> allowedPrefixes) {
+  /// Selects files where no prefix in [allowedPrefixes] matches all imports.
+  FilePredicateBuilder haveNoPrefixSharedByAllImports(Iterable<String> allowedPrefixes) {
     final prefixList = allowedPrefixes.toNonEmptyList('allowedPrefixes');
     return satisfy(
       HeimdallPredicate.noneOf(
         prefixList.map(_fileOnlyImportsFromPrefix),
-        description: 'only import from none of ${prefixList.join(', ')}',
+        description: 'have no prefix shared by all imports in ${prefixList.join(', ')}',
       ),
     );
   }
@@ -59,48 +59,48 @@ extension FileImportPolicyShouldRules on FileShouldBuilder {
   }
 
   /// Requires matching files to import at least one URI outside [allowedPrefixes].
-  HeimdallRule<HeimdallSourceFile> noOnlyImportFrom(
+  HeimdallRule<HeimdallSourceFile> importFromOutside(
     Iterable<String> allowedPrefixes,
   ) {
     final prefixList = allowedPrefixes.toNonEmptyList('allowedPrefixes');
     return satisfy(_fileShouldNotOnlyImportFrom(prefixList));
   }
 
-  /// Requires matching files to satisfy every single-prefix import policy in [allowedPrefixes].
-  HeimdallRule<HeimdallSourceFile> onlyImportFromAll(
+  /// Requires matching files to have every import match every prefix in [allowedPrefixes].
+  HeimdallRule<HeimdallSourceFile> haveEveryImportMatchAllPrefixes(
     Iterable<String> allowedPrefixes,
   ) {
     final prefixList = allowedPrefixes.toNonEmptyList('allowedPrefixes');
     return satisfy(
       HeimdallCondition.allOf(
         prefixList.map(_fileShouldOnlyImportFromPrefix),
-        description: 'only import from all of ${prefixList.join(', ')}',
+        description: 'have every import match all prefixes ${prefixList.join(', ')}',
       ),
     );
   }
 
-  /// Requires matching files to satisfy at least one single-prefix import policy in [allowedPrefixes].
-  HeimdallRule<HeimdallSourceFile> onlyImportFromAny(
+  /// Requires matching files to have a prefix in [allowedPrefixes] shared by all imports.
+  HeimdallRule<HeimdallSourceFile> haveAllImportsShareAnyPrefix(
     Iterable<String> allowedPrefixes,
   ) {
     final prefixList = allowedPrefixes.toNonEmptyList('allowedPrefixes');
     return satisfy(
       HeimdallCondition.anyOf(
         prefixList.map(_fileShouldOnlyImportFromPrefix),
-        description: 'only import from any of ${prefixList.join(', ')}',
+        description: 'have all imports share at least one prefix in ${prefixList.join(', ')}',
       ),
     );
   }
 
-  /// Requires matching files to satisfy none of the single-prefix import policies in [allowedPrefixes].
-  HeimdallRule<HeimdallSourceFile> onlyImportFromNone(
+  /// Requires matching files to have no prefix in [allowedPrefixes] shared by all imports.
+  HeimdallRule<HeimdallSourceFile> haveNoPrefixSharedByAllImports(
     Iterable<String> allowedPrefixes,
   ) {
     final prefixList = allowedPrefixes.toNonEmptyList('allowedPrefixes');
     return satisfy(
       HeimdallCondition.noneOf(
         prefixList.map(_fileShouldOnlyImportFromPrefix),
-        description: 'only import from none of ${prefixList.join(', ')}',
+        description: 'have no prefix shared by all imports in ${prefixList.join(', ')}',
       ),
     );
   }

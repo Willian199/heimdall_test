@@ -2,6 +2,10 @@ import 'package:heimdall_test/heimdall_test.dart';
 import 'package:heimdall_test/src/features/file_features/helpers/public_class_name_mismatch.dart';
 
 /// Predicate-side DSL for public class/file-name convention rules.
+///
+/// The naming check applies only when exactly one public class is present.
+/// Zero or multiple public classes pass it. Combine with a count rule to limit
+/// the number of classes; the combined rule still accepts zero public classes.
 extension FilePublicClassFileNamePredicateRules on FilePredicateBuilder {
   /// Selects files whose public class name matches the file name.
   FilePredicateBuilder havePublicClassNameMatchingFileName() {
@@ -9,12 +13,12 @@ extension FilePublicClassFileNamePredicateRules on FilePredicateBuilder {
   }
 
   /// Selects files whose public class name does not match the file name.
-  FilePredicateBuilder noHavePublicClassNameMatchingFileName() {
+  FilePredicateBuilder notHavePublicClassNameMatchingFileName() {
     return satisfy(_fileDoesNotHavePublicClassNameMatchingFileName());
   }
 
-  /// Selects files with a matching public class and at most one public class.
-  FilePredicateBuilder haveMatchingSinglePublicClassFileName() {
+  /// Selects files with zero public classes, or one whose name matches the file name.
+  FilePredicateBuilder haveAtMostOnePublicClassWithMatchingFileName() {
     return satisfy(
       HeimdallPredicate.allOf([
         _fileHasPublicClassNameMatchingFileName(),
@@ -25,6 +29,9 @@ extension FilePublicClassFileNamePredicateRules on FilePredicateBuilder {
 }
 
 /// Condition-side DSL for public class/file-name convention rules.
+///
+/// The naming check applies only when exactly one public class is present.
+/// Zero or multiple public classes pass it; the combined rule accepts zero.
 extension FilePublicClassFileNameShouldRules on FileShouldBuilder {
   /// Requires a file's public class name to match its file name.
   HeimdallRule<HeimdallSourceFile> havePublicClassNameMatchingFileName() {
@@ -32,12 +39,12 @@ extension FilePublicClassFileNameShouldRules on FileShouldBuilder {
   }
 
   /// Requires a file's public class name to not match its file name.
-  HeimdallRule<HeimdallSourceFile> noHavePublicClassNameMatchingFileName() {
+  HeimdallRule<HeimdallSourceFile> notHavePublicClassNameMatchingFileName() {
     return satisfy(_fileShouldNotHavePublicClassNameMatchingFileName());
   }
 
-  /// Requires a matching public class and at most one public class.
-  HeimdallRule<HeimdallSourceFile> haveMatchingSinglePublicClassFileName() {
+  /// Requires zero public classes, or one whose name matches the file name.
+  HeimdallRule<HeimdallSourceFile> haveAtMostOnePublicClassWithMatchingFileName() {
     return satisfy(
       HeimdallCondition.allOf([
         _fileShouldHavePublicClassNameMatchingFileName(),

@@ -16,12 +16,12 @@ extension MemberHaveOptionalNamedParameterPredicateRules on MemberPredicateBuild
   }
 
   /// Selects members that do not satisfy `haveOptionalNamedParameter`.
-  MemberPredicateBuilder noHaveOptionalNamedParameter(String parameterName) {
+  MemberPredicateBuilder haveNoOptionalNamedParameter(String parameterName) {
     return satisfy(_memberDoesNotHaveOptionalNamedParameter(parameterName));
   }
 
   /// Selects executable members that have optional named parameter every value in [parameterNames].
-  MemberPredicateBuilder haveOptionalNamedParameterAll(Iterable<String> parameterNames) {
+  MemberPredicateBuilder haveOptionalNamedParameterAllOf(Iterable<String> parameterNames) {
     final valueList = parameterNames.toNonEmptyList('parameterNames');
     return satisfy(
       HeimdallPredicate.allOf(
@@ -32,7 +32,7 @@ extension MemberHaveOptionalNamedParameterPredicateRules on MemberPredicateBuild
   }
 
   /// Selects executable members that have optional named parameter at least one value in [parameterNames].
-  MemberPredicateBuilder haveOptionalNamedParameterAny(Iterable<String> parameterNames) {
+  MemberPredicateBuilder haveOptionalNamedParameterAnyOf(Iterable<String> parameterNames) {
     final valueList = parameterNames.toNonEmptyList('parameterNames');
     return satisfy(
       HeimdallPredicate.anyOf(
@@ -43,7 +43,7 @@ extension MemberHaveOptionalNamedParameterPredicateRules on MemberPredicateBuild
   }
 
   /// Selects executable members that have optional named parameter none of [parameterNames].
-  MemberPredicateBuilder haveOptionalNamedParameterNone(Iterable<String> parameterNames) {
+  MemberPredicateBuilder haveOptionalNamedParameterNoneOf(Iterable<String> parameterNames) {
     final valueList = parameterNames.toNonEmptyList('parameterNames');
     return satisfy(
       HeimdallPredicate.noneOf(
@@ -62,12 +62,12 @@ extension MemberHaveOptionalNamedParameterShouldRules on MemberShouldBuilder {
   }
 
   /// Requires members not to satisfy `haveOptionalNamedParameter`.
-  HeimdallRule<ClassMember> noHaveOptionalNamedParameter(String parameterName) {
+  HeimdallRule<ClassMember> haveNoOptionalNamedParameter(String parameterName) {
     return satisfy(_memberShouldNotHaveOptionalNamedParameter(parameterName));
   }
 
   /// Requires executable members to have optional named parameter every value in [parameterNames].
-  HeimdallRule<ClassMember> haveOptionalNamedParameterAll(Iterable<String> parameterNames) {
+  HeimdallRule<ClassMember> haveOptionalNamedParameterAllOf(Iterable<String> parameterNames) {
     final valueList = parameterNames.toNonEmptyList('parameterNames');
     return satisfy(
       HeimdallCondition.allOf(
@@ -78,7 +78,7 @@ extension MemberHaveOptionalNamedParameterShouldRules on MemberShouldBuilder {
   }
 
   /// Requires executable members to have optional named parameter at least one value in [parameterNames].
-  HeimdallRule<ClassMember> haveOptionalNamedParameterAny(Iterable<String> parameterNames) {
+  HeimdallRule<ClassMember> haveOptionalNamedParameterAnyOf(Iterable<String> parameterNames) {
     final valueList = parameterNames.toNonEmptyList('parameterNames');
     return satisfy(
       HeimdallCondition.anyOf(
@@ -89,7 +89,7 @@ extension MemberHaveOptionalNamedParameterShouldRules on MemberShouldBuilder {
   }
 
   /// Requires executable members to have optional named parameter none of [parameterNames].
-  HeimdallRule<ClassMember> haveOptionalNamedParameterNone(Iterable<String> parameterNames) {
+  HeimdallRule<ClassMember> haveOptionalNamedParameterNoneOf(Iterable<String> parameterNames) {
     final valueList = parameterNames.toNonEmptyList('parameterNames');
     return satisfy(
       HeimdallCondition.noneOf(

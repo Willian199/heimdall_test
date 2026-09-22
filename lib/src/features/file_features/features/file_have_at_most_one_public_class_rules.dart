@@ -13,7 +13,7 @@ extension FileHaveAtMostOnePublicClassPredicateRules on FilePredicateBuilder {
   }
 
   /// Selects files that declare at most one public class for at least one name in [classNames].
-  FilePredicateBuilder haveAtMostOnePublicClassNamedAny(
+  FilePredicateBuilder haveAtMostOnePublicClassForAtLeastOneName(
     Iterable<String> classNames,
   ) {
     final classList = classNames.toNonEmptyList('classNames');
@@ -26,7 +26,7 @@ extension FileHaveAtMostOnePublicClassPredicateRules on FilePredicateBuilder {
   }
 
   /// Selects files that declare at most one public class for every name in [classNames].
-  FilePredicateBuilder haveAtMostOnePublicClassNamedAll(
+  FilePredicateBuilder haveAtMostOnePublicClassForEachName(
     Iterable<String> classNames,
   ) {
     final classList = classNames.toNonEmptyList('classNames');
@@ -39,7 +39,7 @@ extension FileHaveAtMostOnePublicClassPredicateRules on FilePredicateBuilder {
   }
 
   /// Selects files that declare at most one public class for none of [classNames].
-  FilePredicateBuilder haveAtMostOnePublicClassNamedNone(
+  FilePredicateBuilder haveMultiplePublicClassesForEachName(
     Iterable<String> classNames,
   ) {
     final classList = classNames.toNonEmptyList('classNames');
@@ -69,7 +69,7 @@ extension FileHaveAtMostOnePublicClassShouldRules on FileShouldBuilder {
   }
 
   /// Requires matching files to declare at most one public class for at least one name in [classNames].
-  HeimdallRule<HeimdallSourceFile> haveAtMostOnePublicClassNamedAny(
+  HeimdallRule<HeimdallSourceFile> haveAtMostOnePublicClassForAtLeastOneName(
     Iterable<String> classNames,
   ) {
     final classList = classNames.toNonEmptyList('classNames');
@@ -82,7 +82,7 @@ extension FileHaveAtMostOnePublicClassShouldRules on FileShouldBuilder {
   }
 
   /// Requires matching files to declare at most one public class for every name in [classNames].
-  HeimdallRule<HeimdallSourceFile> haveAtMostOnePublicClassNamedAll(
+  HeimdallRule<HeimdallSourceFile> haveAtMostOnePublicClassForEachName(
     Iterable<String> classNames,
   ) {
     final classList = classNames.toNonEmptyList('classNames');
@@ -95,7 +95,7 @@ extension FileHaveAtMostOnePublicClassShouldRules on FileShouldBuilder {
   }
 
   /// Requires matching files to declare at most one public class for none of [classNames].
-  HeimdallRule<HeimdallSourceFile> haveAtMostOnePublicClassNamedNone(
+  HeimdallRule<HeimdallSourceFile> haveMultiplePublicClassesForEachName(
     Iterable<String> classNames,
   ) {
     final classList = classNames.toNonEmptyList('classNames');

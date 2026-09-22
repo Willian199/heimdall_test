@@ -17,7 +17,7 @@ dart pub add --dev heimdall_test
 
 For a Flutter project, use `flutter pub add --dev heimdall_test`. The examples use `package:test/test.dart`; add `test` as a development dependency if needed. In a Flutter test suite, you can use `package:flutter_test/flutter_test.dart` instead.
 
-Import the public API with `package:heimdall_test/heimdall_test.dart`. It exports the DSLs, importer, models, and the analyzer AST types used in these examples. This guide describes the 0.9.1 API.
+Import the public API with `package:heimdall_test/heimdall_test.dart`. It exports the DSLs, importer, models, and the analyzer AST types used in these examples. This guide describes the 0.10.0 API.
 
 ## Choose a DSL
 

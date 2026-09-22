@@ -9,12 +9,12 @@ extension FileHaveNameMatchingPredicateRules on FilePredicateBuilder {
   }
 
   /// Selects files whose basenames do not match [pattern].
-  FilePredicateBuilder noHaveNameMatching(RegExp pattern) {
+  FilePredicateBuilder notHaveNameMatching(RegExp pattern) {
     return satisfy(_fileNameDoesNotMatch(pattern));
   }
 
   /// Selects files whose basenames match at least one pattern in [patterns].
-  FilePredicateBuilder haveNameMatchingAny(Iterable<RegExp> patterns) {
+  FilePredicateBuilder haveNameMatchingAnyOf(Iterable<RegExp> patterns) {
     final patternList = patterns.toNonEmptyList('patterns');
     return satisfy(
       HeimdallPredicate.anyOf(
@@ -25,7 +25,7 @@ extension FileHaveNameMatchingPredicateRules on FilePredicateBuilder {
   }
 
   /// Selects files whose basenames match every pattern in [patterns].
-  FilePredicateBuilder haveNameMatchingAll(Iterable<RegExp> patterns) {
+  FilePredicateBuilder haveNameMatchingAllOf(Iterable<RegExp> patterns) {
     final patternList = patterns.toNonEmptyList('patterns');
     return satisfy(
       HeimdallPredicate.allOf(
@@ -36,7 +36,7 @@ extension FileHaveNameMatchingPredicateRules on FilePredicateBuilder {
   }
 
   /// Selects files whose basenames match none of [patterns].
-  FilePredicateBuilder haveNameMatchingNone(Iterable<RegExp> patterns) {
+  FilePredicateBuilder haveNameMatchingNoneOf(Iterable<RegExp> patterns) {
     final patternList = patterns.toNonEmptyList('patterns');
     return satisfy(
       HeimdallPredicate.noneOf(
@@ -55,12 +55,12 @@ extension FileHaveNameMatchingShouldRules on FileShouldBuilder {
   }
 
   /// Requires matching file names to not match [pattern].
-  HeimdallRule<HeimdallSourceFile> noHaveNameMatching(RegExp pattern) {
+  HeimdallRule<HeimdallSourceFile> notHaveNameMatching(RegExp pattern) {
     return satisfy(_fileShouldNotHaveNameMatching(pattern));
   }
 
   /// Requires matching file names to match at least one pattern in [patterns].
-  HeimdallRule<HeimdallSourceFile> haveNameMatchingAny(
+  HeimdallRule<HeimdallSourceFile> haveNameMatchingAnyOf(
     Iterable<RegExp> patterns,
   ) {
     final patternList = patterns.toNonEmptyList('patterns');
@@ -73,7 +73,7 @@ extension FileHaveNameMatchingShouldRules on FileShouldBuilder {
   }
 
   /// Requires matching file names to match every pattern in [patterns].
-  HeimdallRule<HeimdallSourceFile> haveNameMatchingAll(
+  HeimdallRule<HeimdallSourceFile> haveNameMatchingAllOf(
     Iterable<RegExp> patterns,
   ) {
     final patternList = patterns.toNonEmptyList('patterns');
@@ -86,7 +86,7 @@ extension FileHaveNameMatchingShouldRules on FileShouldBuilder {
   }
 
   /// Requires matching file names to match none of [patterns].
-  HeimdallRule<HeimdallSourceFile> haveNameMatchingNone(
+  HeimdallRule<HeimdallSourceFile> haveNameMatchingNoneOf(
     Iterable<RegExp> patterns,
   ) {
     final patternList = patterns.toNonEmptyList('patterns');

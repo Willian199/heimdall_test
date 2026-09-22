@@ -9,7 +9,7 @@ extension FileImportUriMatchingPredicateRules on FilePredicateBuilder {
   }
 
   /// Selects files that do not import a URI matching [pattern].
-  FilePredicateBuilder noImportUriMatching(RegExp pattern) {
+  FilePredicateBuilder notImportUriMatching(RegExp pattern) {
     return satisfy(
       HeimdallPredicate(
         'not import URI matching ${pattern.pattern}',
@@ -62,7 +62,7 @@ extension FileImportUriMatchingShouldRules on FileShouldBuilder {
   }
 
   /// Requires matching files to not import a URI matching [pattern].
-  HeimdallRule<HeimdallSourceFile> noImportUriMatching(RegExp pattern) {
+  HeimdallRule<HeimdallSourceFile> notImportUriMatching(RegExp pattern) {
     return satisfy(
       HeimdallCondition('not import URI matching ${pattern.pattern}', (item, _) {
         final findings = item.importDirectives

@@ -3,20 +3,8 @@ import 'package:test/test.dart';
 
 void main() {
   group('HeimdallCondition', () {
-    final sourceFile = HeimdallSourceFile(
-      absolutePath: '/project/lib/user.dart',
-      relativePath: 'lib/user.dart',
-      content: 'class User {}',
-      directives: [],
-      declarations: [],
-      dependencies: [],
-      parseErrors: [],
-    );
-    final project = HeimdallProject(
-      rootPath: '/project',
-      packageName: null,
-      files: [sourceFile],
-    );
+    final project = const HeimdallFileImporter(useCache: false).importPath('test/importer_fixtures/basic_project');
+    final sourceFile = project.fileByRelativePath('lib/src/domain/user.dart')!;
 
     test('uses findings from condition results directly', () {
       final condition = HeimdallCondition<int>('be even', (item, _) {
@@ -38,7 +26,7 @@ void main() {
     test('DSL noneOf reports each child condition that passed', () {
       final result = Heimdall.files()
           .that()
-          .resideInPath('lib/user.dart')
+          .resideInPath(sourceFile.relativePath)
           .should()
           .containNoSource([
             'class User',
@@ -51,18 +39,18 @@ void main() {
         result.findings.single.message,
         'should not contain source "class User"',
       );
-      expect(result.findings.single.filePath, '/project/lib/user.dart');
+      expect(result.findings.single.filePath, sourceFile.absolutePath);
     });
 
     test('DSL not reports a violation when the wrapped condition passed', () {
-      final result = Heimdall.files().that().resideInPath('lib/user.dart').should().not().containSource('class User').check(project);
+      final result = Heimdall.files().that().resideInPath(sourceFile.relativePath).should().not().containSource('class User').check(project);
 
       expect(result.findings, hasLength(1));
       expect(
         result.findings.single.message,
         'should not contain source "class User"',
       );
-      expect(result.findings.single.filePath, '/project/lib/user.dart');
+      expect(result.findings.single.filePath, sourceFile.absolutePath);
     });
 
     test(

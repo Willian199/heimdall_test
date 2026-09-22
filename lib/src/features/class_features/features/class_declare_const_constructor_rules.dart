@@ -1,4 +1,5 @@
 import 'package:heimdall_test/heimdall_test.dart';
+import 'package:heimdall_test/src/features/queries/declaration_location_queries.dart';
 
 /// Predicate-side DSL for const constructor rules.
 extension ClassDeclareConstConstructorPredicateRules on ClassPredicateBuilder {
@@ -10,7 +11,7 @@ extension ClassDeclareConstConstructorPredicateRules on ClassPredicateBuilder {
   }
 
   /// Selects classes that do not declare a `const` constructor named [name].
-  ClassPredicateBuilder noDeclareConstConstructor({String name = 'new'}) {
+  ClassPredicateBuilder notDeclareConstConstructor({String name = 'new'}) {
     return satisfy(
       HeimdallPredicate(
         'not declare const constructor $name',
@@ -65,7 +66,7 @@ extension ClassDeclareConstConstructorShouldRules on ClassShouldBuilder {
   }
 
   /// Requires matching classes to not declare a `const` constructor named [name].
-  HeimdallRule<CompilationUnitMember> noDeclareConstConstructor({
+  HeimdallRule<CompilationUnitMember> notDeclareConstConstructor({
     String name = 'new',
   }) {
     return satisfy(_classShouldNotDeclareConstConstructor(name: name));
@@ -139,7 +140,7 @@ HeimdallCondition<CompilationUnitMember> _classShouldNotDeclareConstConstructor(
   return HeimdallCondition('not declare const constructor $name', (item, _) {
     final findings = _matchingConstConstructors(item, name).map(
       (constructor) {
-        final location = _constructorLocation(constructor);
+        final location = constructorLocation(constructor);
         return HeimdallValidationInfo(
           filePath: item.sourcePath,
           line: location.line,
@@ -179,11 +180,4 @@ Iterable<ConstructorDeclaration> _matchingConstConstructors(
   return item.constructors.where(
     (constructor) => constructor.isConst && (constructor as ClassMember).name == name,
   );
-}
-
-({int line, int column}) _constructorLocation(
-  ConstructorDeclaration constructor,
-) {
-  final offset = constructor.name?.offset ?? constructor.offset;
-  return constructor.sourceLocationAt(offset);
 }

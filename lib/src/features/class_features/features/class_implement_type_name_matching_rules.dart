@@ -9,12 +9,12 @@ extension ClassImplementTypeNameMatchingPredicateRules on ClassPredicateBuilder 
   }
 
   /// Selects classes that do not implement a type whose name matches [pattern].
-  ClassPredicateBuilder noImplementTypeNameMatching(RegExp pattern) {
+  ClassPredicateBuilder notImplementTypeNameMatching(RegExp pattern) {
     return satisfy(_classDoesNotImplementTypeNameMatching(pattern));
   }
 
   /// Selects classes that implement a type name matching at least one regex in [patterns].
-  ClassPredicateBuilder implementTypeNameMatchingAny(Iterable<RegExp> patterns) {
+  ClassPredicateBuilder implementTypeNameMatchingAnyOf(Iterable<RegExp> patterns) {
     final patternList = patterns.toNonEmptyList('patterns');
     return satisfy(
       HeimdallPredicate.anyOf(
@@ -25,7 +25,7 @@ extension ClassImplementTypeNameMatchingPredicateRules on ClassPredicateBuilder 
   }
 
   /// Selects classes that implement types matching every regex in [patterns].
-  ClassPredicateBuilder implementTypeNameMatchingAll(Iterable<RegExp> patterns) {
+  ClassPredicateBuilder implementTypeNameMatchingAllOf(Iterable<RegExp> patterns) {
     final patternList = patterns.toNonEmptyList('patterns');
     return satisfy(
       HeimdallPredicate.allOf(
@@ -36,7 +36,7 @@ extension ClassImplementTypeNameMatchingPredicateRules on ClassPredicateBuilder 
   }
 
   /// Selects classes that implement no type name matching [patterns].
-  ClassPredicateBuilder implementTypeNameMatchingNone(Iterable<RegExp> patterns) {
+  ClassPredicateBuilder implementTypeNameMatchingNoneOf(Iterable<RegExp> patterns) {
     final patternList = patterns.toNonEmptyList('patterns');
     return satisfy(
       HeimdallPredicate.noneOf(
@@ -55,12 +55,12 @@ extension ClassImplementTypeNameMatchingShouldRules on ClassShouldBuilder {
   }
 
   /// Requires matching classes to not implement a type whose name matches [pattern].
-  HeimdallRule<CompilationUnitMember> noImplementTypeNameMatching(RegExp pattern) {
+  HeimdallRule<CompilationUnitMember> notImplementTypeNameMatching(RegExp pattern) {
     return satisfy(_classShouldNotImplementTypeNameMatching(pattern));
   }
 
   /// Requires matching classes to implement a type name matching at least one regex in [patterns].
-  HeimdallRule<CompilationUnitMember> implementTypeNameMatchingAny(
+  HeimdallRule<CompilationUnitMember> implementTypeNameMatchingAnyOf(
     Iterable<RegExp> patterns,
   ) {
     final patternList = patterns.toNonEmptyList('patterns');
@@ -73,7 +73,7 @@ extension ClassImplementTypeNameMatchingShouldRules on ClassShouldBuilder {
   }
 
   /// Requires matching classes to implement types matching every regex in [patterns].
-  HeimdallRule<CompilationUnitMember> implementTypeNameMatchingAll(
+  HeimdallRule<CompilationUnitMember> implementTypeNameMatchingAllOf(
     Iterable<RegExp> patterns,
   ) {
     final patternList = patterns.toNonEmptyList('patterns');
@@ -86,7 +86,7 @@ extension ClassImplementTypeNameMatchingShouldRules on ClassShouldBuilder {
   }
 
   /// Requires matching classes to implement no type name matching [patterns].
-  HeimdallRule<CompilationUnitMember> implementTypeNameMatchingNone(
+  HeimdallRule<CompilationUnitMember> implementTypeNameMatchingNoneOf(
     Iterable<RegExp> patterns,
   ) {
     final patternList = patterns.toNonEmptyList('patterns');

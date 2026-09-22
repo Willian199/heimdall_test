@@ -9,12 +9,12 @@ extension ClassExtendTypeNameMatchingPredicateRules on ClassPredicateBuilder {
   }
 
   /// Selects classes that do not extend a type whose name matches [pattern].
-  ClassPredicateBuilder noExtendTypeNameMatching(RegExp pattern) {
+  ClassPredicateBuilder notExtendTypeNameMatching(RegExp pattern) {
     return satisfy(_classDoesNotExtendTypeNameMatching(pattern));
   }
 
   /// Selects classes that extend a type name matching at least one regex in [patterns].
-  ClassPredicateBuilder extendTypeNameMatchingAny(Iterable<RegExp> patterns) {
+  ClassPredicateBuilder extendTypeNameMatchingAnyOf(Iterable<RegExp> patterns) {
     final patternList = patterns.toNonEmptyList('patterns');
     return satisfy(
       HeimdallPredicate.anyOf(
@@ -25,7 +25,7 @@ extension ClassExtendTypeNameMatchingPredicateRules on ClassPredicateBuilder {
   }
 
   /// Selects classes that extend types matching every regex in [patterns].
-  ClassPredicateBuilder extendTypeNameMatchingAll(Iterable<RegExp> patterns) {
+  ClassPredicateBuilder extendTypeNameMatchingAllOf(Iterable<RegExp> patterns) {
     final patternList = patterns.toNonEmptyList('patterns');
     return satisfy(
       HeimdallPredicate.allOf(
@@ -36,7 +36,7 @@ extension ClassExtendTypeNameMatchingPredicateRules on ClassPredicateBuilder {
   }
 
   /// Selects classes that extend no type name matching [patterns].
-  ClassPredicateBuilder extendTypeNameMatchingNone(Iterable<RegExp> patterns) {
+  ClassPredicateBuilder extendTypeNameMatchingNoneOf(Iterable<RegExp> patterns) {
     final patternList = patterns.toNonEmptyList('patterns');
     return satisfy(
       HeimdallPredicate.noneOf(
@@ -55,12 +55,12 @@ extension ClassExtendTypeNameMatchingShouldRules on ClassShouldBuilder {
   }
 
   /// Requires matching classes to not extend a type whose name matches [pattern].
-  HeimdallRule<CompilationUnitMember> noExtendTypeNameMatching(RegExp pattern) {
+  HeimdallRule<CompilationUnitMember> notExtendTypeNameMatching(RegExp pattern) {
     return satisfy(_classShouldNotExtendTypeNameMatching(pattern));
   }
 
   /// Requires matching classes to extend a type name matching at least one regex in [patterns].
-  HeimdallRule<CompilationUnitMember> extendTypeNameMatchingAny(
+  HeimdallRule<CompilationUnitMember> extendTypeNameMatchingAnyOf(
     Iterable<RegExp> patterns,
   ) {
     final patternList = patterns.toNonEmptyList('patterns');
@@ -73,7 +73,7 @@ extension ClassExtendTypeNameMatchingShouldRules on ClassShouldBuilder {
   }
 
   /// Requires matching classes to extend types matching every regex in [patterns].
-  HeimdallRule<CompilationUnitMember> extendTypeNameMatchingAll(
+  HeimdallRule<CompilationUnitMember> extendTypeNameMatchingAllOf(
     Iterable<RegExp> patterns,
   ) {
     final patternList = patterns.toNonEmptyList('patterns');
@@ -86,7 +86,7 @@ extension ClassExtendTypeNameMatchingShouldRules on ClassShouldBuilder {
   }
 
   /// Requires matching classes to extend no type name matching [patterns].
-  HeimdallRule<CompilationUnitMember> extendTypeNameMatchingNone(
+  HeimdallRule<CompilationUnitMember> extendTypeNameMatchingNoneOf(
     Iterable<RegExp> patterns,
   ) {
     final patternList = patterns.toNonEmptyList('patterns');

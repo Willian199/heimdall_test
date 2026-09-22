@@ -16,12 +16,12 @@ extension MemberHavePositionalParameterPredicateRules on MemberPredicateBuilder 
   }
 
   /// Selects members that do not satisfy `havePositionalParameter`.
-  MemberPredicateBuilder noHavePositionalParameter(String parameterName) {
+  MemberPredicateBuilder haveNoPositionalParameter(String parameterName) {
     return satisfy(_memberDoesNotHavePositionalParameter(parameterName));
   }
 
   /// Selects executable members that have positional parameter every value in [parameterNames].
-  MemberPredicateBuilder havePositionalParameterAll(Iterable<String> parameterNames) {
+  MemberPredicateBuilder havePositionalParameterAllOf(Iterable<String> parameterNames) {
     final valueList = parameterNames.toNonEmptyList('parameterNames');
     return satisfy(
       HeimdallPredicate.allOf(
@@ -32,7 +32,7 @@ extension MemberHavePositionalParameterPredicateRules on MemberPredicateBuilder 
   }
 
   /// Selects executable members that have positional parameter at least one value in [parameterNames].
-  MemberPredicateBuilder havePositionalParameterAny(Iterable<String> parameterNames) {
+  MemberPredicateBuilder havePositionalParameterAnyOf(Iterable<String> parameterNames) {
     final valueList = parameterNames.toNonEmptyList('parameterNames');
     return satisfy(
       HeimdallPredicate.anyOf(
@@ -43,7 +43,7 @@ extension MemberHavePositionalParameterPredicateRules on MemberPredicateBuilder 
   }
 
   /// Selects executable members that have positional parameter none of [parameterNames].
-  MemberPredicateBuilder havePositionalParameterNone(Iterable<String> parameterNames) {
+  MemberPredicateBuilder havePositionalParameterNoneOf(Iterable<String> parameterNames) {
     final valueList = parameterNames.toNonEmptyList('parameterNames');
     return satisfy(
       HeimdallPredicate.noneOf(
@@ -62,12 +62,12 @@ extension MemberHavePositionalParameterShouldRules on MemberShouldBuilder {
   }
 
   /// Requires members not to satisfy `havePositionalParameter`.
-  HeimdallRule<ClassMember> noHavePositionalParameter(String parameterName) {
+  HeimdallRule<ClassMember> haveNoPositionalParameter(String parameterName) {
     return satisfy(_memberShouldNotHavePositionalParameter(parameterName));
   }
 
   /// Requires executable members to have positional parameter every value in [parameterNames].
-  HeimdallRule<ClassMember> havePositionalParameterAll(Iterable<String> parameterNames) {
+  HeimdallRule<ClassMember> havePositionalParameterAllOf(Iterable<String> parameterNames) {
     final valueList = parameterNames.toNonEmptyList('parameterNames');
     return satisfy(
       HeimdallCondition.allOf(
@@ -78,7 +78,7 @@ extension MemberHavePositionalParameterShouldRules on MemberShouldBuilder {
   }
 
   /// Requires executable members to have positional parameter at least one value in [parameterNames].
-  HeimdallRule<ClassMember> havePositionalParameterAny(Iterable<String> parameterNames) {
+  HeimdallRule<ClassMember> havePositionalParameterAnyOf(Iterable<String> parameterNames) {
     final valueList = parameterNames.toNonEmptyList('parameterNames');
     return satisfy(
       HeimdallCondition.anyOf(
@@ -89,7 +89,7 @@ extension MemberHavePositionalParameterShouldRules on MemberShouldBuilder {
   }
 
   /// Requires executable members to have positional parameter none of [parameterNames].
-  HeimdallRule<ClassMember> havePositionalParameterNone(Iterable<String> parameterNames) {
+  HeimdallRule<ClassMember> havePositionalParameterNoneOf(Iterable<String> parameterNames) {
     final valueList = parameterNames.toNonEmptyList('parameterNames');
     return satisfy(
       HeimdallCondition.noneOf(

@@ -10,17 +10,17 @@ import 'package:heimdall_test/src/features/class_features/helpers/class_construc
 /// Predicate-side DSL for constructor name prefix rules.
 extension ClassHaveConstructorNameStartingWithPredicateRules on ClassPredicateBuilder {
   /// Selects classes that declare a constructor name starting with [prefix].
-  ClassPredicateBuilder haveConstructorNameStartingWith(String prefix) {
+  ClassPredicateBuilder declareConstructorWithNameStartingWith(String prefix) {
     return satisfy(classHasConstructorName('starts with $prefix', (item) => item.startsWith(prefix)));
   }
 
   /// Selects classes that do not declare a constructor name starting with [prefix].
-  ClassPredicateBuilder noHaveConstructorNameStartingWith(String prefix) {
+  ClassPredicateBuilder notDeclareConstructorWithNameStartingWith(String prefix) {
     return satisfy(classDoesNotHaveConstructorName('starts with $prefix', (item) => item.startsWith(prefix)));
   }
 
   /// Selects classes that declare constructor names starting with every prefix in [prefixes].
-  ClassPredicateBuilder haveConstructorNameStartingWithAll(
+  ClassPredicateBuilder declareConstructorWithNameStartingWithAllOf(
     Iterable<String> prefixes,
   ) {
     final prefixList = prefixes.toNonEmptyList('prefixes');
@@ -33,7 +33,7 @@ extension ClassHaveConstructorNameStartingWithPredicateRules on ClassPredicateBu
   }
 
   /// Selects classes that declare at least one constructor name starting with [prefixes].
-  ClassPredicateBuilder haveConstructorNameStartingWithAny(
+  ClassPredicateBuilder declareConstructorWithNameStartingWithAnyOf(
     Iterable<String> prefixes,
   ) {
     final prefixList = prefixes.toNonEmptyList('prefixes');
@@ -46,7 +46,7 @@ extension ClassHaveConstructorNameStartingWithPredicateRules on ClassPredicateBu
   }
 
   /// Selects classes that declare no constructor name starting with [prefixes].
-  ClassPredicateBuilder haveConstructorNameStartingWithNone(
+  ClassPredicateBuilder declareConstructorWithNameStartingWithNoneOf(
     Iterable<String> prefixes,
   ) {
     final prefixList = prefixes.toNonEmptyList('prefixes');
@@ -62,21 +62,21 @@ extension ClassHaveConstructorNameStartingWithPredicateRules on ClassPredicateBu
 /// Condition-side DSL for constructor name prefix rules.
 extension ClassHaveConstructorNameStartingWithShouldRules on ClassShouldBuilder {
   /// Requires matching classes to declare a constructor name starting with [prefix].
-  HeimdallRule<CompilationUnitMember> haveConstructorNameStartingWith(
+  HeimdallRule<CompilationUnitMember> declareConstructorWithNameStartingWith(
     String prefix,
   ) {
     return satisfy(classShouldHaveConstructorName('starts with $prefix', (item) => item.startsWith(prefix)));
   }
 
   /// Requires matching classes to not declare a constructor name starting with [prefix].
-  HeimdallRule<CompilationUnitMember> noHaveConstructorNameStartingWith(
+  HeimdallRule<CompilationUnitMember> notDeclareConstructorWithNameStartingWith(
     String prefix,
   ) {
     return satisfy(classShouldNotHaveConstructorName('starts with $prefix', (item) => item.startsWith(prefix)));
   }
 
   /// Requires matching classes to declare constructor names starting with every prefix in [prefixes].
-  HeimdallRule<CompilationUnitMember> haveConstructorNameStartingWithAll(
+  HeimdallRule<CompilationUnitMember> declareConstructorWithNameStartingWithAllOf(
     Iterable<String> prefixes,
   ) {
     final prefixList = prefixes.toNonEmptyList('prefixes');
@@ -89,7 +89,7 @@ extension ClassHaveConstructorNameStartingWithShouldRules on ClassShouldBuilder 
   }
 
   /// Requires matching classes to declare at least one constructor name starting with [prefixes].
-  HeimdallRule<CompilationUnitMember> haveConstructorNameStartingWithAny(
+  HeimdallRule<CompilationUnitMember> declareConstructorWithNameStartingWithAnyOf(
     Iterable<String> prefixes,
   ) {
     final prefixList = prefixes.toNonEmptyList('prefixes');
@@ -102,7 +102,7 @@ extension ClassHaveConstructorNameStartingWithShouldRules on ClassShouldBuilder 
   }
 
   /// Requires matching classes to declare no constructor name starting with [prefixes].
-  HeimdallRule<CompilationUnitMember> haveConstructorNameStartingWithNone(
+  HeimdallRule<CompilationUnitMember> declareConstructorWithNameStartingWithNoneOf(
     Iterable<String> prefixes,
   ) {
     final prefixList = prefixes.toNonEmptyList('prefixes');

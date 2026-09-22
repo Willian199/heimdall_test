@@ -2,6 +2,9 @@ import 'package:heimdall_test/heimdall_test.dart';
 import 'package:heimdall_test/src/features/file_features/helpers/public_class_name_mismatch.dart';
 
 /// Predicate-side DSL for named public class/file-name convention rules.
+///
+/// A name is checked only when exactly one public class has that name.
+/// Absent or duplicate matching names pass; this does not require existence.
 extension FileHavePublicClassNameMatchingFileNamePredicateRules on FilePredicateBuilder {
   /// Selects files whose public class named [className] matches the file name.
   FilePredicateBuilder havePublicClassNameMatchingFileNameFor(
@@ -11,14 +14,14 @@ extension FileHavePublicClassNameMatchingFileNamePredicateRules on FilePredicate
   }
 
   /// Selects files whose public class named [className] does not match the file name.
-  FilePredicateBuilder noHavePublicClassNameMatchingFileNameFor(
+  FilePredicateBuilder notHavePublicClassNameMatchingFileNameFor(
     String className,
   ) {
     return satisfy(_fileDoesNotHavePublicClassNameMatchingFileNameFor(className));
   }
 
   /// Selects files whose public class/file-name convention matches at least one name in [classNames].
-  FilePredicateBuilder havePublicClassNameMatchingFileNameForAny(
+  FilePredicateBuilder havePublicClassNameMatchingFileNameForAnyOf(
     Iterable<String> classNames,
   ) {
     final classList = classNames.toNonEmptyList('classNames');
@@ -31,7 +34,7 @@ extension FileHavePublicClassNameMatchingFileNamePredicateRules on FilePredicate
   }
 
   /// Selects files whose public class/file-name convention matches every name in [classNames].
-  FilePredicateBuilder havePublicClassNameMatchingFileNameForAll(
+  FilePredicateBuilder havePublicClassNameMatchingFileNameForAllOf(
     Iterable<String> classNames,
   ) {
     final classList = classNames.toNonEmptyList('classNames');
@@ -44,7 +47,7 @@ extension FileHavePublicClassNameMatchingFileNamePredicateRules on FilePredicate
   }
 
   /// Selects files whose public class/file-name convention matches none of [classNames].
-  FilePredicateBuilder havePublicClassNameMatchingFileNameForNone(
+  FilePredicateBuilder havePublicClassNameMatchingFileNameForNoneOf(
     Iterable<String> classNames,
   ) {
     final classList = classNames.toNonEmptyList('classNames');
@@ -58,6 +61,9 @@ extension FileHavePublicClassNameMatchingFileNamePredicateRules on FilePredicate
 }
 
 /// Condition-side DSL for named public class/file-name convention rules.
+///
+/// A name is checked only when exactly one public class has that name.
+/// Absent or duplicate matching names pass; this does not require existence.
 extension FileHavePublicClassNameMatchingFileNameShouldRules on FileShouldBuilder {
   /// Requires a public class named [className] to match its file name.
   HeimdallRule<HeimdallSourceFile> havePublicClassNameMatchingFileNameFor(
@@ -67,14 +73,14 @@ extension FileHavePublicClassNameMatchingFileNameShouldRules on FileShouldBuilde
   }
 
   /// Requires a public class named [className] to not match its file name.
-  HeimdallRule<HeimdallSourceFile> noHavePublicClassNameMatchingFileNameFor(
+  HeimdallRule<HeimdallSourceFile> notHavePublicClassNameMatchingFileNameFor(
     String className,
   ) {
     return satisfy(_fileShouldNotHavePublicClassNameMatchingFileNameFor(className));
   }
 
   /// Requires the public class/file-name convention to match at least one name in [classNames].
-  HeimdallRule<HeimdallSourceFile> havePublicClassNameMatchingFileNameForAny(
+  HeimdallRule<HeimdallSourceFile> havePublicClassNameMatchingFileNameForAnyOf(
     Iterable<String> classNames,
   ) {
     final classList = classNames.toNonEmptyList('classNames');
@@ -87,7 +93,7 @@ extension FileHavePublicClassNameMatchingFileNameShouldRules on FileShouldBuilde
   }
 
   /// Requires the public class/file-name convention to match every name in [classNames].
-  HeimdallRule<HeimdallSourceFile> havePublicClassNameMatchingFileNameForAll(
+  HeimdallRule<HeimdallSourceFile> havePublicClassNameMatchingFileNameForAllOf(
     Iterable<String> classNames,
   ) {
     final classList = classNames.toNonEmptyList('classNames');
@@ -100,7 +106,7 @@ extension FileHavePublicClassNameMatchingFileNameShouldRules on FileShouldBuilde
   }
 
   /// Requires the public class/file-name convention to match none of [classNames].
-  HeimdallRule<HeimdallSourceFile> havePublicClassNameMatchingFileNameForNone(
+  HeimdallRule<HeimdallSourceFile> havePublicClassNameMatchingFileNameForNoneOf(
     Iterable<String> classNames,
   ) {
     final classList = classNames.toNonEmptyList('classNames');

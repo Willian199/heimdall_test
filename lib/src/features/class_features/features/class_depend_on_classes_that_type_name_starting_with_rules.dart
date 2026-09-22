@@ -1,16 +1,17 @@
 import 'package:heimdall_test/heimdall_test.dart';
+import 'package:heimdall_test/src/features/class_features/helpers/class_dependency_rule_helpers.dart';
 import 'package:heimdall_test/src/features/queries/declaration_dependency_queries.dart';
 
 /// Predicate-side DSL for dependency target type name prefix rules.
 extension ClassDependOnClassesThatTypeNameStartingWithPredicateRules on ClassPredicateBuilder {
   /// Selects declarations that depend on a class whose type name starts with [prefix].
   ClassPredicateBuilder dependOnClassesWithTypeNameStartingWith(String prefix) {
-    return satisfy(_classDependsOnTarget(_targetTypeNameStartsWith(prefix)));
+    return satisfy(classDependsOnTarget(_targetTypeNameStartsWith(prefix)));
   }
 
   /// Selects declarations that do not depend on a class whose type name starts with [prefix].
-  ClassPredicateBuilder noDependOnClassesWithTypeNameStartingWith(String prefix) {
-    return satisfy(_classDoesNotDependOnTarget(_targetTypeNameStartsWith(prefix)));
+  ClassPredicateBuilder notDependOnClassesWithTypeNameStartingWith(String prefix) {
+    return satisfy(classDoesNotDependOnTarget(_targetTypeNameStartsWith(prefix)));
   }
 
   /// Selects declarations that depend on every target prefix in [prefixes].
@@ -94,14 +95,14 @@ extension ClassDependOnClassesThatTypeNameStartingWithShouldRules on ClassShould
   HeimdallRule<CompilationUnitMember> dependOnClassesWithTypeNameStartingWith(
     String prefix,
   ) {
-    return satisfy(_classShouldDependOnTarget(_targetTypeNameStartsWith(prefix)));
+    return satisfy(classShouldDependOnTarget(_targetTypeNameStartsWith(prefix)));
   }
 
   /// Requires matching classes to not depend on a class whose type name starts with [prefix].
-  HeimdallRule<CompilationUnitMember> noDependOnClassesWithTypeNameStartingWith(
+  HeimdallRule<CompilationUnitMember> notDependOnClassesWithTypeNameStartingWith(
     String prefix,
   ) {
-    return satisfy(_classShouldNotDependOnTarget(_targetTypeNameStartsWith(prefix)));
+    return satisfy(classShouldNotDependOnTarget(_targetTypeNameStartsWith(prefix)));
   }
 
   /// Requires matching classes to depend on every target prefix in [prefixes].
@@ -111,7 +112,7 @@ extension ClassDependOnClassesThatTypeNameStartingWithShouldRules on ClassShould
     final prefixList = prefixes.toNonEmptyList('prefixes');
     return satisfy(
       HeimdallCondition.allOf(
-        prefixList.map(_targetTypeNameStartsWith).map(_classShouldDependOnTarget),
+        prefixList.map(_targetTypeNameStartsWith).map(classShouldDependOnTarget),
         description: 'depend on all classes with type name starting with ${prefixList.join(', ')}',
       ),
     );
@@ -124,7 +125,7 @@ extension ClassDependOnClassesThatTypeNameStartingWithShouldRules on ClassShould
     final prefixList = prefixes.toNonEmptyList('prefixes');
     return satisfy(
       HeimdallCondition.anyOf(
-        prefixList.map(_targetTypeNameStartsWith).map(_classShouldDependOnTarget),
+        prefixList.map(_targetTypeNameStartsWith).map(classShouldDependOnTarget),
         description: 'depend on any class with type name starting with ${prefixList.join(', ')}',
       ),
     );
@@ -137,82 +138,11 @@ extension ClassDependOnClassesThatTypeNameStartingWithShouldRules on ClassShould
     final prefixList = prefixes.toNonEmptyList('prefixes');
     return satisfy(
       HeimdallCondition.noneOf(
-        prefixList.map(_targetTypeNameStartsWith).map(_classShouldDependOnTarget),
+        prefixList.map(_targetTypeNameStartsWith).map(classShouldDependOnTarget),
         description: 'depend on no class with type name starting with ${prefixList.join(', ')}',
       ),
     );
   }
-}
-
-HeimdallPredicate<CompilationUnitMember> _classDependsOnTarget(
-  HeimdallPredicate<CompilationUnitMember> targetPredicate,
-) {
-  return HeimdallPredicate(
-    'depend on classes with type name that ${targetPredicate.description}',
-    (item, project) => targetDeclarations(
-      item,
-      project,
-    ).any((target) => targetPredicate.test(target, project)),
-  );
-}
-
-HeimdallPredicate<CompilationUnitMember> _classDoesNotDependOnTarget(
-  HeimdallPredicate<CompilationUnitMember> targetPredicate,
-) {
-  return HeimdallPredicate(
-    'not depend on classes with type name that ${targetPredicate.description}',
-    (item, project) => !declarationDependenciesFrom(
-      item,
-      project,
-    ).any((dependency) => targetPredicate.test(dependency.target, project)),
-  );
-}
-
-HeimdallCondition<CompilationUnitMember> _classShouldDependOnTarget(
-  HeimdallPredicate<CompilationUnitMember> targetPredicate,
-) {
-  return HeimdallCondition('depend on classes with type name that ${targetPredicate.description}', (item, project) {
-    final findings =
-        targetDeclarations(
-          item,
-          project,
-        ).any((target) => targetPredicate.test(target, project))
-        ? const <HeimdallValidationInfo>[]
-        : [
-            HeimdallValidationInfo(
-              filePath: item.sourcePath,
-              line: item.line,
-              message: '${item.name} does not depend on a matching class',
-            ),
-          ];
-    return HeimdallFindings(
-      subject: item,
-      passed: findings.isEmpty,
-      findings: findings,
-    );
-  });
-}
-
-HeimdallCondition<CompilationUnitMember> _classShouldNotDependOnTarget(
-  HeimdallPredicate<CompilationUnitMember> targetPredicate,
-) {
-  return HeimdallCondition('not depend on classes with type name that ${targetPredicate.description}', (item, project) {
-    final findings = declarationDependenciesFrom(item, project)
-        .where((dependency) => targetPredicate.test(dependency.target, project))
-        .map(
-          (dependency) => HeimdallValidationInfo(
-            filePath: item.sourcePath,
-            line: dependency.directive.line,
-            message: '${item.name} depends on forbidden ${dependency.target.name}',
-          ),
-        )
-        .toList();
-    return HeimdallFindings(
-      subject: item,
-      passed: findings.isEmpty,
-      findings: findings,
-    );
-  });
 }
 
 HeimdallPredicate<CompilationUnitMember> _targetTypeNameStartsWith(

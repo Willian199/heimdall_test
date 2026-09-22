@@ -10,7 +10,7 @@ extension FileCallStaticMethodPredicateRules on FilePredicateBuilder {
   }
 
   /// Selects files that do not call [methodName] on [targetType].
-  FilePredicateBuilder noCallStaticMethod(
+  FilePredicateBuilder notCallStaticMethod(
     String targetType,
     String methodName,
   ) {
@@ -71,7 +71,7 @@ extension FileCallStaticMethodShouldRules on FileShouldBuilder {
   }
 
   /// Requires matching files to not call [methodName] on [targetType].
-  HeimdallRule<HeimdallSourceFile> noCallStaticMethod(
+  HeimdallRule<HeimdallSourceFile> notCallStaticMethod(
     String targetType,
     String methodName,
   ) {

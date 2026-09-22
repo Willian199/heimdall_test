@@ -16,12 +16,12 @@ extension MemberHaveRequiredNamedParameterPredicateRules on MemberPredicateBuild
   }
 
   /// Selects members that do not satisfy `haveRequiredNamedParameter`.
-  MemberPredicateBuilder noHaveRequiredNamedParameter(String parameterName) {
+  MemberPredicateBuilder haveNoRequiredNamedParameter(String parameterName) {
     return satisfy(_memberDoesNotHaveRequiredNamedParameter(parameterName));
   }
 
   /// Selects executable members that have required named parameter every value in [parameterNames].
-  MemberPredicateBuilder haveRequiredNamedParameterAll(Iterable<String> parameterNames) {
+  MemberPredicateBuilder haveRequiredNamedParameterAllOf(Iterable<String> parameterNames) {
     final valueList = parameterNames.toNonEmptyList('parameterNames');
     return satisfy(
       HeimdallPredicate.allOf(
@@ -32,7 +32,7 @@ extension MemberHaveRequiredNamedParameterPredicateRules on MemberPredicateBuild
   }
 
   /// Selects executable members that have required named parameter at least one value in [parameterNames].
-  MemberPredicateBuilder haveRequiredNamedParameterAny(Iterable<String> parameterNames) {
+  MemberPredicateBuilder haveRequiredNamedParameterAnyOf(Iterable<String> parameterNames) {
     final valueList = parameterNames.toNonEmptyList('parameterNames');
     return satisfy(
       HeimdallPredicate.anyOf(
@@ -43,7 +43,7 @@ extension MemberHaveRequiredNamedParameterPredicateRules on MemberPredicateBuild
   }
 
   /// Selects executable members that have required named parameter none of [parameterNames].
-  MemberPredicateBuilder haveRequiredNamedParameterNone(Iterable<String> parameterNames) {
+  MemberPredicateBuilder haveRequiredNamedParameterNoneOf(Iterable<String> parameterNames) {
     final valueList = parameterNames.toNonEmptyList('parameterNames');
     return satisfy(
       HeimdallPredicate.noneOf(
@@ -62,12 +62,12 @@ extension MemberHaveRequiredNamedParameterShouldRules on MemberShouldBuilder {
   }
 
   /// Requires members not to satisfy `haveRequiredNamedParameter`.
-  HeimdallRule<ClassMember> noHaveRequiredNamedParameter(String parameterName) {
+  HeimdallRule<ClassMember> haveNoRequiredNamedParameter(String parameterName) {
     return satisfy(_memberShouldNotHaveRequiredNamedParameter(parameterName));
   }
 
   /// Requires executable members to have required named parameter every value in [parameterNames].
-  HeimdallRule<ClassMember> haveRequiredNamedParameterAll(Iterable<String> parameterNames) {
+  HeimdallRule<ClassMember> haveRequiredNamedParameterAllOf(Iterable<String> parameterNames) {
     final valueList = parameterNames.toNonEmptyList('parameterNames');
     return satisfy(
       HeimdallCondition.allOf(
@@ -78,7 +78,7 @@ extension MemberHaveRequiredNamedParameterShouldRules on MemberShouldBuilder {
   }
 
   /// Requires executable members to have required named parameter at least one value in [parameterNames].
-  HeimdallRule<ClassMember> haveRequiredNamedParameterAny(Iterable<String> parameterNames) {
+  HeimdallRule<ClassMember> haveRequiredNamedParameterAnyOf(Iterable<String> parameterNames) {
     final valueList = parameterNames.toNonEmptyList('parameterNames');
     return satisfy(
       HeimdallCondition.anyOf(
@@ -89,7 +89,7 @@ extension MemberHaveRequiredNamedParameterShouldRules on MemberShouldBuilder {
   }
 
   /// Requires executable members to have required named parameter none of [parameterNames].
-  HeimdallRule<ClassMember> haveRequiredNamedParameterNone(Iterable<String> parameterNames) {
+  HeimdallRule<ClassMember> haveRequiredNamedParameterNoneOf(Iterable<String> parameterNames) {
     final valueList = parameterNames.toNonEmptyList('parameterNames');
     return satisfy(
       HeimdallCondition.noneOf(

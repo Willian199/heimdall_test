@@ -2,6 +2,9 @@ import 'package:heimdall_test/heimdall_test.dart';
 import 'package:heimdall_test/src/features/queries/declaration_dependency_queries.dart';
 
 /// Predicate-side DSL for exclusive class declaration dependency rules.
+///
+/// Positive exclusive rules require at least one dependency. Their inverse
+/// accepts declarations with no dependencies.
 extension ClassOnlyDependOnClassesThatPredicateRules on ClassPredicateBuilder {
   /// Selects declarations whose dependency targets all match [targetPredicate].
   ClassPredicateBuilder onlyDependOnClassesThat(
@@ -10,15 +13,15 @@ extension ClassOnlyDependOnClassesThatPredicateRules on ClassPredicateBuilder {
     return satisfy(_classOnlyDependsOnClassesThat(targetPredicate));
   }
 
-  /// Selects declarations that have at least one dependency outside [targetPredicate].
-  ClassPredicateBuilder noOnlyDependOnClassesThat(
+  /// Selects declarations with no dependencies or a dependency outside [targetPredicate].
+  ClassPredicateBuilder notOnlyDependOnClassesThat(
     HeimdallPredicate<CompilationUnitMember> targetPredicate,
   ) {
     return satisfy(_classDoesNotOnlyDependOnClassesThat(targetPredicate));
   }
 
   /// Selects declarations whose dependency targets all match every predicate group in [targetPredicates].
-  ClassPredicateBuilder onlyDependOnAllClassesThat(
+  ClassPredicateBuilder onlyDependOnClassesMatchingAllOf(
     Iterable<HeimdallPredicate<CompilationUnitMember>> targetPredicates,
   ) {
     final predicateList = targetPredicates.toNonEmptyList('targetPredicates');
@@ -31,7 +34,7 @@ extension ClassOnlyDependOnClassesThatPredicateRules on ClassPredicateBuilder {
   }
 
   /// Selects declarations whose dependency targets all match at least one predicate in [targetPredicates].
-  ClassPredicateBuilder onlyDependOnAnyClassesThat(
+  ClassPredicateBuilder onlyDependOnClassesMatchingAnyOf(
     Iterable<HeimdallPredicate<CompilationUnitMember>> targetPredicates,
   ) {
     final predicateList = targetPredicates.toNonEmptyList('targetPredicates');
@@ -48,7 +51,7 @@ extension ClassOnlyDependOnClassesThatPredicateRules on ClassPredicateBuilder {
   }
 
   /// Selects declarations whose dependency targets all match none of [targetPredicates].
-  ClassPredicateBuilder onlyDependOnNoClassesThat(
+  ClassPredicateBuilder onlyDependOnClassesMatchingNoneOf(
     Iterable<HeimdallPredicate<CompilationUnitMember>> targetPredicates,
   ) {
     final predicateList = targetPredicates.toNonEmptyList('targetPredicates');
@@ -62,6 +65,8 @@ extension ClassOnlyDependOnClassesThatPredicateRules on ClassPredicateBuilder {
 }
 
 /// Condition-side DSL for exclusive class declaration dependency rules.
+///
+/// Positive exclusive rules require at least one dependency.
 extension ClassOnlyDependOnClassesThatShouldRules on ClassShouldBuilder {
   /// Requires every dependency target to match [targetPredicate].
   HeimdallRule<CompilationUnitMember> onlyDependOnClassesThat(
@@ -70,15 +75,15 @@ extension ClassOnlyDependOnClassesThatShouldRules on ClassShouldBuilder {
     return satisfy(_classShouldOnlyDependOnClassesThat(targetPredicate));
   }
 
-  /// Requires matching classes to have at least one dependency outside [targetPredicate].
-  HeimdallRule<CompilationUnitMember> noOnlyDependOnClassesThat(
+  /// Requires no dependencies or at least one dependency outside [targetPredicate].
+  HeimdallRule<CompilationUnitMember> notOnlyDependOnClassesThat(
     HeimdallPredicate<CompilationUnitMember> targetPredicate,
   ) {
     return satisfy(_classShouldNotOnlyDependOnClassesThat(targetPredicate));
   }
 
   /// Requires every dependency target to match every predicate group in [targetPredicates].
-  HeimdallRule<CompilationUnitMember> onlyDependOnAllClassesThat(
+  HeimdallRule<CompilationUnitMember> onlyDependOnClassesMatchingAllOf(
     Iterable<HeimdallPredicate<CompilationUnitMember>> targetPredicates,
   ) {
     final predicateList = targetPredicates.toNonEmptyList('targetPredicates');
@@ -91,7 +96,7 @@ extension ClassOnlyDependOnClassesThatShouldRules on ClassShouldBuilder {
   }
 
   /// Requires every dependency target to match at least one predicate in [targetPredicates].
-  HeimdallRule<CompilationUnitMember> onlyDependOnAnyClassesThat(
+  HeimdallRule<CompilationUnitMember> onlyDependOnClassesMatchingAnyOf(
     Iterable<HeimdallPredicate<CompilationUnitMember>> targetPredicates,
   ) {
     final predicateList = targetPredicates.toNonEmptyList('targetPredicates');
@@ -113,7 +118,7 @@ extension ClassOnlyDependOnClassesThatShouldRules on ClassShouldBuilder {
   }
 
   /// Requires every dependency target to match none of [targetPredicates].
-  HeimdallRule<CompilationUnitMember> onlyDependOnNoClassesThat(
+  HeimdallRule<CompilationUnitMember> onlyDependOnClassesMatchingNoneOf(
     Iterable<HeimdallPredicate<CompilationUnitMember>> targetPredicates,
   ) {
     final predicateList = targetPredicates.toNonEmptyList('targetPredicates');

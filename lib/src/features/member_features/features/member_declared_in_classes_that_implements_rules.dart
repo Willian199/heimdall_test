@@ -1,53 +1,54 @@
 import 'package:heimdall_test/heimdall_test.dart';
-import 'package:heimdall_test/src/features/queries/declaration_type_queries.dart';
+import 'package:heimdall_test/src/features/member_features/helpers/member_owner_rule_helpers.dart';
+import 'package:heimdall_test/src/features/queries/declaration_rule_predicates.dart';
 import 'package:heimdall_test/src/features/queries/member_queries.dart';
 
 /// Predicate-side DSL for member owner declaration rules.
 extension MemberDeclaredInClassesThatImplementsPredicateRules on MemberPredicateBuilder {
   /// Selects members declared in classes that implement [typeName].
   MemberPredicateBuilder areDeclaredInClassesThatImplement(String typeName) {
-    return areDeclaredInClassesThat(_classImplements(typeName));
+    return areDeclaredInClassesThat(classImplements(typeName));
   }
 
   /// Selects members that do not satisfy `areDeclaredInClassesThatImplement`.
-  MemberPredicateBuilder noAreDeclaredInClassesThatImplement(String typeName) {
+  MemberPredicateBuilder areNotDeclaredInClassesThatImplement(String typeName) {
     return satisfy(_memberDoesNotBeDeclaredInClassesThatImplement(typeName));
   }
 
   /// Selects members declared in classes that implement any type in [typeNames].
-  MemberPredicateBuilder areDeclaredInClassesThatImplementAny(
+  MemberPredicateBuilder areDeclaredInClassesThatImplementAnyOf(
     Iterable<String> typeNames,
   ) {
     final typeList = typeNames.toNonEmptyList('typeNames');
     return areDeclaredInClassesThat(
       HeimdallPredicate.anyOf(
-        typeList.map(_classImplements),
+        typeList.map(classImplements),
         description: 'implement any of ${typeList.join(', ')}',
       ),
     );
   }
 
   /// Selects members declared in classes that implement every type in [typeNames].
-  MemberPredicateBuilder areDeclaredInClassesThatImplementAll(
+  MemberPredicateBuilder areDeclaredInClassesThatImplementAllOf(
     Iterable<String> typeNames,
   ) {
     final typeList = typeNames.toNonEmptyList('typeNames');
     return areDeclaredInClassesThat(
       HeimdallPredicate.allOf(
-        typeList.map(_classImplements),
+        typeList.map(classImplements),
         description: 'implement all of ${typeList.join(', ')}',
       ),
     );
   }
 
   /// Selects members declared in classes that implement none of [typeNames].
-  MemberPredicateBuilder areDeclaredInClassesThatImplementNone(
+  MemberPredicateBuilder areDeclaredInClassesThatImplementNoneOf(
     Iterable<String> typeNames,
   ) {
     final typeList = typeNames.toNonEmptyList('typeNames');
     return areDeclaredInClassesThat(
       HeimdallPredicate.noneOf(
-        typeList.map(_classImplements),
+        typeList.map(classImplements),
         description: 'implement none of ${typeList.join(', ')}',
       ),
     );
@@ -58,72 +59,56 @@ extension MemberDeclaredInClassesThatImplementsPredicateRules on MemberPredicate
 extension MemberDeclaredInClassesThatImplementsShouldRules on MemberShouldBuilder {
   /// Requires members to be declared in classes that implement [typeName].
   HeimdallRule<ClassMember> beDeclaredInClassesThatImplement(String typeName) {
-    return beDeclaredInClassesThat(_classImplements(typeName));
+    return beDeclaredInClassesThat(classImplements(typeName));
   }
 
   /// Requires members not to satisfy `beDeclaredInClassesThatImplement`.
-  HeimdallRule<ClassMember> noBeDeclaredInClassesThatImplement(String typeName) {
+  HeimdallRule<ClassMember> notBeDeclaredInClassesThatImplement(String typeName) {
     return satisfy(_memberShouldNotBeDeclaredInClassesThatImplement(typeName));
   }
 
   /// Requires members to be declared in classes that implement any type in [typeNames].
-  HeimdallRule<ClassMember> beDeclaredInClassesThatImplementAny(
+  HeimdallRule<ClassMember> beDeclaredInClassesThatImplementAnyOf(
     Iterable<String> typeNames,
   ) {
     final typeList = typeNames.toNonEmptyList('typeNames');
     return satisfy(
       HeimdallCondition.anyOf(
-        typeList.map(_classImplements).map(_memberShouldBeDeclaredInClassesThat),
+        typeList.map(classImplements).map(memberShouldBeDeclaredInClassesThat),
         description: 'implement any of ${typeList.join(', ')}',
       ),
     );
   }
 
   /// Requires members to be declared in classes that implement every type in [typeNames].
-  HeimdallRule<ClassMember> beDeclaredInClassesThatImplementAll(
+  HeimdallRule<ClassMember> beDeclaredInClassesThatImplementAllOf(
     Iterable<String> typeNames,
   ) {
     final typeList = typeNames.toNonEmptyList('typeNames');
     return satisfy(
       HeimdallCondition.allOf(
-        typeList.map(_classImplements).map(_memberShouldBeDeclaredInClassesThat),
+        typeList.map(classImplements).map(memberShouldBeDeclaredInClassesThat),
         description: 'implement all of ${typeList.join(', ')}',
       ),
     );
   }
 
   /// Requires members to be declared in classes that implement none of [typeNames].
-  HeimdallRule<ClassMember> beDeclaredInClassesThatImplementNone(
+  HeimdallRule<ClassMember> beDeclaredInClassesThatImplementNoneOf(
     Iterable<String> typeNames,
   ) {
     final typeList = typeNames.toNonEmptyList('typeNames');
     return satisfy(
       HeimdallCondition.noneOf(
-        typeList.map(_classImplements).map(_memberShouldBeDeclaredInClassesThat),
+        typeList.map(classImplements).map(memberShouldBeDeclaredInClassesThat),
         description: 'implement none of ${typeList.join(', ')}',
       ),
     );
   }
 }
 
-HeimdallCondition<ClassMember> _memberShouldBeDeclaredInClassesThat(
-  HeimdallPredicate<CompilationUnitMember> classPredicate,
-) {
-  return memberCondition(
-    'be declared in classes that ${classPredicate.description}',
-    (item, project) => classPredicate.test(item.owner, project),
-  );
-}
-
-HeimdallPredicate<CompilationUnitMember> _classImplements(String typeName) {
-  return HeimdallPredicate(
-    'implement $typeName',
-    (item, project) => implementsType(item, typeName, project),
-  );
-}
-
 HeimdallCondition<ClassMember> _memberShouldNotBeDeclaredInClassesThatImplement(String typeName) {
-  final classPredicate = _classImplements(typeName);
+  final classPredicate = classImplements(typeName);
   return prohibitedMemberCondition(
     'be declared in classes that ${classPredicate.description}',
     (item, project) => classPredicate.test(item.owner, project),
@@ -131,7 +116,7 @@ HeimdallCondition<ClassMember> _memberShouldNotBeDeclaredInClassesThatImplement(
 }
 
 HeimdallPredicate<ClassMember> _memberDoesNotBeDeclaredInClassesThatImplement(String typeName) {
-  final classPredicate = _classImplements(typeName);
+  final classPredicate = classImplements(typeName);
   return HeimdallPredicate(
     'not be declared in classes that implement $typeName',
     (item, project) => !classPredicate.test(item.owner, project),

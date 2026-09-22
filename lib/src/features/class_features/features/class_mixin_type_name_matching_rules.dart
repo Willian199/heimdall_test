@@ -4,17 +4,17 @@ import 'package:heimdall_test/src/features/queries/declaration_type_queries.dart
 /// Predicate-side DSL for mixin type regex rules.
 extension ClassMixinTypeNameMatchingPredicateRules on ClassPredicateBuilder {
   /// Selects classes that mix in a type whose name matches [pattern].
-  ClassPredicateBuilder mixinTypeNameMatching(RegExp pattern) {
+  ClassPredicateBuilder applyMixinTypeNameMatching(RegExp pattern) {
     return satisfy(_classMixesInTypeNameMatching(pattern));
   }
 
   /// Selects classes that do not mix in a type whose name matches [pattern].
-  ClassPredicateBuilder noMixinTypeNameMatching(RegExp pattern) {
+  ClassPredicateBuilder notApplyMixinTypeNameMatching(RegExp pattern) {
     return satisfy(_classDoesNotMixinTypeNameMatching(pattern));
   }
 
   /// Selects classes that mix in a type name matching at least one regex in [patterns].
-  ClassPredicateBuilder mixinTypeNameMatchingAny(Iterable<RegExp> patterns) {
+  ClassPredicateBuilder applyMixinTypeNameMatchingAnyOf(Iterable<RegExp> patterns) {
     final patternList = patterns.toNonEmptyList('patterns');
     return satisfy(
       HeimdallPredicate.anyOf(
@@ -25,7 +25,7 @@ extension ClassMixinTypeNameMatchingPredicateRules on ClassPredicateBuilder {
   }
 
   /// Selects classes that mix in types matching every regex in [patterns].
-  ClassPredicateBuilder mixinTypeNameMatchingAll(Iterable<RegExp> patterns) {
+  ClassPredicateBuilder applyMixinTypeNameMatchingAllOf(Iterable<RegExp> patterns) {
     final patternList = patterns.toNonEmptyList('patterns');
     return satisfy(
       HeimdallPredicate.allOf(
@@ -36,7 +36,7 @@ extension ClassMixinTypeNameMatchingPredicateRules on ClassPredicateBuilder {
   }
 
   /// Selects classes that mix in no type name matching [patterns].
-  ClassPredicateBuilder mixinTypeNameMatchingNone(Iterable<RegExp> patterns) {
+  ClassPredicateBuilder applyMixinTypeNameMatchingNoneOf(Iterable<RegExp> patterns) {
     final patternList = patterns.toNonEmptyList('patterns');
     return satisfy(
       HeimdallPredicate.noneOf(
@@ -50,17 +50,17 @@ extension ClassMixinTypeNameMatchingPredicateRules on ClassPredicateBuilder {
 /// Condition-side DSL for mixin type regex rules.
 extension ClassMixinTypeNameMatchingShouldRules on ClassShouldBuilder {
   /// Requires matching classes to mix in a type whose name matches [pattern].
-  HeimdallRule<CompilationUnitMember> mixinTypeNameMatching(RegExp pattern) {
+  HeimdallRule<CompilationUnitMember> applyMixinTypeNameMatching(RegExp pattern) {
     return satisfy(_classShouldMixinTypeNameMatching(pattern));
   }
 
   /// Requires matching classes to not mix in a type whose name matches [pattern].
-  HeimdallRule<CompilationUnitMember> noMixinTypeNameMatching(RegExp pattern) {
+  HeimdallRule<CompilationUnitMember> notApplyMixinTypeNameMatching(RegExp pattern) {
     return satisfy(_classShouldNotMixinTypeNameMatching(pattern));
   }
 
   /// Requires matching classes to mix in a type name matching at least one regex in [patterns].
-  HeimdallRule<CompilationUnitMember> mixinTypeNameMatchingAny(
+  HeimdallRule<CompilationUnitMember> applyMixinTypeNameMatchingAnyOf(
     Iterable<RegExp> patterns,
   ) {
     final patternList = patterns.toNonEmptyList('patterns');
@@ -73,7 +73,7 @@ extension ClassMixinTypeNameMatchingShouldRules on ClassShouldBuilder {
   }
 
   /// Requires matching classes to mix in types matching every regex in [patterns].
-  HeimdallRule<CompilationUnitMember> mixinTypeNameMatchingAll(
+  HeimdallRule<CompilationUnitMember> applyMixinTypeNameMatchingAllOf(
     Iterable<RegExp> patterns,
   ) {
     final patternList = patterns.toNonEmptyList('patterns');
@@ -86,7 +86,7 @@ extension ClassMixinTypeNameMatchingShouldRules on ClassShouldBuilder {
   }
 
   /// Requires matching classes to mix in no type name matching [patterns].
-  HeimdallRule<CompilationUnitMember> mixinTypeNameMatchingNone(
+  HeimdallRule<CompilationUnitMember> applyMixinTypeNameMatchingNoneOf(
     Iterable<RegExp> patterns,
   ) {
     final patternList = patterns.toNonEmptyList('patterns');

@@ -7,10 +7,10 @@ extension FileHaveNamePredicateRules on FilePredicateBuilder {
   FilePredicateBuilder haveName(String name) => satisfy(_fileHasName(name));
 
   /// Selects files without exactly [name].
-  FilePredicateBuilder noHaveName(String name) => satisfy(_fileDoesNotHaveName(name));
+  FilePredicateBuilder haveNameDifferentFrom(String name) => satisfy(_fileDoesNotHaveName(name));
 
   /// Selects files with any name in [names].
-  FilePredicateBuilder haveNameAny(Iterable<String> names) {
+  FilePredicateBuilder haveNameEqualToAnyOf(Iterable<String> names) {
     final nameList = names.toNonEmptyList('names');
     return satisfy(
       HeimdallPredicate.anyOf(
@@ -21,7 +21,7 @@ extension FileHaveNamePredicateRules on FilePredicateBuilder {
   }
 
   /// Selects files with every name in [names].
-  FilePredicateBuilder haveNameAll(Iterable<String> names) {
+  FilePredicateBuilder haveNameEqualToAllOf(Iterable<String> names) {
     final nameList = names.toNonEmptyList('names');
     return satisfy(
       HeimdallPredicate.allOf(
@@ -32,7 +32,7 @@ extension FileHaveNamePredicateRules on FilePredicateBuilder {
   }
 
   /// Selects files with none of [names].
-  FilePredicateBuilder haveNameNone(Iterable<String> names) {
+  FilePredicateBuilder haveNameEqualToNoneOf(Iterable<String> names) {
     final nameList = names.toNonEmptyList('names');
     return satisfy(
       HeimdallPredicate.noneOf(
@@ -51,12 +51,12 @@ extension FileHaveNameShouldRules on FileShouldBuilder {
   }
 
   /// Requires matching file names to not equal [name].
-  HeimdallRule<HeimdallSourceFile> noHaveName(String name) {
+  HeimdallRule<HeimdallSourceFile> haveNameDifferentFrom(String name) {
     return satisfy(_fileShouldNotHaveName(name));
   }
 
   /// Requires matching file names to equal at least one name in [names].
-  HeimdallRule<HeimdallSourceFile> haveNameAny(Iterable<String> names) {
+  HeimdallRule<HeimdallSourceFile> haveNameEqualToAnyOf(Iterable<String> names) {
     final nameList = names.toNonEmptyList('names');
     return satisfy(
       HeimdallCondition.anyOf(
@@ -67,7 +67,7 @@ extension FileHaveNameShouldRules on FileShouldBuilder {
   }
 
   /// Requires matching file names to equal every name in [names].
-  HeimdallRule<HeimdallSourceFile> haveNameAll(Iterable<String> names) {
+  HeimdallRule<HeimdallSourceFile> haveNameEqualToAllOf(Iterable<String> names) {
     final nameList = names.toNonEmptyList('names');
     return satisfy(
       HeimdallCondition.allOf(
@@ -78,7 +78,7 @@ extension FileHaveNameShouldRules on FileShouldBuilder {
   }
 
   /// Requires matching file names to equal none of [names].
-  HeimdallRule<HeimdallSourceFile> haveNameNone(Iterable<String> names) {
+  HeimdallRule<HeimdallSourceFile> haveNameEqualToNoneOf(Iterable<String> names) {
     final nameList = names.toNonEmptyList('names');
     return satisfy(
       HeimdallCondition.noneOf(

@@ -146,16 +146,9 @@ void main() {
       );
     });
 
-    test('caches line information created from source content', () {
-      final file = HeimdallSourceFile(
-        absolutePath: '/project/lib/user.dart',
-        relativePath: 'lib/user.dart',
-        content: 'class User {}',
-        directives: [],
-        declarations: [],
-        dependencies: [],
-        parseErrors: [],
-      );
+    test('reuses line information from an imported fixture', () {
+      final project = const HeimdallFileImporter(useCache: false).importPath(basicProject);
+      final file = project.fileByRelativePath('lib/src/domain/user.dart')!;
 
       expect(identical(file.lineInfo, file.lineInfo), isTrue);
     });

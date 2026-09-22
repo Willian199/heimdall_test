@@ -1,16 +1,17 @@
 import 'package:heimdall_test/heimdall_test.dart';
+import 'package:heimdall_test/src/features/class_features/helpers/class_dependency_rule_helpers.dart';
 import 'package:heimdall_test/src/features/queries/declaration_dependency_queries.dart';
 
 /// Predicate-side DSL for dependency target type name rules.
 extension ClassDependOnClassesThatTypeNamePredicateRules on ClassPredicateBuilder {
   /// Selects declarations that depend on a class named [typeName].
   ClassPredicateBuilder dependOnClassesWithTypeName(String typeName) {
-    return satisfy(_classDependsOnTypeName(_typeNameEquals(typeName)));
+    return satisfy(classDependsOnTarget(_typeNameEquals(typeName)));
   }
 
   /// Selects declarations that do not depend on a class named [typeName].
-  ClassPredicateBuilder noDependOnClassesWithTypeName(String typeName) {
-    return satisfy(_classDoesNotDependOnTypeName(_typeNameEquals(typeName)));
+  ClassPredicateBuilder notDependOnClassesWithTypeName(String typeName) {
+    return satisfy(classDoesNotDependOnTarget(_typeNameEquals(typeName)));
   }
 
   /// Selects declarations that depend on every target type name in [typeNames].
@@ -94,14 +95,14 @@ extension ClassDependOnClassesThatTypeNameShouldRules on ClassShouldBuilder {
   HeimdallRule<CompilationUnitMember> dependOnClassesWithTypeName(
     String typeName,
   ) {
-    return satisfy(_classShouldDependOnTypeName(_typeNameEquals(typeName)));
+    return satisfy(classShouldDependOnTarget(_typeNameEquals(typeName)));
   }
 
   /// Requires matching classes to not depend on a class named [typeName].
-  HeimdallRule<CompilationUnitMember> noDependOnClassesWithTypeName(
+  HeimdallRule<CompilationUnitMember> notDependOnClassesWithTypeName(
     String typeName,
   ) {
-    return satisfy(_classShouldNotDependOnTypeName(_typeNameEquals(typeName)));
+    return satisfy(classShouldNotDependOnTarget(_typeNameEquals(typeName)));
   }
 
   /// Requires matching classes to depend on every target type name in [typeNames].
@@ -111,7 +112,7 @@ extension ClassDependOnClassesThatTypeNameShouldRules on ClassShouldBuilder {
     final typeList = typeNames.toNonEmptyList('typeNames');
     return satisfy(
       HeimdallCondition.allOf(
-        typeList.map(_typeNameEquals).map(_classShouldDependOnTypeName),
+        typeList.map(_typeNameEquals).map(classShouldDependOnTarget),
         description: 'depend on all classes with type name ${typeList.join(', ')}',
       ),
     );
@@ -124,7 +125,7 @@ extension ClassDependOnClassesThatTypeNameShouldRules on ClassShouldBuilder {
     final typeList = typeNames.toNonEmptyList('typeNames');
     return satisfy(
       HeimdallCondition.anyOf(
-        typeList.map(_typeNameEquals).map(_classShouldDependOnTypeName),
+        typeList.map(_typeNameEquals).map(classShouldDependOnTarget),
         description: 'depend on any class with type name ${typeList.join(', ')}',
       ),
     );
@@ -137,82 +138,11 @@ extension ClassDependOnClassesThatTypeNameShouldRules on ClassShouldBuilder {
     final typeList = typeNames.toNonEmptyList('typeNames');
     return satisfy(
       HeimdallCondition.noneOf(
-        typeList.map(_typeNameEquals).map(_classShouldDependOnTypeName),
+        typeList.map(_typeNameEquals).map(classShouldDependOnTarget),
         description: 'depend on no class with type name ${typeList.join(', ')}',
       ),
     );
   }
-}
-
-HeimdallPredicate<CompilationUnitMember> _classDependsOnTypeName(
-  HeimdallPredicate<CompilationUnitMember> targetPredicate,
-) {
-  return HeimdallPredicate(
-    'depend on classes with type name that ${targetPredicate.description}',
-    (item, project) => targetDeclarations(
-      item,
-      project,
-    ).any((target) => targetPredicate.test(target, project)),
-  );
-}
-
-HeimdallPredicate<CompilationUnitMember> _classDoesNotDependOnTypeName(
-  HeimdallPredicate<CompilationUnitMember> targetPredicate,
-) {
-  return HeimdallPredicate(
-    'not depend on classes with type name that ${targetPredicate.description}',
-    (item, project) => !declarationDependenciesFrom(
-      item,
-      project,
-    ).any((dependency) => targetPredicate.test(dependency.target, project)),
-  );
-}
-
-HeimdallCondition<CompilationUnitMember> _classShouldDependOnTypeName(
-  HeimdallPredicate<CompilationUnitMember> targetPredicate,
-) {
-  return HeimdallCondition('depend on classes with type name that ${targetPredicate.description}', (item, project) {
-    final findings =
-        targetDeclarations(
-          item,
-          project,
-        ).any((target) => targetPredicate.test(target, project))
-        ? const <HeimdallValidationInfo>[]
-        : [
-            HeimdallValidationInfo(
-              filePath: item.sourcePath,
-              line: item.line,
-              message: '${item.name} does not depend on a matching class',
-            ),
-          ];
-    return HeimdallFindings(
-      subject: item,
-      passed: findings.isEmpty,
-      findings: findings,
-    );
-  });
-}
-
-HeimdallCondition<CompilationUnitMember> _classShouldNotDependOnTypeName(
-  HeimdallPredicate<CompilationUnitMember> targetPredicate,
-) {
-  return HeimdallCondition('not depend on classes with type name that ${targetPredicate.description}', (item, project) {
-    final findings = declarationDependenciesFrom(item, project)
-        .where((dependency) => targetPredicate.test(dependency.target, project))
-        .map(
-          (dependency) => HeimdallValidationInfo(
-            filePath: item.sourcePath,
-            line: dependency.directive.line,
-            message: '${item.name} depends on forbidden ${dependency.target.name}',
-          ),
-        )
-        .toList();
-    return HeimdallFindings(
-      subject: item,
-      passed: findings.isEmpty,
-      findings: findings,
-    );
-  });
 }
 
 HeimdallPredicate<CompilationUnitMember> _typeNameEquals(String typeName) {

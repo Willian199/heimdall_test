@@ -1,4 +1,5 @@
 import 'package:heimdall_test/heimdall_test.dart';
+import 'package:heimdall_test/src/features/member_features/helpers/member_owner_rule_helpers.dart';
 import 'package:heimdall_test/src/features/queries/declaration_type_queries.dart';
 import 'package:heimdall_test/src/features/queries/member_queries.dart';
 
@@ -10,12 +11,12 @@ extension MemberDeclaredInClassesAssignableMatchingPredicateRules on MemberPredi
   }
 
   /// Selects members that do not satisfy `areDeclaredInClassesAssignableToTypeNameMatching`.
-  MemberPredicateBuilder noAreDeclaredInClassesAssignableToTypeNameMatching(RegExp pattern) {
+  MemberPredicateBuilder areNotDeclaredInClassesAssignableToTypeNameMatching(RegExp pattern) {
     return satisfy(_memberDoesNotBeDeclaredInClassesAssignableToTypeNameMatching(pattern));
   }
 
   /// Selects members declared in classes that assignable to type name matching any value in [patterns].
-  MemberPredicateBuilder areDeclaredInClassesAssignableToTypeNameMatchingAny(Iterable<RegExp> patterns) {
+  MemberPredicateBuilder areDeclaredInClassesAssignableToTypeNameMatchingAnyOf(Iterable<RegExp> patterns) {
     final valueList = patterns.toNonEmptyList('patterns');
     return areDeclaredInClassesThat(
       HeimdallPredicate.anyOf(
@@ -26,7 +27,7 @@ extension MemberDeclaredInClassesAssignableMatchingPredicateRules on MemberPredi
   }
 
   /// Selects members declared in classes that assignable to type name matching every value in [patterns].
-  MemberPredicateBuilder areDeclaredInClassesAssignableToTypeNameMatchingAll(Iterable<RegExp> patterns) {
+  MemberPredicateBuilder areDeclaredInClassesAssignableToTypeNameMatchingAllOf(Iterable<RegExp> patterns) {
     final valueList = patterns.toNonEmptyList('patterns');
     return areDeclaredInClassesThat(
       HeimdallPredicate.allOf(
@@ -37,7 +38,7 @@ extension MemberDeclaredInClassesAssignableMatchingPredicateRules on MemberPredi
   }
 
   /// Selects members declared in classes that assignable to type name matching none of [patterns].
-  MemberPredicateBuilder areDeclaredInClassesAssignableToTypeNameMatchingNone(Iterable<RegExp> patterns) {
+  MemberPredicateBuilder areDeclaredInClassesAssignableToTypeNameMatchingNoneOf(Iterable<RegExp> patterns) {
     final valueList = patterns.toNonEmptyList('patterns');
     return areDeclaredInClassesThat(
       HeimdallPredicate.noneOf(
@@ -56,51 +57,42 @@ extension MemberDeclaredInClassesAssignableMatchingShouldRules on MemberShouldBu
   }
 
   /// Requires members not to satisfy `beDeclaredInClassesAssignableToTypeNameMatching`.
-  HeimdallRule<ClassMember> noBeDeclaredInClassesAssignableToTypeNameMatching(RegExp pattern) {
+  HeimdallRule<ClassMember> notBeDeclaredInClassesAssignableToTypeNameMatching(RegExp pattern) {
     return satisfy(_memberShouldNotBeDeclaredInClassesAssignableToTypeNameMatching(pattern));
   }
 
   /// Requires members to be declared in classes that assignable to type name matching any value in [patterns].
-  HeimdallRule<ClassMember> beDeclaredInClassesAssignableToTypeNameMatchingAny(Iterable<RegExp> patterns) {
+  HeimdallRule<ClassMember> beDeclaredInClassesAssignableToTypeNameMatchingAnyOf(Iterable<RegExp> patterns) {
     final valueList = patterns.toNonEmptyList('patterns');
     return satisfy(
       HeimdallCondition.anyOf(
-        valueList.map(_classAssignableToTypeNameMatching).map(_memberShouldBeDeclaredInClassesThat),
+        valueList.map(_classAssignableToTypeNameMatching).map(memberShouldBeDeclaredInClassesThat),
         description: 'assignable to type name matching any of ${valueList.join(', ')}',
       ),
     );
   }
 
   /// Requires members to be declared in classes that assignable to type name matching every value in [patterns].
-  HeimdallRule<ClassMember> beDeclaredInClassesAssignableToTypeNameMatchingAll(Iterable<RegExp> patterns) {
+  HeimdallRule<ClassMember> beDeclaredInClassesAssignableToTypeNameMatchingAllOf(Iterable<RegExp> patterns) {
     final valueList = patterns.toNonEmptyList('patterns');
     return satisfy(
       HeimdallCondition.allOf(
-        valueList.map(_classAssignableToTypeNameMatching).map(_memberShouldBeDeclaredInClassesThat),
+        valueList.map(_classAssignableToTypeNameMatching).map(memberShouldBeDeclaredInClassesThat),
         description: 'assignable to type name matching all of ${valueList.join(', ')}',
       ),
     );
   }
 
   /// Requires members to be declared in classes that assignable to type name matching none of [patterns].
-  HeimdallRule<ClassMember> beDeclaredInClassesAssignableToTypeNameMatchingNone(Iterable<RegExp> patterns) {
+  HeimdallRule<ClassMember> beDeclaredInClassesAssignableToTypeNameMatchingNoneOf(Iterable<RegExp> patterns) {
     final valueList = patterns.toNonEmptyList('patterns');
     return satisfy(
       HeimdallCondition.noneOf(
-        valueList.map(_classAssignableToTypeNameMatching).map(_memberShouldBeDeclaredInClassesThat),
+        valueList.map(_classAssignableToTypeNameMatching).map(memberShouldBeDeclaredInClassesThat),
         description: 'assignable to type name matching none of ${valueList.join(', ')}',
       ),
     );
   }
-}
-
-HeimdallCondition<ClassMember> _memberShouldBeDeclaredInClassesThat(
-  HeimdallPredicate<CompilationUnitMember> classPredicate,
-) {
-  return memberCondition(
-    'be declared in classes that ${classPredicate.description}',
-    (item, project) => classPredicate.test(item.owner, project),
-  );
 }
 
 HeimdallPredicate<CompilationUnitMember> _classAssignableToTypeNameMatching(RegExp pattern) {

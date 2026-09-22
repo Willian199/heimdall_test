@@ -9,7 +9,7 @@ extension MemberCallMethodPredicateRules on MemberPredicateBuilder {
   }
 
   /// Selects members that do not satisfy `callMethod`.
-  MemberPredicateBuilder noCallMethod(String methodName) {
+  MemberPredicateBuilder notCallMethod(String methodName) {
     return satisfy(
       HeimdallPredicate(
         'not call method $methodName',
@@ -58,7 +58,7 @@ extension MemberCallMethodShouldRules on MemberShouldBuilder {
   HeimdallRule<ClassMember> callMethod(String methodName) => satisfy(_memberShouldCallMethod(methodName));
 
   /// Requires members not to satisfy `callMethod`.
-  HeimdallRule<ClassMember> noCallMethod(String methodName) {
+  HeimdallRule<ClassMember> notCallMethod(String methodName) {
     return satisfy(
       prohibitedMemberCondition(
         'call method $methodName',

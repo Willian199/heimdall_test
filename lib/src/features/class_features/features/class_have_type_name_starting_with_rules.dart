@@ -1,4 +1,5 @@
 import 'package:heimdall_test/heimdall_test.dart';
+import 'package:heimdall_test/src/features/queries/declaration_location_queries.dart';
 
 /// Predicate-side DSL for class type name prefix rules.
 extension ClassHaveTypeNameStartingWithPredicateRules on ClassPredicateBuilder {
@@ -8,12 +9,12 @@ extension ClassHaveTypeNameStartingWithPredicateRules on ClassPredicateBuilder {
   }
 
   /// Selects declarations whose names do not start with [prefix].
-  ClassPredicateBuilder noHaveTypeNameStartingWith(String prefix) {
+  ClassPredicateBuilder notHaveTypeNameStartingWith(String prefix) {
     return satisfy(HeimdallPredicate('not have type name starting with $prefix', (item, _) => !item.name.startsWith(prefix)));
   }
 
   /// Selects declarations whose names start with at least one prefix in [prefixes].
-  ClassPredicateBuilder haveTypeNameStartingWithAny(Iterable<String> prefixes) {
+  ClassPredicateBuilder haveTypeNameStartingWithAnyOf(Iterable<String> prefixes) {
     final prefixList = prefixes.toNonEmptyList('prefixes');
     return satisfy(
       HeimdallPredicate.anyOf(
@@ -26,7 +27,7 @@ extension ClassHaveTypeNameStartingWithPredicateRules on ClassPredicateBuilder {
   }
 
   /// Selects declarations whose names start with every prefix in [prefixes].
-  ClassPredicateBuilder haveTypeNameStartingWithAll(Iterable<String> prefixes) {
+  ClassPredicateBuilder haveTypeNameStartingWithAllOf(Iterable<String> prefixes) {
     final prefixList = prefixes.toNonEmptyList('prefixes');
     return satisfy(
       HeimdallPredicate.allOf(
@@ -39,7 +40,7 @@ extension ClassHaveTypeNameStartingWithPredicateRules on ClassPredicateBuilder {
   }
 
   /// Selects declarations whose names start with none of [prefixes].
-  ClassPredicateBuilder haveTypeNameStartingWithNone(Iterable<String> prefixes) {
+  ClassPredicateBuilder haveTypeNameStartingWithNoneOf(Iterable<String> prefixes) {
     final prefixList = prefixes.toNonEmptyList('prefixes');
     return satisfy(
       HeimdallPredicate.noneOf(
@@ -60,12 +61,12 @@ extension ClassHaveTypeNameStartingWithShouldRules on ClassShouldBuilder {
   }
 
   /// Requires matching class type names to not start with [prefix].
-  HeimdallRule<CompilationUnitMember> noHaveTypeNameStartingWith(String prefix) {
+  HeimdallRule<CompilationUnitMember> notHaveTypeNameStartingWith(String prefix) {
     return satisfy(_classShouldNotHaveTypeNameStartingWith(prefix));
   }
 
   /// Requires matching class type names to start with at least one prefix in [prefixes].
-  HeimdallRule<CompilationUnitMember> haveTypeNameStartingWithAny(
+  HeimdallRule<CompilationUnitMember> haveTypeNameStartingWithAnyOf(
     Iterable<String> prefixes,
   ) {
     final prefixList = prefixes.toNonEmptyList('prefixes');
@@ -78,7 +79,7 @@ extension ClassHaveTypeNameStartingWithShouldRules on ClassShouldBuilder {
   }
 
   /// Requires matching class type names to start with every prefix in [prefixes].
-  HeimdallRule<CompilationUnitMember> haveTypeNameStartingWithAll(
+  HeimdallRule<CompilationUnitMember> haveTypeNameStartingWithAllOf(
     Iterable<String> prefixes,
   ) {
     final prefixList = prefixes.toNonEmptyList('prefixes');
@@ -91,7 +92,7 @@ extension ClassHaveTypeNameStartingWithShouldRules on ClassShouldBuilder {
   }
 
   /// Requires matching class type names to start with none of [prefixes].
-  HeimdallRule<CompilationUnitMember> haveTypeNameStartingWithNone(
+  HeimdallRule<CompilationUnitMember> haveTypeNameStartingWithNoneOf(
     Iterable<String> prefixes,
   ) {
     final prefixList = prefixes.toNonEmptyList('prefixes');
@@ -130,7 +131,7 @@ HeimdallCondition<CompilationUnitMember> _classShouldNotHaveTypeNameStartingWith
 ) {
   return HeimdallCondition('not have type name starting with $prefix', (item, _) {
     final matches = item.name.startsWith(prefix);
-    final location = matches ? item.sourceLocationAt(_declarationNameOffset(item)) : null;
+    final location = matches ? item.sourceLocationAt(declarationNameOffset(item)) : null;
     final findings = location == null
         ? const <HeimdallValidationInfo>[]
         : [
@@ -147,18 +148,4 @@ HeimdallCondition<CompilationUnitMember> _classShouldNotHaveTypeNameStartingWith
       findings: findings,
     );
   });
-}
-
-int _declarationNameOffset(CompilationUnitMember item) {
-  return switch (item) {
-    ClassDeclaration(:final namePart) => namePart.offset,
-    MixinDeclaration(:final name) => name.offset,
-    EnumDeclaration(:final namePart) => namePart.offset,
-    ExtensionDeclaration(:final name?) => name.offset,
-    ExtensionTypeDeclaration(:final primaryConstructor) => primaryConstructor.typeName.offset,
-    TypeAlias(:final name) => name.offset,
-    FunctionDeclaration(:final name) => name.offset,
-    TopLevelVariableDeclaration(:final variables) => variables.variables.first.name.offset,
-    _ => item.offset,
-  };
 }

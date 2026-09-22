@@ -7,13 +7,13 @@ extension ClassHaveOnlyPrivateConstructorsPredicateRules on ClassPredicateBuilde
     return satisfy(_classHasOnlyPrivateConstructors());
   }
 
-  /// Selects classes with at least one non-private constructor.
-  ClassPredicateBuilder noHaveOnlyPrivateConstructors() {
+  /// Selects classes with no constructors or at least one non-private constructor.
+  ClassPredicateBuilder notHaveOnlyPrivateConstructors() {
     return satisfy(_classDoesNotHaveOnlyPrivateConstructors());
   }
 
   /// Selects classes where every constructor in [names] is private.
-  ClassPredicateBuilder haveAllPrivateConstructors(
+  ClassPredicateBuilder havePrivateConstructorsNamedAllOf(
     Iterable<String> names,
   ) {
     final nameList = names.toNonEmptyList('names');
@@ -26,7 +26,7 @@ extension ClassHaveOnlyPrivateConstructorsPredicateRules on ClassPredicateBuilde
   }
 
   /// Selects classes where at least one constructor in [names] is private.
-  ClassPredicateBuilder haveAnyPrivateConstructors(
+  ClassPredicateBuilder havePrivateConstructorNamedAnyOf(
     Iterable<String> names,
   ) {
     final nameList = names.toNonEmptyList('names');
@@ -39,7 +39,7 @@ extension ClassHaveOnlyPrivateConstructorsPredicateRules on ClassPredicateBuilde
   }
 
   /// Selects classes where none of [names] is a private constructor.
-  ClassPredicateBuilder haveNoPrivateConstructors(
+  ClassPredicateBuilder haveNoPrivateConstructorsNamed(
     Iterable<String> names,
   ) {
     final nameList = names.toNonEmptyList('names');
@@ -60,12 +60,12 @@ extension ClassHaveOnlyPrivateConstructorsShouldRules on ClassShouldBuilder {
   }
 
   /// Requires matching classes to have at least one non-private constructor.
-  HeimdallRule<CompilationUnitMember> noHaveOnlyPrivateConstructors() {
+  HeimdallRule<CompilationUnitMember> notHaveOnlyPrivateConstructors() {
     return satisfy(_classShouldNotHaveOnlyPrivateConstructors());
   }
 
   /// Requires every constructor in [names] to be private.
-  HeimdallRule<CompilationUnitMember> haveAllPrivateConstructors(
+  HeimdallRule<CompilationUnitMember> havePrivateConstructorsNamedAllOf(
     Iterable<String> names,
   ) {
     final nameList = names.toNonEmptyList('names');
@@ -78,7 +78,7 @@ extension ClassHaveOnlyPrivateConstructorsShouldRules on ClassShouldBuilder {
   }
 
   /// Requires at least one constructor in [names] to be private.
-  HeimdallRule<CompilationUnitMember> haveAnyPrivateConstructors(
+  HeimdallRule<CompilationUnitMember> havePrivateConstructorNamedAnyOf(
     Iterable<String> names,
   ) {
     final nameList = names.toNonEmptyList('names');
@@ -91,7 +91,7 @@ extension ClassHaveOnlyPrivateConstructorsShouldRules on ClassShouldBuilder {
   }
 
   /// Requires none of [names] to be a private constructor.
-  HeimdallRule<CompilationUnitMember> haveNoPrivateConstructors(
+  HeimdallRule<CompilationUnitMember> haveNoPrivateConstructorsNamed(
     Iterable<String> names,
   ) {
     final nameList = names.toNonEmptyList('names');

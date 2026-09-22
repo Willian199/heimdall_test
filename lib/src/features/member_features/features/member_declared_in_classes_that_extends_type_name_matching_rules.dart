@@ -1,4 +1,5 @@
 import 'package:heimdall_test/heimdall_test.dart';
+import 'package:heimdall_test/src/features/member_features/helpers/member_owner_rule_helpers.dart';
 import 'package:heimdall_test/src/features/queries/declaration_type_queries.dart';
 import 'package:heimdall_test/src/features/queries/member_queries.dart';
 
@@ -10,12 +11,12 @@ extension MemberDeclaredInClassesThatExtendsMatchingPredicateRules on MemberPred
   }
 
   /// Selects members that do not satisfy `areDeclaredInClassesThatExtendTypeNameMatching`.
-  MemberPredicateBuilder noAreDeclaredInClassesThatExtendTypeNameMatching(RegExp pattern) {
+  MemberPredicateBuilder areNotDeclaredInClassesThatExtendTypeNameMatching(RegExp pattern) {
     return satisfy(_memberDoesNotBeDeclaredInClassesThatExtendTypeNameMatching(pattern));
   }
 
   /// Selects members declared in classes that extend type name matching any value in [patterns].
-  MemberPredicateBuilder areDeclaredInClassesThatExtendTypeNameMatchingAny(Iterable<RegExp> patterns) {
+  MemberPredicateBuilder areDeclaredInClassesThatExtendTypeNameMatchingAnyOf(Iterable<RegExp> patterns) {
     final valueList = patterns.toNonEmptyList('patterns');
     return areDeclaredInClassesThat(
       HeimdallPredicate.anyOf(
@@ -26,7 +27,7 @@ extension MemberDeclaredInClassesThatExtendsMatchingPredicateRules on MemberPred
   }
 
   /// Selects members declared in classes that extend type name matching every value in [patterns].
-  MemberPredicateBuilder areDeclaredInClassesThatExtendTypeNameMatchingAll(Iterable<RegExp> patterns) {
+  MemberPredicateBuilder areDeclaredInClassesThatExtendTypeNameMatchingAllOf(Iterable<RegExp> patterns) {
     final valueList = patterns.toNonEmptyList('patterns');
     return areDeclaredInClassesThat(
       HeimdallPredicate.allOf(
@@ -37,7 +38,7 @@ extension MemberDeclaredInClassesThatExtendsMatchingPredicateRules on MemberPred
   }
 
   /// Selects members declared in classes that extend type name matching none of [patterns].
-  MemberPredicateBuilder areDeclaredInClassesThatExtendTypeNameMatchingNone(Iterable<RegExp> patterns) {
+  MemberPredicateBuilder areDeclaredInClassesThatExtendTypeNameMatchingNoneOf(Iterable<RegExp> patterns) {
     final valueList = patterns.toNonEmptyList('patterns');
     return areDeclaredInClassesThat(
       HeimdallPredicate.noneOf(
@@ -56,51 +57,42 @@ extension MemberDeclaredInClassesThatExtendsMatchingShouldRules on MemberShouldB
   }
 
   /// Requires members not to satisfy `beDeclaredInClassesThatExtendTypeNameMatching`.
-  HeimdallRule<ClassMember> noBeDeclaredInClassesThatExtendTypeNameMatching(RegExp pattern) {
+  HeimdallRule<ClassMember> notBeDeclaredInClassesThatExtendTypeNameMatching(RegExp pattern) {
     return satisfy(_memberShouldNotBeDeclaredInClassesThatExtendTypeNameMatching(pattern));
   }
 
   /// Requires members to be declared in classes that extend type name matching any value in [patterns].
-  HeimdallRule<ClassMember> beDeclaredInClassesThatExtendTypeNameMatchingAny(Iterable<RegExp> patterns) {
+  HeimdallRule<ClassMember> beDeclaredInClassesThatExtendTypeNameMatchingAnyOf(Iterable<RegExp> patterns) {
     final valueList = patterns.toNonEmptyList('patterns');
     return satisfy(
       HeimdallCondition.anyOf(
-        valueList.map(_classExtendsTypeNameMatching).map(_memberShouldBeDeclaredInClassesThat),
+        valueList.map(_classExtendsTypeNameMatching).map(memberShouldBeDeclaredInClassesThat),
         description: 'extend type name matching any of ${valueList.join(', ')}',
       ),
     );
   }
 
   /// Requires members to be declared in classes that extend type name matching every value in [patterns].
-  HeimdallRule<ClassMember> beDeclaredInClassesThatExtendTypeNameMatchingAll(Iterable<RegExp> patterns) {
+  HeimdallRule<ClassMember> beDeclaredInClassesThatExtendTypeNameMatchingAllOf(Iterable<RegExp> patterns) {
     final valueList = patterns.toNonEmptyList('patterns');
     return satisfy(
       HeimdallCondition.allOf(
-        valueList.map(_classExtendsTypeNameMatching).map(_memberShouldBeDeclaredInClassesThat),
+        valueList.map(_classExtendsTypeNameMatching).map(memberShouldBeDeclaredInClassesThat),
         description: 'extend type name matching all of ${valueList.join(', ')}',
       ),
     );
   }
 
   /// Requires members to be declared in classes that extend type name matching none of [patterns].
-  HeimdallRule<ClassMember> beDeclaredInClassesThatExtendTypeNameMatchingNone(Iterable<RegExp> patterns) {
+  HeimdallRule<ClassMember> beDeclaredInClassesThatExtendTypeNameMatchingNoneOf(Iterable<RegExp> patterns) {
     final valueList = patterns.toNonEmptyList('patterns');
     return satisfy(
       HeimdallCondition.noneOf(
-        valueList.map(_classExtendsTypeNameMatching).map(_memberShouldBeDeclaredInClassesThat),
+        valueList.map(_classExtendsTypeNameMatching).map(memberShouldBeDeclaredInClassesThat),
         description: 'extend type name matching none of ${valueList.join(', ')}',
       ),
     );
   }
-}
-
-HeimdallCondition<ClassMember> _memberShouldBeDeclaredInClassesThat(
-  HeimdallPredicate<CompilationUnitMember> classPredicate,
-) {
-  return memberCondition(
-    'be declared in classes that ${classPredicate.description}',
-    (item, project) => classPredicate.test(item.owner, project),
-  );
 }
 
 HeimdallPredicate<CompilationUnitMember> _classExtendsTypeNameMatching(RegExp pattern) {

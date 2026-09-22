@@ -9,7 +9,7 @@ extension FileExportUriMatchingPredicateRules on FilePredicateBuilder {
   }
 
   /// Selects files that do not export a URI matching [pattern].
-  FilePredicateBuilder noExportUriMatching(RegExp pattern) {
+  FilePredicateBuilder notExportUriMatching(RegExp pattern) {
     return satisfy(
       HeimdallPredicate(
         'not export URI matching ${pattern.pattern}',
@@ -43,7 +43,7 @@ extension FileExportUriMatchingPredicateRules on FilePredicateBuilder {
   }
 
   /// Selects files that export none of the URI patterns in [patterns].
-  FilePredicateBuilder exportNoneUrisMatching(Iterable<RegExp> patterns) {
+  FilePredicateBuilder exportNoUrisMatching(Iterable<RegExp> patterns) {
     final patternList = patterns.toNonEmptyList('patterns');
     return satisfy(
       HeimdallPredicate.noneOf(
@@ -62,7 +62,7 @@ extension FileExportUriMatchingShouldRules on FileShouldBuilder {
   }
 
   /// Requires matching files to not export a URI matching [pattern].
-  HeimdallRule<HeimdallSourceFile> noExportUriMatching(RegExp pattern) {
+  HeimdallRule<HeimdallSourceFile> notExportUriMatching(RegExp pattern) {
     return satisfy(
       HeimdallCondition('not export URI matching ${pattern.pattern}', (
         item,
@@ -116,7 +116,7 @@ extension FileExportUriMatchingShouldRules on FileShouldBuilder {
   }
 
   /// Requires matching files to export none of the URI patterns in [patterns].
-  HeimdallRule<HeimdallSourceFile> exportNoneUrisMatching(
+  HeimdallRule<HeimdallSourceFile> exportNoUrisMatching(
     Iterable<RegExp> patterns,
   ) {
     final patternList = patterns.toNonEmptyList('patterns');

@@ -9,12 +9,12 @@ extension ClassAssignableToTypeNameStartingWithPredicateRules on ClassPredicateB
   }
 
   /// Selects declarations not assignable to a type whose name starts with [prefix].
-  ClassPredicateBuilder noAreAssignableToTypeNameStartingWith(String prefix) {
+  ClassPredicateBuilder areNotAssignableToTypeNameStartingWith(String prefix) {
     return satisfy(_classNotAssignableToTypeNameStartingWith(prefix));
   }
 
   /// Selects declarations assignable to a type name starting with at least one prefix in [prefixes].
-  ClassPredicateBuilder areAssignableToTypeNameStartingWithAny(
+  ClassPredicateBuilder areAssignableToTypeNameStartingWithAnyOf(
     Iterable<String> prefixes,
   ) {
     final prefixList = prefixes.toNonEmptyList('prefixes');
@@ -27,7 +27,7 @@ extension ClassAssignableToTypeNameStartingWithPredicateRules on ClassPredicateB
   }
 
   /// Selects declarations assignable to type names starting with every prefix in [prefixes].
-  ClassPredicateBuilder areAssignableToTypeNameStartingWithAll(
+  ClassPredicateBuilder areAssignableToTypeNameStartingWithAllOf(
     Iterable<String> prefixes,
   ) {
     final prefixList = prefixes.toNonEmptyList('prefixes');
@@ -40,7 +40,7 @@ extension ClassAssignableToTypeNameStartingWithPredicateRules on ClassPredicateB
   }
 
   /// Selects declarations assignable to no type name starting with [prefixes].
-  ClassPredicateBuilder areAssignableToTypeNameStartingWithNone(
+  ClassPredicateBuilder areAssignableToTypeNameStartingWithNoneOf(
     Iterable<String> prefixes,
   ) {
     final prefixList = prefixes.toNonEmptyList('prefixes');
@@ -63,14 +63,14 @@ extension ClassAssignableToTypeNameStartingWithShouldRules on ClassShouldBuilder
   }
 
   /// Requires matching classes to not be assignable to a type whose name starts with [prefix].
-  HeimdallRule<CompilationUnitMember> noBeAssignableToTypeNameStartingWith(
+  HeimdallRule<CompilationUnitMember> notBeAssignableToTypeNameStartingWith(
     String prefix,
   ) {
     return satisfy(_classShouldNotBeAssignableToTypeNameStartingWith(prefix));
   }
 
   /// Requires matching classes to be assignable to a type name starting with at least one prefix in [prefixes].
-  HeimdallRule<CompilationUnitMember> beAssignableToTypeNameStartingWithAny(
+  HeimdallRule<CompilationUnitMember> beAssignableToTypeNameStartingWithAnyOf(
     Iterable<String> prefixes,
   ) {
     final prefixList = prefixes.toNonEmptyList('prefixes');
@@ -83,7 +83,7 @@ extension ClassAssignableToTypeNameStartingWithShouldRules on ClassShouldBuilder
   }
 
   /// Requires matching classes to be assignable to type names starting with every prefix in [prefixes].
-  HeimdallRule<CompilationUnitMember> beAssignableToTypeNameStartingWithAll(
+  HeimdallRule<CompilationUnitMember> beAssignableToTypeNameStartingWithAllOf(
     Iterable<String> prefixes,
   ) {
     final prefixList = prefixes.toNonEmptyList('prefixes');
@@ -96,7 +96,7 @@ extension ClassAssignableToTypeNameStartingWithShouldRules on ClassShouldBuilder
   }
 
   /// Requires matching classes to be assignable to no type name starting with [prefixes].
-  HeimdallRule<CompilationUnitMember> beAssignableToTypeNameStartingWithNone(
+  HeimdallRule<CompilationUnitMember> beAssignableToTypeNameStartingWithNoneOf(
     Iterable<String> prefixes,
   ) {
     final prefixList = prefixes.toNonEmptyList('prefixes');

@@ -1,5 +1,6 @@
 import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/dart/ast/visitor.dart';
+import 'package:heimdall_test/src/features/queries/type_annotation_queries.dart';
 
 /// Returns calls shaped as `Target.method()` inside [node].
 List<AstNode> astNodeStaticMethodInvocations(
@@ -122,12 +123,7 @@ bool _matchesNamedConstructorInvocation(
   String methodName,
 ) {
   final constructor = node.constructorName;
-  return _namedTypeName(constructor.type) == targetType && constructor.name?.name == methodName;
-}
-
-String _namedTypeName(NamedType type) {
-  final prefix = type.importPrefix?.name.lexeme;
-  return prefix == null ? type.name.lexeme : '$prefix.${type.name.lexeme}';
+  return namedTypeReferenceName(constructor.type) == targetType && constructor.name?.name == methodName;
 }
 
 /// Returns the source offset of the static method name in [node].

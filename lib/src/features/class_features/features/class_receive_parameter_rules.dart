@@ -1,4 +1,5 @@
 import 'package:heimdall_test/heimdall_test.dart';
+import 'package:heimdall_test/src/features/queries/parameter_queries.dart';
 
 /// Predicate-side DSL for constructor parameter rules.
 extension ClassReceiveParameterPredicateRules on ClassPredicateBuilder {
@@ -8,7 +9,7 @@ extension ClassReceiveParameterPredicateRules on ClassPredicateBuilder {
   }
 
   /// Selects classes that do not receive [parameterName] in a constructor.
-  ClassPredicateBuilder noReceiveParameter(String parameterName) {
+  ClassPredicateBuilder notReceiveParameter(String parameterName) {
     return satisfy(_classDoesNotReceiveParameter(parameterName));
   }
 
@@ -54,7 +55,7 @@ extension ClassReceiveParameterShouldRules on ClassShouldBuilder {
   }
 
   /// Requires matching classes to not receive [parameterName] in a constructor.
-  HeimdallRule<CompilationUnitMember> noReceiveParameter(String parameterName) {
+  HeimdallRule<CompilationUnitMember> notReceiveParameter(String parameterName) {
     return satisfy(_classShouldNotReceiveParameter(parameterName));
   }
 
@@ -167,7 +168,7 @@ HeimdallPredicate<CompilationUnitMember> _classDoesNotReceiveParameter(
 bool _receivesParameter(CompilationUnitMember item, String parameterName) {
   return item.constructors.any(
     (constructor) => constructor.parameters.parameters.any(
-      (parameter) => _isPositionalOrRequiredNamedParameter(
+      (parameter) => isPositionalOrRequiredNamedParameter(
         parameter,
         parameterName,
       ),
@@ -181,19 +182,9 @@ Iterable<({ConstructorDeclaration constructor, FormalParameter parameter})> _mat
 ) sync* {
   for (final constructor in item.constructors) {
     for (final parameter in constructor.parameters.parameters) {
-      if (_isPositionalOrRequiredNamedParameter(parameter, parameterName)) {
+      if (isPositionalOrRequiredNamedParameter(parameter, parameterName)) {
         yield (constructor: constructor, parameter: parameter);
       }
     }
   }
-}
-
-bool _isPositionalOrRequiredNamedParameter(
-  FormalParameter parameter,
-  String name,
-) {
-  if (parameter.name?.lexeme != name) return false;
-  if (parameter is! DefaultFormalParameter) return true;
-  if (!parameter.isNamed) return true;
-  return parameter.isRequiredNamed;
 }

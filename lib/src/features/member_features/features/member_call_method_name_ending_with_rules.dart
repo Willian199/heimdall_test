@@ -15,7 +15,7 @@ extension MemberCallMethodNameEndingWithPredicateRules on MemberPredicateBuilder
   }
 
   /// Selects members that do not satisfy `callMethodNameEndingWith`.
-  MemberPredicateBuilder noCallMethodNameEndingWith(String suffix) {
+  MemberPredicateBuilder notCallMethodNameEndingWith(String suffix) {
     return satisfy(
       HeimdallPredicate(
         'not call method name ending with $suffix',
@@ -25,7 +25,7 @@ extension MemberCallMethodNameEndingWithPredicateRules on MemberPredicateBuilder
   }
 
   /// Selects members that call method name ending with every value in [suffixes].
-  MemberPredicateBuilder callMethodNameEndingWithAll(Iterable<String> suffixes) {
+  MemberPredicateBuilder callMethodNameEndingWithAllOf(Iterable<String> suffixes) {
     final valueList = suffixes.toNonEmptyList('suffixes');
     return satisfy(
       HeimdallPredicate.allOf(
@@ -36,7 +36,7 @@ extension MemberCallMethodNameEndingWithPredicateRules on MemberPredicateBuilder
   }
 
   /// Selects members that call method name ending with at least one value in [suffixes].
-  MemberPredicateBuilder callMethodNameEndingWithAny(Iterable<String> suffixes) {
+  MemberPredicateBuilder callMethodNameEndingWithAnyOf(Iterable<String> suffixes) {
     final valueList = suffixes.toNonEmptyList('suffixes');
     return satisfy(
       HeimdallPredicate.anyOf(
@@ -47,7 +47,7 @@ extension MemberCallMethodNameEndingWithPredicateRules on MemberPredicateBuilder
   }
 
   /// Selects members that call method name ending with none of [suffixes].
-  MemberPredicateBuilder callMethodNameEndingWithNone(Iterable<String> suffixes) {
+  MemberPredicateBuilder callMethodNameEndingWithNoneOf(Iterable<String> suffixes) {
     final valueList = suffixes.toNonEmptyList('suffixes');
     return satisfy(
       HeimdallPredicate.noneOf(
@@ -66,7 +66,7 @@ extension MemberCallMethodNameEndingWithShouldRules on MemberShouldBuilder {
   }
 
   /// Requires members not to satisfy `callMethodNameEndingWith`.
-  HeimdallRule<ClassMember> noCallMethodNameEndingWith(String suffix) {
+  HeimdallRule<ClassMember> notCallMethodNameEndingWith(String suffix) {
     return satisfy(
       prohibitedMemberCondition(
         'call method name ending with $suffix',
@@ -76,7 +76,7 @@ extension MemberCallMethodNameEndingWithShouldRules on MemberShouldBuilder {
   }
 
   /// Requires members to call method name ending with every value in [suffixes].
-  HeimdallRule<ClassMember> callMethodNameEndingWithAll(Iterable<String> suffixes) {
+  HeimdallRule<ClassMember> callMethodNameEndingWithAllOf(Iterable<String> suffixes) {
     final valueList = suffixes.toNonEmptyList('suffixes');
     return satisfy(
       HeimdallCondition.allOf(
@@ -87,7 +87,7 @@ extension MemberCallMethodNameEndingWithShouldRules on MemberShouldBuilder {
   }
 
   /// Requires members to call method name ending with at least one value in [suffixes].
-  HeimdallRule<ClassMember> callMethodNameEndingWithAny(Iterable<String> suffixes) {
+  HeimdallRule<ClassMember> callMethodNameEndingWithAnyOf(Iterable<String> suffixes) {
     final valueList = suffixes.toNonEmptyList('suffixes');
     return satisfy(
       HeimdallCondition.anyOf(
@@ -98,7 +98,7 @@ extension MemberCallMethodNameEndingWithShouldRules on MemberShouldBuilder {
   }
 
   /// Requires members to call method name ending with none of [suffixes].
-  HeimdallRule<ClassMember> callMethodNameEndingWithNone(Iterable<String> suffixes) {
+  HeimdallRule<ClassMember> callMethodNameEndingWithNoneOf(Iterable<String> suffixes) {
     final valueList = suffixes.toNonEmptyList('suffixes');
     return satisfy(
       HeimdallCondition.noneOf(

@@ -13,7 +13,7 @@ extension FileTopLevelStructurePredicateRules on FilePredicateBuilder {
   }
 
   /// Selects files that satisfy every top-level class limit in [counts].
-  FilePredicateBuilder haveAtMostAllTopLevelClasses(Iterable<int> counts) {
+  FilePredicateBuilder haveTopLevelClassCountAtMostAllOf(Iterable<int> counts) {
     final countList = counts.toNonEmptyList('counts');
     return satisfy(
       HeimdallPredicate.allOf(
@@ -24,7 +24,7 @@ extension FileTopLevelStructurePredicateRules on FilePredicateBuilder {
   }
 
   /// Selects files that satisfy at least one top-level class limit in [counts].
-  FilePredicateBuilder haveAtMostAnyTopLevelClasses(Iterable<int> counts) {
+  FilePredicateBuilder haveTopLevelClassCountAtMostAnyOf(Iterable<int> counts) {
     final countList = counts.toNonEmptyList('counts');
     return satisfy(
       HeimdallPredicate.anyOf(
@@ -35,12 +35,12 @@ extension FileTopLevelStructurePredicateRules on FilePredicateBuilder {
   }
 
   /// Selects files that satisfy none of the top-level class limits in [counts].
-  FilePredicateBuilder haveAtMostNoTopLevelClasses(Iterable<int> counts) {
+  FilePredicateBuilder haveTopLevelClassCountExceedingAllOf(Iterable<int> counts) {
     final countList = counts.toNonEmptyList('counts');
     return satisfy(
-      HeimdallPredicate.noneOf(
-        countList.map(_fileHasAtMostTopLevelClasses),
-        description: 'satisfy no top-level class limits ${countList.join(', ')}',
+      HeimdallPredicate.allOf(
+        countList.map(_fileHasMoreThanTopLevelClasses),
+        description: 'exceed all top-level class limits ${countList.join(', ')}',
       ),
     );
   }
@@ -59,7 +59,7 @@ extension FileTopLevelStructureShouldRules on FileShouldBuilder {
   }
 
   /// Requires matching files to satisfy every top-level class limit in [counts].
-  HeimdallRule<HeimdallSourceFile> haveAtMostAllTopLevelClasses(
+  HeimdallRule<HeimdallSourceFile> haveTopLevelClassCountAtMostAllOf(
     Iterable<int> counts,
   ) {
     final countList = counts.toNonEmptyList('counts');
@@ -72,7 +72,7 @@ extension FileTopLevelStructureShouldRules on FileShouldBuilder {
   }
 
   /// Requires matching files to satisfy at least one top-level class limit in [counts].
-  HeimdallRule<HeimdallSourceFile> haveAtMostAnyTopLevelClasses(
+  HeimdallRule<HeimdallSourceFile> haveTopLevelClassCountAtMostAnyOf(
     Iterable<int> counts,
   ) {
     final countList = counts.toNonEmptyList('counts');
@@ -85,14 +85,14 @@ extension FileTopLevelStructureShouldRules on FileShouldBuilder {
   }
 
   /// Requires matching files to satisfy none of the top-level class limits in [counts].
-  HeimdallRule<HeimdallSourceFile> haveAtMostNoTopLevelClasses(
+  HeimdallRule<HeimdallSourceFile> haveTopLevelClassCountExceedingAllOf(
     Iterable<int> counts,
   ) {
     final countList = counts.toNonEmptyList('counts');
     return satisfy(
-      HeimdallCondition.noneOf(
-        countList.map(_fileShouldHaveAtMostTopLevelClasses),
-        description: 'satisfy no top-level class limits ${countList.join(', ')}',
+      HeimdallCondition.allOf(
+        countList.map(_fileShouldHaveMoreThanTopLevelClasses),
+        description: 'exceed all top-level class limits ${countList.join(', ')}',
       ),
     );
   }

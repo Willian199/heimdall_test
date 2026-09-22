@@ -1,5 +1,12 @@
-# Fixture projects contain intentionally unresolved package imports used by importer tests. They are not part of the published package API.
-test/**/lib/**
+# Local and generated files do not belong in the published archive.
+.dart_tool/
+/build/
+/coverage/
+pubspec.lock
 
-# Consumer-facing agent skills are distributed through the repository only.
+# Tests need their fixtures, so exclude the complete test tree together.
+test/
+
+# Repository-only resources.
 skills/
+tool/

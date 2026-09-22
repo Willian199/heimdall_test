@@ -1,3 +1,10 @@
+## 0.10.1
+
+- Added strict field checks for list and for matching parameters forwarded to returned constructors.
+- Exposed parsed compilation units from the importer and made semantic resolution metadata explicit.
+- Added field modifiers, scoped expression and argument rules, and field relationships with method parameters and returned lists. Models cache syntax data internally.
+- Improved dynamic detection in public signatures, type exemptions, and support for SDK and configurable external generics.
+
 ## 0.10.0
 
 - **Breaking:** Renamed negative and collection rules, clarified count semantics (`haveAtMost...`, `...CountOtherThan`), and removed redundant APIs.

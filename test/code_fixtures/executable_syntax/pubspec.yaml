@@ -1,0 +1,3 @@
+name: executable_syntax_fixture
+environment:
+  sdk: ^3.11.0

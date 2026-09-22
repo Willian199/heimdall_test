@@ -1,5 +1,9 @@
 export 'features/file_basic_content_rules.dart';
+export 'features/file_call_constructor_with_arguments_rules.dart';
+export 'features/file_call_method_with_arguments_rules.dart';
 export 'features/file_call_static_method_rules.dart';
+export 'features/file_contain_expression_rules.dart';
+export 'features/file_contain_null_assertion_rules.dart';
 export 'features/file_contain_source_matching_rules.dart';
 export 'features/file_contain_source_rules.dart';
 export 'features/file_content_structure_rules.dart';

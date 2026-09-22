@@ -61,6 +61,36 @@ final class MemberPredicateBuilder implements HeimdallPredicateBuilder<ClassMemb
     HeimdallPredicate('are final', (item, _) => item.isFinal),
   );
 
+  /// Selects not final fields.
+  MemberPredicateBuilder areNotFinal() => satisfy(HeimdallPredicate('are not final', (item, _) => item.isField && !item.isFinal));
+
+  /// Selects const fields.
+  MemberPredicateBuilder areConst() => satisfy(HeimdallPredicate('are const', (item, _) => item.isField && item.isConst));
+
+  /// Selects not const fields.
+  MemberPredicateBuilder areNotConst() => satisfy(HeimdallPredicate('are not const', (item, _) => item.isField && !item.isConst));
+
+  /// Selects mutable fields.
+  MemberPredicateBuilder areMutable() => satisfy(HeimdallPredicate('are mutable', (item, _) => item.isField && !item.isFinal && !item.isConst));
+
+  /// Selects not mutable fields.
+  MemberPredicateBuilder areNotMutable() =>
+      satisfy(HeimdallPredicate('are not mutable', (item, _) => item.isField && (item.isFinal || item.isConst)));
+
+  /// Selects explicitly nullable fields.
+  /// Uses written annotations; inferred and dynamic nullability are not resolved.
+  MemberPredicateBuilder areNullable() =>
+      satisfy(HeimdallPredicate('are explicitly nullable', (item, _) => item is FieldDeclaration && item.fields.type?.question != null));
+
+  /// Selects not explicitly nullable fields.
+  /// Uses written annotations; inferred and dynamic nullability are not resolved.
+  MemberPredicateBuilder areNotNullable() => satisfy(
+    HeimdallPredicate(
+      'are not explicitly nullable',
+      (item, _) => item is FieldDeclaration && item.fields.type != null && item.fields.type?.question == null,
+    ),
+  );
+
   /// Selects static fields and methods.
   MemberPredicateBuilder areStatic() => satisfy(
     HeimdallPredicate('are static', (item, _) => item.isStatic),

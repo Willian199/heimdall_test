@@ -98,6 +98,36 @@ final class MemberShouldBuilder implements HeimdallShouldBuilder<ClassMember, Me
     _memberFlagCondition('be final', (item) => item.isFinal),
   );
 
+  /// Requires not final fields.
+  HeimdallRule<ClassMember> notBeFinal() => satisfy(_memberFlagCondition('be not final', (item) => item.isField && !item.isFinal));
+
+  /// Requires const fields.
+  HeimdallRule<ClassMember> beConst() => satisfy(_memberFlagCondition('be const', (item) => item.isField && item.isConst));
+
+  /// Requires not const fields.
+  HeimdallRule<ClassMember> notBeConst() => satisfy(_memberFlagCondition('be not const', (item) => item.isField && !item.isConst));
+
+  /// Requires mutable fields.
+  HeimdallRule<ClassMember> beMutable() => satisfy(_memberFlagCondition('be mutable', (item) => item.isField && !item.isFinal && !item.isConst));
+
+  /// Requires not mutable fields.
+  HeimdallRule<ClassMember> notBeMutable() =>
+      satisfy(_memberFlagCondition('be not mutable', (item) => item.isField && (item.isFinal || item.isConst)));
+
+  /// Requires explicitly nullable fields.
+  /// Uses written annotations; inferred and dynamic nullability are not resolved.
+  HeimdallRule<ClassMember> beNullable() =>
+      satisfy(_memberFlagCondition('be explicitly nullable', (item) => item is FieldDeclaration && item.fields.type?.question != null));
+
+  /// Requires not explicitly nullable fields.
+  /// Uses written annotations; inferred and dynamic nullability are not resolved.
+  HeimdallRule<ClassMember> notBeNullable() => satisfy(
+    _memberFlagCondition(
+      'be not explicitly nullable',
+      (item) => item is FieldDeclaration && item.fields.type != null && item.fields.type?.question == null,
+    ),
+  );
+
   /// Requires members to be static.
   HeimdallRule<ClassMember> beStatic() => satisfy(
     _memberFlagCondition('be static', (item) => item.isStatic),

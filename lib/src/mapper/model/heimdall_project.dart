@@ -73,17 +73,18 @@ final class HeimdallProject {
   /// Total parse error count across imported files.
   late final int parseErrorCount = parseErrors.length;
 
-  /// Files that contain non-syntactic analyzer diagnostics.
+  /// Files with caller-supplied semantic diagnostics. The default importer
+  /// only parses source and leaves this list empty.
   late final List<HeimdallSourceFile> filesWithAnalysisDiagnostics = List.unmodifiable(
     files.where((file) => file.analysisDiagnostics.isNotEmpty),
   );
 
-  /// Semantic diagnostics reported across imported files.
+  /// Caller-supplied semantic diagnostics across imported files.
   late final List<HeimdallAnalysisDiagnostic> analysisDiagnostics = List.unmodifiable([
     for (final file in files) ...file.analysisDiagnostics,
   ]);
 
-  /// Total semantic diagnostic count across imported files.
+  /// Total caller-supplied semantic diagnostic count across imported files.
   late final int analysisDiagnosticCount = analysisDiagnostics.length;
 
   /// All top-level declarations found in imported files.

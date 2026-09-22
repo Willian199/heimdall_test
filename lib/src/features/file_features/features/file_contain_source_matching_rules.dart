@@ -1,6 +1,9 @@
 import 'package:heimdall_test/heimdall_test.dart';
 
-/// Predicate-side DSL for source pattern rules.
+/// Predicate-side DSL for textual source pattern rules.
+///
+/// Patterns are applied to the whole file, including comments and strings.
+/// Use executable syntax rules for calls, arguments, and expressions.
 extension FileContainSourceMatchingPredicateRules on FilePredicateBuilder {
   /// Selects files that contain source matching [pattern].
   FilePredicateBuilder containSourceMatching(RegExp pattern) {
@@ -46,7 +49,10 @@ extension FileContainSourceMatchingPredicateRules on FilePredicateBuilder {
   }
 }
 
-/// Condition-side DSL for source pattern rules.
+/// Condition-side DSL for textual source pattern rules.
+///
+/// Patterns are applied to the whole file, including comments and strings.
+/// Use executable syntax rules for calls, arguments, and expressions.
 extension FileContainSourceMatchingShouldRules on FileShouldBuilder {
   /// Requires matching files to contain source matching [pattern].
   HeimdallRule<HeimdallSourceFile> containSourceMatching(RegExp pattern) {

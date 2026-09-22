@@ -217,8 +217,17 @@ For reusable custom checks, create a `HeimdallPredicate<T>` for selection or a
 ```dart
 Heimdall.code().shouldParse().check(project).assertNoFindings();
 Heimdall.code().shouldNotImportDartMirrors().check(project).assertNoFindings();
-Heimdall.code().publicSignaturesShouldNotUseDynamic().check(project).assertNoFindings();
+Heimdall.code().publicSignaturesShouldNotUseDynamic(
+  ignoredTypes: {'Map<String, dynamic>', 'List<dynamic>'},
+  externalGenericTypeNames: ['Bloc', 'Cubit', 'Response', 'ValueNotifier', 'ValueListenable'],
+).check(project).assertNoFindings();
 ```
+
+Both options are optional. `ignoredTypes` also covers nullable and nested uses;
+bare names such as `Map` or `List` exempt all their parametrizations. Import
+prefixes must still match. SDK generics such as `Future` and `Stream` are
+recognized by default; `externalGenericTypeNames` adds types whose omitted
+arguments should count as `dynamic`.
 
 `Heimdall.dependencies()` provides dependency policies:
 

@@ -80,6 +80,7 @@ final class HeimdallSourceFileParser {
           column: location.columnNumber,
         );
       }).toList(),
+      unit: result.unit,
       lineInfo: result.lineInfo,
     );
   }

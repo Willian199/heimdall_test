@@ -2,7 +2,10 @@ import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/source/line_info.dart';
 
 import 'package:heimdall_test/src/features/queries/type_annotation_queries.dart';
+import 'package:heimdall_test/src/mapper/model/executable_ast_index.dart';
 import 'package:heimdall_test/src/mapper/model/heimdall_declaration.dart';
+import 'package:heimdall_test/src/mapper/model/member_relationship_index.dart';
+import 'package:heimdall_test/src/mapper/model/returned_constructor_parameter_index.dart';
 
 final _contexts = Expando<_MemberContext>('heimdall.memberContext');
 
@@ -55,6 +58,22 @@ extension HeimdallMember on ClassMember {
 
   /// AST roots that can contain executable references inside this member.
   List<AstNode> get executableRoots => _context.executableRoots;
+
+  /// Cached expressions in this member's executable roots.
+  List<Expression> get executableExpressions => _context.executableExpressions;
+
+  /// Cached names of this member's parameters.
+  Set<String> get parameterNames => _context.parameterNames;
+
+  /// Direct field entries in returned list literals, excluding shadowed locals.
+  Set<String> get returnedListFieldNames => _context.returnedListFieldNames;
+
+  /// Direct field names included in every returned list of this member.
+  Set<String> get returnedListFieldNamesInEveryReturn => _context.returnedListFieldNamesInEveryReturn;
+
+  /// Matching parameters forwarded to named arguments of a returned
+  /// constructor in every return of this method.
+  Set<String> get forwardedConstructorFieldNames => _context.forwardedConstructorFieldNames;
 
   /// `true` para [FieldDeclaration].
   bool get isField => _context.isField;
@@ -165,6 +184,14 @@ final class _MemberContext {
   final List<Annotation> annotationNodes;
   final List<FormalParameter> parameters;
   final List<AstNode> executableRoots;
+  late final List<Expression> executableExpressions = ExecutableAstIndex(executableRoots).expressions;
+  late final Set<String> parameterNames = Set.unmodifiable(parameters.map((parameter) => parameter.name?.lexeme).whereType<String>());
+  late final MemberRelationshipIndex? _relationshipIndex = isMethod ? MemberRelationshipIndex(executableRoots) : null;
+  late final Set<String> returnedListFieldNames = _relationshipIndex?.returnedListFields ?? const {};
+  late final Set<String> returnedListFieldNamesInEveryReturn = isMethod ? _relationshipIndex!.returnedListFieldsInEveryReturn : const {};
+  late final Set<String> forwardedConstructorFieldNames = isMethod
+      ? ReturnedConstructorParameterIndex(executableRoots, ownerName: owner.name, parameterNames: parameterNames).fieldsUpdatedInEveryReturn
+      : const {};
   late final bool isPrivate;
 }
 

@@ -80,6 +80,8 @@ void main() {
           .resideInPath('src/library/**')
           .and()
           .haveTypeNameStartingWith('Heimdall')
+          .and()
+          .satisfy(HeimdallPredicate('are class declarations', (item, _) => item is ClassDeclaration))
           .should()
           .beFinal()
           .check(project)

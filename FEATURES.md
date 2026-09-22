@@ -428,6 +428,10 @@
 
 ## Files
 
+- `containExpression` / `notContainExpression`
+- `containNullAssertion` / `notContainNullAssertion`
+- `callMethodWithArguments` / `notCallMethodWithArguments`
+- `callConstructorWithArguments` / `notCallConstructorWithArguments`
 - `not`
 - `exist`
 - `shouldNotExist`
@@ -589,8 +593,24 @@
 - `noResideOutsideOfPath`
 - `noUseOnlyPackageImports`
 
+Source matching is textual across the whole file, including comments and
+strings. Use the expression and call rules above for syntax-aware checks.
+
 ## Members
 
+- `areNotFinal` / `notBeFinal`
+- `areConst` / `beConst`, `areNotConst` / `notBeConst`
+- `areMutable` / `beMutable`, `areNotMutable` / `notBeMutable`
+- `areNullable` / `beNullable`, `areNotNullable` / `notBeNullable`
+- `containExpression` / `notContainExpression`
+- `containNullAssertion` / `notContainNullAssertion`
+- `callMethodWithArguments` / `notCallMethodWithArguments`
+- `callConstructorWithArguments` / `notCallConstructorWithArguments`
+- `haveMatchingParameterIn` / `notHaveMatchingParameterIn`
+- `areIncludedInReturnedListOf` / `areNotIncludedInReturnedListOf`
+- `beIncludedInReturnedListOf` / `notBeIncludedInReturnedListOf`
+- `areIncludedInEveryReturnedListOf` / `beIncludedInEveryReturnedListOf`
+- `passMatchingParameterToReturnedConstructorIn` / `notPassMatchingParameterToReturnedConstructorIn`
 - `not`
 - `arePublic`
 - `arePrivate`

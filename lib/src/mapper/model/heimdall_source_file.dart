@@ -1,5 +1,6 @@
 import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/source/line_info.dart';
+import 'package:heimdall_test/src/mapper/model/executable_ast_index.dart';
 import 'package:heimdall_test/src/mapper/model/heimdall_declaration.dart';
 import 'package:heimdall_test/src/mapper/model/heimdall_dependency.dart';
 import 'package:heimdall_test/src/mapper/model/heimdall_member.dart';
@@ -25,10 +26,12 @@ final class HeimdallSourceFile {
     required List<Directive> dependencies,
     required List<HeimdallParseError> parseErrors,
     this.unit,
+    this.isResolved = false,
     List<HeimdallAnalysisDiagnostic> analysisDiagnostics = const [],
     List<ClassMember>? classMembers,
     LineInfo? lineInfo,
-  }) : directives = List.unmodifiable(directives),
+  }) : assert(!isResolved || unit != null, 'A resolved file must have a compilation unit.'),
+       directives = List.unmodifiable(directives),
        declarations = List.unmodifiable(declarations),
        dependencies = List.unmodifiable(dependencies),
        parseErrors = List.unmodifiable(parseErrors),
@@ -45,13 +48,18 @@ final class HeimdallSourceFile {
   /// Source text loaded by `HeimdallFileImporter`.
   final String content;
 
-  /// Resolved analyzer unit when this file came from the importer.
+  /// Cached expressions in all declarations, including defaults and annotations.
+  late final List<Expression> expressions = ExecutableAstIndex(declarations).expressions;
+
+  /// Parsed compilation unit. Callers that supply a resolved unit must also
+  /// set [isResolved] to `true`.
   ///
-  /// This is nullable only for compatibility with manually constructed models.
+  /// Nullable for compatibility with manually constructed models.
   final CompilationUnit? unit;
 
-  /// Whether this model contains a semantically resolved analyzer unit.
-  bool get isResolved => unit != null;
+  /// Whether [unit] has semantic resolution. The default importer only parses
+  /// source and therefore leaves this `false`.
+  final bool isResolved;
 
   final LineInfo? _lineInfo;
 
@@ -412,7 +420,8 @@ final class HeimdallSourceFile {
   /// Parse errors, when the analyzer reported any.
   final List<HeimdallParseError> parseErrors;
 
-  /// Non-syntactic diagnostics reported while resolving this file.
+  /// Non-syntactic diagnostics supplied by a semantic resolver. The default
+  /// importer does not populate this list.
   final List<HeimdallAnalysisDiagnostic> analysisDiagnostics;
 
   /// `true` when the analyzer reported parse errors.

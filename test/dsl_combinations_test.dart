@@ -218,8 +218,8 @@ void main() {
       () {
         final project = importProject();
         final reports = [
-          Heimdall.noFiles().that().resideInPath('lib').should().containSourceMatching(RegExp(r'(?<![\w.])print\s*\(')).check(project),
-          Heimdall.noFiles().that().resideInPath('lib').should().containSourceMatching(RegExp(r'\bContainer\s*\(\s*\)')).check(project),
+          Heimdall.noFiles().that().resideInPath('lib').should().callMethodWithArguments('print', receiver: '').check(project),
+          Heimdall.noFiles().that().resideInPath('lib').should().callConstructorWithArguments('Container', exactArguments: true).check(project),
           Heimdall.noFiles().that().resideInPath('lib').should().containSourceMatching(RegExp(r'\}\s*on\s+Object\b')).check(project),
           Heimdall.noFiles().that().resideInPath('lib').should().containSourceMatching(RegExp(r'\bWidget\s+_\w+\s*\(')).check(project),
           Heimdall.noFiles()
@@ -491,7 +491,7 @@ void main() {
     );
 
     test(
-      'reports public dynamic signatures without flagging inferred values or returns',
+      'reports explicit and locally inferred dynamic without flagging safe inferred values',
       () {
         final project = importProject();
 
@@ -501,12 +501,18 @@ void main() {
             )
             .check(project);
 
-        expect(result.findings, hasLength(26));
+        expect(result.findings, hasLength(41));
         expect(
           result.findings.map((finding) => finding.message),
           containsAll([
             contains('publicTopLevelDynamic has public dynamic type'),
             contains('RawFutureAlias has public dynamic type'),
+            contains('publicRawFuture has public dynamic type'),
+            contains('rawFutureReturn has public dynamic return type'),
+            contains('rawFutureReturn has public dynamic parameter rawFutureParameter'),
+            contains('publicTopLevelImplicit has public dynamic type'),
+            contains('publicFieldImplicit has public dynamic type'),
+            contains('implicitReturn has public dynamic return type'),
             contains('DynamicFutureAlias has public dynamic type'),
             contains('DynamicAlias has public dynamic type'),
             contains('DynamicCallback has public dynamic return type'),
@@ -521,7 +527,6 @@ void main() {
               'callbackParameter has public dynamic parameter callback',
             ),
             contains('publicFieldDynamic has public dynamic type'),
-            contains('publicRawFuture has public dynamic type'),
             contains('publicDynamicFuture has public dynamic type'),
             contains('publicRawCubit has public dynamic type'),
             contains('publicDynamicCubit has public dynamic type'),
@@ -529,10 +534,6 @@ void main() {
             contains('explicitReturn has public dynamic return type'),
             contains(
               'explicitReturn has public dynamic parameter explicitParameter',
-            ),
-            contains('rawFutureReturn has public dynamic return type'),
-            contains(
-              'rawFutureReturn has public dynamic parameter rawFutureParameter',
             ),
             contains('dynamicFutureReturn has public dynamic return type'),
             contains(
@@ -557,17 +558,7 @@ void main() {
             [
               isNot(
                 contains(
-                  contains('publicTopLevelImplicit has public dynamic type'),
-                ),
-              ),
-              isNot(
-                contains(
                   contains('publicTopLevelInferred has public dynamic type'),
-                ),
-              ),
-              isNot(
-                contains(
-                  contains('publicFieldImplicit has public dynamic type'),
                 ),
               ),
               isNot(
@@ -576,68 +567,15 @@ void main() {
                 ),
               ),
               isNot(
-                contains(contains('DynamicListAlias has public dynamic type')),
-              ),
-              isNot(
-                contains(contains('DynamicSetAlias has public dynamic type')),
-              ),
-              isNot(
-                contains(
-                  contains('DynamicIterableAlias has public dynamic type'),
-                ),
-              ),
-              isNot(
-                contains(contains('DynamicMapAlias has public dynamic type')),
-              ),
-              isNot(
-                contains(contains('publicListDynamic has public dynamic type')),
-              ),
-              isNot(
-                contains(contains('publicSetDynamic has public dynamic type')),
-              ),
-              isNot(
-                contains(
-                  contains('publicIterableDynamic has public dynamic type'),
-                ),
-              ),
-              isNot(
-                contains(contains('publicMapDynamic has public dynamic type')),
-              ),
-              isNot(
-                contains(contains('nestedReturn has public dynamic return type')),
-              ),
-              isNot(
-                contains(
-                  contains('nestedSetReturn has public dynamic return type'),
-                ),
-              ),
-              isNot(
-                contains(
-                  contains(
-                    'nestedIterableReturn has public dynamic return type',
-                  ),
-                ),
-              ),
-              isNot(
-                contains(
-                  contains('nestedMapReturn has public dynamic return type'),
-                ),
-              ),
-              isNot(
-                contains(
-                  contains('implicitReturn has public dynamic return type'),
-                ),
-              ),
-              isNot(
                 contains(
                   contains('wildcardParameter has public dynamic parameter _'),
                 ),
               ),
               isNot(
-                contains(contains('new has public dynamic parameter codigo')),
+                contains(contains('has public dynamic parameter codigo')),
               ),
               isNot(
-                contains(contains('new has public dynamic parameter parametro')),
+                contains(contains('has public dynamic parameter parametro')),
               ),
             ],
           ),
@@ -658,14 +596,14 @@ void main() {
       final ignoredByDeclaration = Heimdall.code()
           .publicSignaturesShouldNotUseDynamic(
             pathPattern: 'dynamic_signature.dart',
-            ignoredDeclarationNames: ['DynamicAlias'],
+            ignoredDeclarationNames: {'DynamicAlias'},
             ignoredDeclarationNamePatterns: [RegExp('^Legacy')],
           )
           .check(project);
 
       expect(ignoredByPath.findings, isEmpty);
       expect(ignoredByPath.checkedCount, 0);
-      expect(ignoredByDeclaration.findings, hasLength(23));
+      expect(ignoredByDeclaration.findings, hasLength(38));
       expect(
         ignoredByDeclaration.findings.map((finding) => finding.message),
         allOf([

@@ -239,7 +239,7 @@ HeimdallPredicate<HeimdallSourceFile> _matches(
   );
   return HeimdallPredicate(
     '${prohibited ? 'not ' : ''}call method $methodName with arguments $positionalArguments $namedArguments (receiver: $receiver, exact: $exactArguments)',
-    (item, _) => prohibited ? !scopedExpressions(item).any(match) : scopedExpressions(item).any(match),
+    (item, project) => prohibited ? !hasSyntaxMatch(item, project, match) : hasSyntaxMatch(item, project, match),
   );
 }
 

@@ -354,18 +354,21 @@ void main() {
           .should()
           .declareMethod('declareExtensionOn')
           .check(project);
+      final staticProject = const HeimdallFileImporter(useCache: false).importPath(
+        'test/executable_fixtures/static_method_constructor',
+      );
       final staticCall = Heimdall.files()
           .that()
-          .resideInPath('src/features/file_features/features/file_declare_extension_on_rules.dart')
+          .resideInPath('lib/calls.dart')
           .should()
-          .callStaticMethod('HeimdallPredicate', 'allOf')
+          .callStaticMethod('Product', 'staticCall')
           .and()
-          .callAllStaticMethods('HeimdallCondition', ['allOf', 'anyOf', 'noneOf'])
+          .callAllStaticMethods('Product', ['staticCall'])
           .and()
-          .callAnyStaticMethod('HeimdallPredicate', ['missing', 'allOf'])
+          .callAnyStaticMethod('Product', ['missing', 'staticCall'])
           .and()
-          .callNoStaticMethods('HeimdallPredicate', ['missing'])
-          .check(project);
+          .callNoStaticMethods('Product', ['missing'])
+          .check(staticProject);
 
       expect(extension.findings, isEmpty);
       expect(extensionMethod.findings, isEmpty);

@@ -1,0 +1,4 @@
+name: annotation_value_shadowing
+
+environment:
+  sdk: ^3.11.0

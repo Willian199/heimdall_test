@@ -20,6 +20,12 @@ abstract interface class ImportOption {
   bool includes(String absolutePath);
 }
 
+/// Import option evaluated relative to the package root by the importer.
+abstract interface class PackageRelativeImportOption implements ImportOption {
+  /// Returns whether [relativePath] should be included.
+  bool includesRelativePath(String relativePath);
+}
+
 /// Includes every discovered `.dart` file.
 ///
 /// Use this option when no generated-file or test-file filtering is desired.
@@ -37,7 +43,7 @@ final class IncludeAllImportOption implements ImportOption {
 /// Excludes test files from the analysis scope.
 ///
 /// A file is excluded when it is under `/test/` or ends with `_test.dart`.
-final class ExcludeTestsImportOption implements ImportOption {
+final class ExcludeTestsImportOption implements PackageRelativeImportOption {
   /// Creates an option that excludes test files.
   const ExcludeTestsImportOption();
 
@@ -45,15 +51,18 @@ final class ExcludeTestsImportOption implements ImportOption {
   String get cacheKey => 'exclude-tests';
 
   @override
-  bool includes(String absolutePath) {
-    final normalized = normalizePath(absolutePath);
-    return !normalized.contains('/test/') && !normalized.endsWith('_test.dart');
+  bool includes(String absolutePath) => includesRelativePath(absolutePath);
+
+  @override
+  bool includesRelativePath(String relativePath) {
+    final normalized = normalizePath(relativePath);
+    return !normalized.startsWith('test/') && !normalized.contains('/test/') && !normalized.endsWith('_test.dart');
   }
 }
 
 /// Includes only Dart files under a `lib/` path segment.
 ///
-final class IncludeLibraryImportOption implements ImportOption {
+final class IncludeLibraryImportOption implements PackageRelativeImportOption {
   /// Creates an option that includes only Dart files under `lib/`.
   const IncludeLibraryImportOption();
 
@@ -61,9 +70,12 @@ final class IncludeLibraryImportOption implements ImportOption {
   String get cacheKey => 'include-library';
 
   @override
-  bool includes(String absolutePath) {
-    final normalized = normalizePath(absolutePath);
-    return normalized.contains('/lib/') && normalized.endsWith('.dart');
+  bool includes(String absolutePath) => includesRelativePath(absolutePath);
+
+  @override
+  bool includesRelativePath(String relativePath) {
+    final normalized = normalizePath(relativePath);
+    return (normalized.startsWith('lib/') || normalized.contains('/lib/')) && normalized.endsWith('.dart');
   }
 }
 

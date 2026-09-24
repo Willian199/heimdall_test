@@ -98,8 +98,11 @@ List<CompilationUnitMember> visibleTypeReferenceDeclarationsFrom(
   final file = project.filesByPath[item.sourcePath];
   if (file == null) return [...project.typeDeclarations, ...project.typeAliases];
   return _dedupeDeclarations([
-    if (importPrefix == null) ...file.typeDeclarations,
-    if (importPrefix == null) ...file.typeAliases,
+    if (importPrefix == null)
+      for (final libraryFile in libraryFilesFrom(item, project)) ...[
+        ...libraryFile.typeDeclarations,
+        ...libraryFile.typeAliases,
+      ],
     for (final dependency in dependenciesFrom(item, project))
       if (_dependencyMatchesImportPrefix(dependency, importPrefix)) ...project.visibleTypeDeclarationsThrough(dependency),
   ]);

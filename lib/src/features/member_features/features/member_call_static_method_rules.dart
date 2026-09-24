@@ -124,9 +124,9 @@ HeimdallCondition<ClassMember> _memberShouldCallStaticMethod(
 ) {
   return HeimdallCondition('call static method $targetType.$methodName', (
     item,
-    _,
+    project,
   ) {
-    final findings = _memberCallsStaticMethod(item, targetType, methodName)
+    final findings = _memberCallsStaticMethod(item, targetType, methodName, project)
         ? const <HeimdallValidationInfo>[]
         : [
             HeimdallValidationInfo(
@@ -149,7 +149,7 @@ HeimdallCondition<ClassMember> _memberShouldNotCallStaticMethod(
 ) {
   return prohibitedMemberCondition(
     'call static method $targetType.$methodName',
-    (item, project) => _memberCallsStaticMethod(item, targetType, methodName),
+    (item, project) => _memberCallsStaticMethod(item, targetType, methodName, project),
   );
 }
 
@@ -159,7 +159,7 @@ HeimdallPredicate<ClassMember> _memberMatchesCallStaticMethod(
 ) {
   return HeimdallPredicate(
     'call static method $targetType.$methodName',
-    (item, project) => _memberCallsStaticMethod(item, targetType, methodName),
+    (item, project) => _memberCallsStaticMethod(item, targetType, methodName, project),
   );
 }
 
@@ -169,7 +169,7 @@ HeimdallPredicate<ClassMember> _memberDoesNotCallStaticMethod(
 ) {
   return HeimdallPredicate(
     'not call static method $targetType.$methodName',
-    (item, project) => !_memberCallsStaticMethod(item, targetType, methodName),
+    (item, project) => !_memberCallsStaticMethod(item, targetType, methodName, project),
   );
 }
 
@@ -178,9 +178,10 @@ bool _memberCallsStaticMethod(
   ClassMember member,
   String targetType,
   String methodName,
+  HeimdallProject project,
 ) {
   for (final root in member.executableRoots) {
-    if (astNodeHasStaticMethodInvocation(root, targetType, methodName)) {
+    if (astNodeHasStaticMethodInvocation(root, targetType, methodName, project)) {
       return true;
     }
   }

@@ -65,7 +65,7 @@ extension HeimdallDeclaration on CompilationUnitMember {
   /// Individual field variables owned by this declaration.
   List<VariableDeclaration> get fieldVariables => _context.fieldVariables;
 
-  /// `true` when the name starts with `_`.
+  /// `true` when the name starts with `_` or an extension has no name.
   bool get isPrivate => _context.isPrivate;
 
   /// `true` when the name does not start with `_`.
@@ -202,7 +202,7 @@ final class _DeclarationContext {
     fieldVariables = List.unmodifiable(
       fields.expand((field) => field.fields.variables),
     );
-    isPrivate = name.startsWith('_');
+    isPrivate = name.startsWith('_') || node is ExtensionDeclaration && node.name == null;
   }
 
   final String sourcePath;

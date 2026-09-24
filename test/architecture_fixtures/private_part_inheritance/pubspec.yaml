@@ -1,0 +1,4 @@
+name: private_part_inheritance
+
+environment:
+  sdk: ^3.11.0

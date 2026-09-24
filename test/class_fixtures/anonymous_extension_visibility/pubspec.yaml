@@ -1,0 +1,4 @@
+name: anonymous_extension_visibility
+
+environment:
+  sdk: ^3.11.0

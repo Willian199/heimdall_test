@@ -611,6 +611,14 @@ final class HeimdallProject {
     Directive directive,
     HeimdallSourceFile targetFile,
   ) {
+    // A part belongs to the same library, so its private declarations are
+    // visible to the owning file even though they are not exported to imports.
+    if (directive is PartDirective) {
+      return List.unmodifiable([
+        ...targetFile.typeDeclarations,
+        ...targetFile.typeAliases,
+      ]);
+    }
     final exported = exportedTypeDeclarationsOf(targetFile);
     if (directive is ImportDirective) {
       return _applyCombinators(exported, directive.combinators);
@@ -624,8 +632,9 @@ final class HeimdallProject {
   void _resolveDependencies() {
     for (final file in files) {
       for (final dependency in file.dependencies) {
-        final primaryPath = dependency is PartOfDirective ? null : _resolveUri(file.absolutePath, dependency.targetUri);
-        final resolvedTargets = dependency is PartOfDirective
+        final namedPartOf = dependency is PartOfDirective && dependency.uri == null;
+        final primaryPath = namedPartOf ? null : _resolveUri(file.absolutePath, dependency.targetUri);
+        final resolvedTargets = namedPartOf
             ? const <({String uri, String path, HeimdallSourceFile? file})>[]
             : [
                 for (final uri in dependency.targetUris)

@@ -2,9 +2,10 @@ import 'dart:convert';
 
 import 'package:analyzer/dart/analysis/utilities.dart';
 import 'package:heimdall_test/heimdall_test.dart';
+import 'package:heimdall_test/src/features/queries/declaration_lookup_queries.dart';
 
 /// Internal syntax matcher shared by file and member DSL features.
-typedef SyntaxMatch = bool Function(Expression expression);
+typedef SyntaxMatch = bool Function(Expression expression, HeimdallProject project);
 
 /// Returns cached expressions for a file or member.
 Iterable<Expression> scopedExpressions(Object subject) {
@@ -18,10 +19,17 @@ Iterable<Expression> scopedExpressions(Object subject) {
 /// Matches actual postfix assertions, without attempting flow analysis.
 bool isNullAssertion(Expression expression) => expression is PostfixExpression && expression.operator.lexeme == '!';
 
+/// Matches a null assertion in a project-aware syntax query.
+bool nullAssertionMatch(Expression expression, HeimdallProject _) => isNullAssertion(expression);
+
+/// Returns whether any expression in [subject] matches [match].
+bool hasSyntaxMatch(Object subject, HeimdallProject project, SyntaxMatch match) =>
+    scopedExpressions(subject).any((expression) => match(expression, project));
+
 /// Matches expression tokens, preserving literal contents and token boundaries.
 SyntaxMatch expressionMatcher(String source) {
   final key = _expressionKey(source);
-  return (expression) => _tokenKey(expression) == key;
+  return (expression, _) => _tokenKey(expression) == key;
 }
 
 /// Matches a syntactically named call and its argument expressions.
@@ -37,7 +45,7 @@ SyntaxMatch invocationMatcher(
   if (name.trim().isEmpty) throw ArgumentError.value(name, 'name', 'Must not be empty');
   final named = namedArguments.map((name, source) => MapEntry(name, _expressionKey(source)));
   final positional = positionalArguments?.map(_expressionKey).toList();
-  return (expression) {
+  return (expression, project) {
     ArgumentList? arguments;
     if (constructor) {
       if (expression is InstanceCreationExpression) {
@@ -52,7 +60,7 @@ SyntaxMatch invocationMatcher(
         if (!matches && !splitNamed) return false;
         arguments = expression.argumentList;
       } else if (expression is MethodInvocation) {
-        if (!_matchesConstructorReference(expression, name, constructorName)) return false;
+        if (!_matchesConstructorReference(expression, name, constructorName, project)) return false;
         arguments = expression.argumentList;
       }
     } else if (expression is MethodInvocation && expression.methodName.name == name) {
@@ -83,20 +91,37 @@ SyntaxMatch invocationMatcher(
   };
 }
 
-bool _matchesConstructorReference(MethodInvocation invocation, String typeName, String constructorName) {
+bool _matchesConstructorReference(MethodInvocation invocation, String typeName, String constructorName, HeimdallProject project) {
   if (invocation.isCascaded) return false;
   final target = invocation.target?.toSource();
   final reference = target == null ? invocation.methodName.name : '$target.${invocation.methodName.name}';
   final expected = constructorName.isEmpty ? typeName : '$typeName.$constructorName';
+  String effectiveType;
   if (reference == expected) {
     if (typeName.contains('.')) {
-      return _hasImportPrefix(invocation, typeName.substring(0, typeName.lastIndexOf('.')));
+      if (!_hasImportPrefix(invocation, typeName.substring(0, typeName.lastIndexOf('.')))) return false;
     }
-    return true;
+    effectiveType = typeName;
+  } else {
+    if (!reference.endsWith('.$expected')) return false;
+    final prefix = reference.substring(0, reference.length - expected.length - 1);
+    if (!_hasImportPrefix(invocation, prefix)) return false;
+    effectiveType = '$prefix.$typeName';
   }
-  if (!reference.endsWith('.$expected')) return false;
-  final prefix = reference.substring(0, reference.length - expected.length - 1);
-  return _hasImportPrefix(invocation, prefix);
+
+  AstNode? node = invocation;
+  while (node != null && node is! CompilationUnitMember) {
+    node = node.parent;
+  }
+  if (node is! CompilationUnitMember) return true;
+  final declaration = declarationNamedFrom(node, project, effectiveType);
+  if (declaration == null) return true;
+  if (constructorName.isEmpty) {
+    return declaration is ExtensionTypeDeclaration ||
+        declaration is ClassDeclaration &&
+            (declaration.constructors.isEmpty || declaration.constructors.any((constructor) => constructor.name == null));
+  }
+  return declaration.constructors.any((constructor) => constructor.name?.lexeme == constructorName);
 }
 
 bool _hasImportPrefix(MethodInvocation invocation, String prefix) {
@@ -110,8 +135,8 @@ bool _hasImportPrefix(MethodInvocation invocation, String prefix) {
 
 /// Reports matching expressions or the subject when required syntax is missing.
 HeimdallCondition<T> syntaxCondition<T>(String description, SyntaxMatch match, {bool prohibited = false}) {
-  return HeimdallCondition(description, (subject, _) {
-    final matches = scopedExpressions(subject as Object).where(match).toList();
+  return HeimdallCondition(description, (subject, project) {
+    final matches = scopedExpressions(subject as Object).where((expression) => match(expression, project)).toList();
     final passed = prohibited ? matches.isEmpty : matches.isNotEmpty;
     return HeimdallFindings(
       subject: subject,

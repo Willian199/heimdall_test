@@ -94,5 +94,5 @@ extension ClassConstructorParameterCountShouldRules on ClassShouldBuilder {
 }
 
 int _constructorParameterCount(CompilationUnitMember item) {
-  return item.constructors.fold<int>(0, (count, constructor) => count + constructor.parameters.parameters.length);
+  return item.constructorParameterCount;
 }

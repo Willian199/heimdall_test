@@ -54,13 +54,14 @@ final class _ReturnVisitor extends RecursiveAstVisitor<void> {
     } else if (expression is ConditionalExpression) {
       _collect(expression.thenExpression);
       _collect(expression.elseExpression);
+    } else if (expression is SwitchExpression) {
+      for (final branch in expression.cases) {
+        _collect(branch.expression);
+      }
     } else if (expression is ListLiteral) {
       final directFields = <String>{};
       for (final element in expression.elements) {
-        if (element is Expression) {
-          final name = _fieldName(element);
-          if (name != null) directFields.add(name);
-        }
+        directFields.addAll(_fieldsInElement(element));
       }
       fields.addAll(directFields);
       returnFields.add(directFields);
@@ -68,6 +69,21 @@ final class _ReturnVisitor extends RecursiveAstVisitor<void> {
       returnFields.add({});
     }
   }
+}
+
+Set<String> _fieldsInElement(CollectionElement element) {
+  if (element is Expression) {
+    final name = _fieldName(element);
+    return name == null ? {} : {name};
+  }
+  if (element is IfElement) {
+    return {
+      ..._fieldsInElement(element.thenElement),
+      if (element.elseElement != null) ..._fieldsInElement(element.elseElement!),
+    };
+  }
+  if (element is ForElement) return _fieldsInElement(element.body);
+  return {};
 }
 
 String? _fieldName(Expression expression) {
@@ -92,9 +108,20 @@ bool _isShadowed(SimpleIdentifier identifier) {
         if (statement is PatternVariableDeclarationStatement && _declaresName(statement.declaration.pattern, name)) return true;
       }
     }
-    if (parent is ForStatement && _declaresName(parent.forLoopParts, name)) return true;
+    if (parent is ForStatement &&
+        !(parent.forLoopParts is ForEachParts && _contains((parent.forLoopParts as ForEachParts).iterable, identifier)) &&
+        _declaresName(parent.forLoopParts, name)) {
+      return true;
+    }
+    if (parent is ForElement && _declaresName(parent.forLoopParts, name)) return true;
     if (parent is CatchClause && (parent.exceptionParameter?.name.lexeme == name || parent.stackTraceParameter?.name.lexeme == name)) return true;
-    if (parent is IfStatement && parent.caseClause != null && _declaresName(parent.caseClause!, name)) return true;
+    if (parent is IfStatement &&
+        parent.caseClause != null &&
+        parent.thenStatement.offset <= identifier.offset &&
+        identifier.end <= parent.thenStatement.end &&
+        _declaresName(parent.caseClause!, name)) {
+      return true;
+    }
     if (parent is SwitchPatternCase && _declaresName(parent.guardedPattern.pattern, name)) return true;
   }
   return false;
@@ -106,3 +133,5 @@ bool _declaresName(AstNode node, String name) {
   if (node is DeclaredVariablePattern && node.name.lexeme == name) return true;
   return node.childEntities.whereType<AstNode>().any((child) => _declaresName(child, name));
 }
+
+bool _contains(AstNode scope, AstNode node) => scope.offset <= node.offset && node.end <= scope.end;

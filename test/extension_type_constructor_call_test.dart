@@ -19,4 +19,23 @@ void main() {
     expect(report.checkedCount, 1);
     expect(report.findings, isEmpty);
   });
+
+  test('a named extension type constructor is not a static method call', () {
+    final report = Heimdall.methods().that().haveName('parseExtension').should().notCallStaticMethod('ProductId', 'parse').check(project);
+
+    expect(report.checkedCount, 1);
+    expect(report.findings, isEmpty);
+  });
+
+  test('file-level static rules ignore named extension type constructors', () {
+    final report = Heimdall.files()
+        .that()
+        .resideInPath('lib/extension_type_calls.dart')
+        .should()
+        .notCallStaticMethod('ProductId', 'parse')
+        .check(project);
+
+    expect(report.checkedCount, 1);
+    expect(report.findings, isEmpty);
+  });
 }

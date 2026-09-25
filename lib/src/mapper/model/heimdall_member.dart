@@ -1,6 +1,5 @@
 import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/source/line_info.dart';
-
 import 'package:heimdall_test/src/features/queries/type_annotation_queries.dart';
 import 'package:heimdall_test/src/mapper/model/executable_ast_index.dart';
 import 'package:heimdall_test/src/mapper/model/heimdall_declaration.dart';

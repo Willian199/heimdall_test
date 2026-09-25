@@ -1,0 +1,4 @@
+name: prefixed_static_method
+
+environment:
+  sdk: ^3.11.0

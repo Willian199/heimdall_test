@@ -1,0 +1,3 @@
+name: shadowed_catch_pattern
+environment:
+  sdk: ^3.11.0

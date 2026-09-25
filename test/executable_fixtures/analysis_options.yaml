@@ -1,0 +1,10 @@
+include: ../../analysis_options.yaml
+
+analyzer:
+  errors:
+    public_member_api_docs: ignore
+    always_use_package_imports: ignore
+    non_constant_identifier_names: ignore
+    constant_identifier_names: ignore
+    prefer_final_locals: ignore
+    unnecessary_lambdas: ignore

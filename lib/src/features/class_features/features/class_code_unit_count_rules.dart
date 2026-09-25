@@ -88,5 +88,5 @@ extension ClassCodeUnitCountShouldRules on ClassShouldBuilder {
 }
 
 int _codeUnitCount(CompilationUnitMember item) {
-  return item.methods.length + item.constructors.length;
+  return item.methods.length + item.constructorCount;
 }

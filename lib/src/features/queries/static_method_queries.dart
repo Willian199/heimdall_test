@@ -97,7 +97,7 @@ bool _matchesStaticMethodInvocation(
   HeimdallProject project,
 ) {
   return node.methodName.name == methodName &&
-      _qualifiedName(node.target) == targetType &&
+      _matchesTargetType(node, node.target, targetType, project) &&
       !_hasValueReceiver(node, targetType, project) &&
       !_isNamedConstructorReference(node, targetType, methodName, project);
 }
@@ -108,9 +108,22 @@ bool _matchesStaticFunctionInvocation(
   String methodName,
   HeimdallProject project,
 ) {
-  return _qualifiedName(node.function) == '$targetType.$methodName' &&
+  return _matchesTargetType(node, node.function, '$targetType.$methodName', project) &&
       !_hasValueReceiver(node, targetType, project) &&
       !_isNamedConstructorReference(node, targetType, methodName, project);
+}
+
+bool _matchesTargetType(AstNode invocation, Expression? target, String expected, HeimdallProject project) {
+  final actual = _qualifiedName(target);
+  if (actual == expected) return true;
+  if (actual == null || !actual.endsWith('.$expected')) return false;
+  for (var ancestor = invocation.parent; ancestor != null; ancestor = ancestor.parent) {
+    if (ancestor is CompilationUnitMember) {
+      final typeReference = invocation is MethodInvocation ? actual : actual.substring(0, actual.lastIndexOf('.'));
+      return declarationNamedFrom(ancestor, project, typeReference) != null;
+    }
+  }
+  return false;
 }
 
 bool _hasValueReceiver(AstNode node, String targetType, HeimdallProject project) {
@@ -133,6 +146,11 @@ bool _hasValueReceiver(AstNode node, String targetType, HeimdallProject project)
       if (parts is ForEachParts && _containsNode(parts.iterable, node)) continue;
       if (_forLoopDeclaresName(parts, receiverName)) return true;
     }
+    if (ancestor is ForElement) {
+      final parts = ancestor.forLoopParts;
+      if (parts is ForEachParts && _containsNode(parts.iterable, node)) continue;
+      if (_forLoopDeclaresName(parts, receiverName)) return true;
+    }
     if (ancestor is CatchClause &&
         (ancestor.exceptionParameter?.name.lexeme == receiverName || ancestor.stackTraceParameter?.name.lexeme == receiverName)) {
       return true;
@@ -143,11 +161,22 @@ bool _hasValueReceiver(AstNode node, String targetType, HeimdallProject project)
         _declaresName(ancestor.caseClause!, receiverName)) {
       return true;
     }
+    if (ancestor is IfElement &&
+        ancestor.caseClause != null &&
+        _containsNode(ancestor.thenElement, node) &&
+        _declaresName(ancestor.caseClause!, receiverName)) {
+      return true;
+    }
     if (ancestor is SwitchPatternCase && _declaresName(ancestor.guardedPattern.pattern, receiverName)) return true;
+    if (ancestor is SwitchExpressionCase && _declaresName(ancestor.guardedPattern.pattern, receiverName)) return true;
     if (ancestor is CompilationUnitMember && _valueMembersDeclareInHierarchy(ancestor, receiverName, project, <String>{})) return true;
     if (ancestor is CompilationUnit &&
-        ancestor.declarations.whereType<TopLevelVariableDeclaration>().any(
-          (declaration) => declaration.variables.variables.any((variable) => variable.name.lexeme == receiverName),
+        ancestor.declarations.any(
+          (declaration) => switch (declaration) {
+            TopLevelVariableDeclaration(:final variables) => variables.variables.any((variable) => variable.name.lexeme == receiverName),
+            FunctionDeclaration(:final name) => name.lexeme == receiverName,
+            _ => false,
+          },
         )) {
       return true;
     }
@@ -172,6 +201,7 @@ bool _valueMembersDeclare(CompilationUnitMember owner, String name, {bool inheri
   (member) => switch (member) {
     FieldDeclaration(:final fields) => (!inherited || !member.isStatic) && fields.variables.any((variable) => variable.name.lexeme == name),
     MethodDeclaration() when member.isGetter => (!inherited || !member.isStatic) && member.name.lexeme == name,
+    MethodDeclaration() when !member.isStatic => member.name.lexeme == name,
     _ => false,
   },
 );
@@ -217,7 +247,9 @@ bool _isNamedConstructorReference(
   for (var ancestor = node.parent; ancestor != null; ancestor = ancestor.parent) {
     if (ancestor is CompilationUnitMember) {
       final declaration = declarationNamedFrom(ancestor, project, targetType);
-      return declaration is ClassDeclaration && declaration.constructors.any((constructor) => constructor.name?.lexeme == methodName);
+      return declaration != null &&
+          declaration.isTypeDeclaration &&
+          declaration.constructors.any((constructor) => constructor.name?.lexeme == methodName);
     }
   }
   return false;

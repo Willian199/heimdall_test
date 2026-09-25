@@ -56,6 +56,14 @@ extension HeimdallDeclaration on CompilationUnitMember {
   /// Constructor declarations owned by this declaration.
   List<ConstructorDeclaration> get constructors => _context.constructors;
 
+  /// Number of declared constructors, including an extension type's primary constructor.
+  int get constructorCount => constructors.length + (this is ExtensionTypeDeclaration ? 1 : 0);
+
+  /// Total number of parameters across declared constructors.
+  int get constructorParameterCount =>
+      constructors.fold<int>(0, (count, constructor) => count + constructor.parameters.parameters.length) +
+      (this is ExtensionTypeDeclaration ? (this as ExtensionTypeDeclaration).primaryConstructor.formalParameters.parameters.length : 0);
+
   /// Method declarations owned by this declaration.
   List<MethodDeclaration> get methods => _context.methods;
 

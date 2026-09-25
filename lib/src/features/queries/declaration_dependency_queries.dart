@@ -35,6 +35,8 @@ List<DeclarationDependency> declarationDependenciesFrom(
   };
   final localValueNames = {
     for (final file in libraryFiles)
+      for (final function in file.declarations.whereType<FunctionDeclaration>()) function.name.lexeme,
+    for (final file in libraryFiles)
       for (final declaration in file.topLevelVariables)
         for (final variable in declaration.variables.variables) variable.name.lexeme,
   };
@@ -217,6 +219,10 @@ final class _IdentifierReferenceVisitor extends RecursiveAstVisitor<void> {
     _valueMemberScopes.add({
       for (final field in owner.members.whereType<FieldDeclaration>())
         for (final variable in field.fields.variables) variable.name.lexeme,
+      for (final method in owner.members.whereType<MethodDeclaration>()) method.name.lexeme,
+      if (owner is ExtensionTypeDeclaration)
+        for (final parameter in owner.primaryConstructor.formalParameters.parameters)
+          if (parameter.name != null) parameter.name!.lexeme,
     });
     visit();
     _valueMemberScopes.removeLast();
@@ -250,6 +256,22 @@ final class _IdentifierReferenceVisitor extends RecursiveAstVisitor<void> {
       () => super.visitExtensionDeclaration(node),
       names: _typeParameterNames(node.typeParameters),
     );
+  }
+
+  @override
+  void visitExtensionTypeDeclaration(ExtensionTypeDeclaration node) {
+    _withValueMembers(
+      node,
+      () => _withScope(
+        () => super.visitExtensionTypeDeclaration(node),
+        names: _typeParameterNames(node.primaryConstructor.typeParameters),
+      ),
+    );
+  }
+
+  @override
+  void visitGenericFunctionType(GenericFunctionType node) {
+    _withScope(() => super.visitGenericFunctionType(node), names: _typeParameterNames(node.typeParameters));
   }
 
   @override
@@ -296,6 +318,98 @@ final class _IdentifierReferenceVisitor extends RecursiveAstVisitor<void> {
   }
 
   @override
+  void visitCatchClause(CatchClause node) {
+    _withScope(
+      () => super.visitCatchClause(node),
+      names: [
+        if (node.exceptionParameter != null) node.exceptionParameter!.name.lexeme,
+        if (node.stackTraceParameter != null) node.stackTraceParameter!.name.lexeme,
+      ],
+    );
+  }
+
+  @override
+  void visitPatternVariableDeclarationStatement(PatternVariableDeclarationStatement node) {
+    node.declaration.expression.accept(this);
+    node.declaration.pattern.accept(this);
+    _declarePattern(node.declaration.pattern);
+  }
+
+  @override
+  void visitForStatement(ForStatement node) {
+    _withScope(() {
+      final parts = node.forLoopParts;
+      if (parts is ForEachParts) {
+        parts.iterable.accept(this);
+        _declareForEach(parts);
+      } else {
+        parts.accept(this);
+      }
+      node.body.accept(this);
+    });
+  }
+
+  @override
+  void visitForElement(ForElement node) {
+    _withScope(() {
+      final parts = node.forLoopParts;
+      if (parts is ForEachParts) {
+        parts.iterable.accept(this);
+        _declareForEach(parts);
+      } else {
+        parts.accept(this);
+      }
+      node.body.accept(this);
+    });
+  }
+
+  void _declareForEach(ForEachParts parts) {
+    if (parts is ForEachPartsWithDeclaration) _declare(parts.loopVariable.name.lexeme);
+    if (parts is ForEachPartsWithPattern) _declarePattern(parts.pattern);
+  }
+
+  void _declarePattern(AstNode pattern) {
+    if (pattern is DeclaredVariablePattern) _declare(pattern.name.lexeme);
+    if (pattern is DeclaredIdentifier) _declare(pattern.name.lexeme);
+    pattern.childEntities.whereType<AstNode>().forEach(_declarePattern);
+  }
+
+  @override
+  void visitIfStatement(IfStatement node) {
+    node.expression.accept(this);
+    node.caseClause?.accept(this);
+    _withScope(() => node.thenStatement.accept(this), names: _declaredPatternNames(node.caseClause));
+    node.elseStatement?.accept(this);
+  }
+
+  @override
+  void visitIfElement(IfElement node) {
+    node.expression.accept(this);
+    node.caseClause?.accept(this);
+    _withScope(() => node.thenElement.accept(this), names: _declaredPatternNames(node.caseClause));
+    node.elseElement?.accept(this);
+  }
+
+  @override
+  void visitSwitchPatternCase(SwitchPatternCase node) {
+    _withScope(() => super.visitSwitchPatternCase(node), names: _declaredPatternNames(node.guardedPattern.pattern));
+  }
+
+  @override
+  void visitSwitchExpressionCase(SwitchExpressionCase node) {
+    _withScope(() => super.visitSwitchExpressionCase(node), names: _declaredPatternNames(node.guardedPattern.pattern));
+  }
+
+  Iterable<String> _declaredPatternNames(AstNode? pattern) sync* {
+    if (pattern == null) return;
+    if (pattern is DeclaredVariablePattern) yield pattern.name.lexeme;
+    if (pattern is DeclaredIdentifier) yield pattern.name.lexeme;
+    for (final child in pattern.childEntities.whereType<AstNode>()) {
+      yield* _declaredPatternNames(child);
+    }
+  }
+
+  @override
   void visitFunctionDeclaration(FunctionDeclaration node) {
     _declare(node.name.lexeme);
     _withScope(
@@ -328,6 +442,11 @@ final class _IdentifierReferenceVisitor extends RecursiveAstVisitor<void> {
   @override
   void visitMethodInvocation(MethodInvocation node) {
     final target = node.target;
+    if (node.methodName.name == targetName &&
+        (target == null && importPrefix == null && !_isLocalExpressionTargetName || target is SimpleIdentifier && target.name == importPrefix)) {
+      found = true;
+      return;
+    }
     if (target != null && _matchesTargetExpression(target) && !_isLocalExpressionTargetName) {
       found = true;
       return;
@@ -352,7 +471,12 @@ final class _IdentifierReferenceVisitor extends RecursiveAstVisitor<void> {
   void visitConstructorDeclaration(ConstructorDeclaration node) {
     node.parameters.accept(this);
     final parameterNames = node.parameters.parameters.map((parameter) => parameter.name?.lexeme).whereType<String>();
-    _withScope(() => node.body.accept(this), names: parameterNames);
+    _withScope(() {
+      for (final initializer in node.initializers) {
+        initializer.accept(this);
+      }
+      node.body.accept(this);
+    }, names: parameterNames);
   }
 
   @override

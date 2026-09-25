@@ -52,6 +52,10 @@ final class _ReturnVisitor extends RecursiveAstVisitor<void> {
     } else if (expression is ConditionalExpression) {
       _collect(expression.thenExpression);
       _collect(expression.elseExpression);
+    } else if (expression is SwitchExpression) {
+      for (final branch in expression.cases) {
+        _collect(branch.expression);
+      }
     } else {
       final arguments = switch (expression) {
         InstanceCreationExpression(:final constructorName, :final argumentList)
@@ -112,7 +116,13 @@ bool _hasLocalShadow(SimpleIdentifier identifier) {
         (parent.exceptionParameter?.name.lexeme == identifier.name || parent.stackTraceParameter?.name.lexeme == identifier.name)) {
       return true;
     }
-    if (parent is IfStatement && parent.caseClause != null && _declaresName(parent.caseClause!, identifier.name)) return true;
+    if (parent is IfStatement &&
+        parent.caseClause != null &&
+        parent.thenStatement.offset <= identifier.offset &&
+        identifier.end <= parent.thenStatement.end &&
+        _declaresName(parent.caseClause!, identifier.name)) {
+      return true;
+    }
     if (parent is SwitchPatternCase && _declaresName(parent.guardedPattern.pattern, identifier.name)) return true;
   }
   return false;

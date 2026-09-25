@@ -1,0 +1,3 @@
+name: access_field_receiver
+environment:
+  sdk: ^3.11.0

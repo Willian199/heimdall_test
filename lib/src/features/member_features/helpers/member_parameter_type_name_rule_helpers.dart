@@ -98,7 +98,10 @@ String? _superParameterTypeName(
     return null;
   }
 
-  final superclassName = owner.extendsClause?.superclass.name.lexeme;
+  final superclassName = switch (owner.extendsClause?.superclass) {
+    final NamedType type => namedTypeReferenceName(type),
+    null => null,
+  };
   if (superclassName == null) return null;
 
   final superclass = declarationNamedFrom(owner, project, superclassName);

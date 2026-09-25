@@ -1,5 +1,7 @@
 class Product {
-  Product.named(int value);
+  Product.named(this.value);
+
+  final int value;
 
   static void staticCall(int value) {}
 }

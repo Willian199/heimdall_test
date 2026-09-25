@@ -293,6 +293,7 @@ List<String> _directImplementedTypes(CompilationUnitMember item) {
       ...?item.implementsClause?.interfaces.map(
         namedTypeReferenceName,
       ),
+    if (item is ExtensionTypeDeclaration) ...?item.implementsClause?.interfaces.map(namedTypeReferenceName),
   ];
 }
 

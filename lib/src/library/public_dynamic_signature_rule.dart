@@ -422,6 +422,13 @@ bool _typeContainsPublicDynamic(
 
 enum _DynamicStatus { dynamicType, known, unknown }
 
+bool _containsNode(AstNode scope, AstNode node) => scope.offset <= node.offset && node.end <= scope.end;
+
+bool _patternDeclaresName(AstNode pattern, String name) {
+  if (pattern is DeclaredVariablePattern && pattern.name.lexeme == name || pattern is DeclaredIdentifier && pattern.name.lexeme == name) return true;
+  return pattern.childEntities.whereType<AstNode>().any((child) => _patternDeclaresName(child, name));
+}
+
 // SDK types whose omitted, unbounded arguments default to dynamic.
 // Bounded types such as Expando<T extends Object> are deliberately excluded.
 const _sdkDynamicGenericTypeNames = {
@@ -619,6 +626,15 @@ final class _RawGenericTypeResolver {
     if (expression is ParenthesizedExpression) return expressionStatus(expression.expression, origin);
     if (expression is AwaitExpression) return expressionStatus(expression.expression, origin);
     if (expression is PostfixExpression && expression.operator.lexeme == '!') return expressionStatus(expression.operand, origin);
+    if (expression is PostfixExpression) return expressionStatus(expression.operand, origin);
+    if (expression is PrefixExpression) return expressionStatus(expression.operand, origin);
+    if (expression is BinaryExpression) {
+      return _combine([expressionStatus(expression.leftOperand, origin), expressionStatus(expression.rightOperand, origin)]);
+    }
+    if (expression is AssignmentExpression) {
+      return _combine([expressionStatus(expression.leftHandSide, origin), expressionStatus(expression.rightHandSide, origin)]);
+    }
+    if (expression is CascadeExpression) return expressionStatus(expression.target, origin);
     if (expression is AsExpression) return typeStatus(expression.type, origin);
     if (expression is MethodInvocation) return _invocationStatus(expression, origin);
     if (expression is FunctionExpressionInvocation) return _callValue(expression.function, origin);
@@ -677,6 +693,9 @@ final class _RawGenericTypeResolver {
     if (expression is ConditionalExpression) {
       return _combine([expressionStatus(expression.thenExpression, origin), expressionStatus(expression.elseExpression, origin)]);
     }
+    if (expression is SwitchExpression) {
+      return _combine(expression.cases.map((branch) => expressionStatus(branch.expression, origin)));
+    }
     if (expression is SimpleIdentifier) {
       final value = _lookupValue(expression.name, expression, origin);
       if (value != null) return _valueStatus(value, origin);
@@ -697,7 +716,44 @@ final class _RawGenericTypeResolver {
               if (variable.name.lexeme == name) return variable;
             }
           }
+          if (statement is PatternVariableDeclarationStatement && _patternDeclaresName(statement.declaration.pattern, name)) {
+            return statement.declaration.expression;
+          }
         }
+      }
+      if (scope is IfStatement &&
+          scope.caseClause != null &&
+          _containsNode(scope.thenStatement, use) &&
+          _patternDeclaresName(scope.caseClause!, name)) {
+        return scope.expression;
+      }
+      if (scope is IfElement && scope.caseClause != null && _containsNode(scope.thenElement, use) && _patternDeclaresName(scope.caseClause!, name)) {
+        return scope.expression;
+      }
+      if (scope is SwitchPatternCase && _patternDeclaresName(scope.guardedPattern.pattern, name)) {
+        for (var parent = scope.parent; parent != null; parent = parent.parent) {
+          if (parent is SwitchStatement) return parent.expression;
+        }
+      }
+      if (scope is SwitchExpressionCase && _patternDeclaresName(scope.guardedPattern.pattern, name)) {
+        for (var parent = scope.parent; parent != null; parent = parent.parent) {
+          if (parent is SwitchExpression) return parent.expression;
+        }
+      }
+      if (scope is ForStatement || scope is ForElement) {
+        final parts = scope is ForStatement ? scope.forLoopParts : (scope as ForElement).forLoopParts;
+        if (parts is ForEachParts && !_containsNode(parts.iterable, use)) {
+          if (parts is ForEachPartsWithDeclaration && parts.loopVariable.name.lexeme == name ||
+              parts is ForEachPartsWithPattern && _patternDeclaresName(parts.pattern, name)) {
+            return parts.iterable;
+          }
+        }
+        if (parts is ForPartsWithDeclarations) {
+          for (final variable in parts.variables.variables) {
+            if (variable.name.lexeme == name) return variable;
+          }
+        }
+        if (parts is ForPartsWithPattern && _patternDeclaresName(parts.variables.pattern, name)) return parts.variables.expression;
       }
       final parameters = switch (scope) {
         FunctionExpression(:final parameters) => parameters,
@@ -736,6 +792,7 @@ final class _RawGenericTypeResolver {
 
   _DynamicStatus _valueStatus(AstNode value, CompilationUnitMember origin) {
     final owner = _owner(value, origin);
+    if (value is Expression) return expressionStatus(value, owner);
     if (value is VariableDeclaration) return variableStatus(value, owner);
     if (value is FormalParameter) {
       ClassMember? member;
@@ -944,6 +1001,19 @@ final class _RawGenericTypeResolver {
   }
 
   _DynamicStatus _memberStatus(Expression target, String name, CompilationUnitMember origin, {bool call = false, MethodInvocation? invocation}) {
+    final targetType = _expressionType(target, origin)?.type;
+    if (targetType is NamedType && !call) {
+      final arguments = targetType.typeArguments?.arguments;
+      if (arguments != null && arguments.isNotEmpty) {
+        if ({'first', 'last', 'single', 'current', 'values', 'keys'}.contains(name)) {
+          return typeStatus(name == 'keys' ? arguments.first : arguments.last, origin);
+        }
+      }
+    }
+    if ((targetType == null || targetType is NamedType && targetType.name.lexeme == 'dynamic') &&
+        expressionStatus(target, origin) == _DynamicStatus.dynamicType) {
+      return _DynamicStatus.dynamicType;
+    }
     if (target is ThisExpression) return _declaredMemberStatus(origin, name, call: call, invocation: invocation);
     final reference = _expressionType(target, origin);
     if (reference == null) {

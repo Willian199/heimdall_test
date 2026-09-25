@@ -1,0 +1,4 @@
+name: dynamic_signature_switch_expression
+
+environment:
+  sdk: ^3.11.0

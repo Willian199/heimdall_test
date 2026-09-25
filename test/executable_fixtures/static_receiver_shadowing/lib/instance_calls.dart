@@ -9,6 +9,8 @@ class InstanceConsumer {
 
   void callLocal() {
     final Tools = Action();
+    // This separate call is the syntax covered by the regression test.
+    // ignore: cascade_invocations
     Tools.run();
   }
 

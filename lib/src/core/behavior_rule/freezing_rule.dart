@@ -28,8 +28,12 @@ final class FreezingHeimdallRule<T> {
     for (final finding in report.findings) {
       final key = _findingKey(finding, project);
       final isKnown = known.contains(key);
-      if (!isKnown) newFindings.add(finding);
-      if (!storeExists || isKnown) nextKnown.add(key);
+      if (!isKnown) {
+        newFindings.add(finding);
+      }
+      if (!storeExists || isKnown) {
+        nextKnown.add(key);
+      }
     }
 
     if (!storeExists || !_setEquals(nextKnown, known)) {
@@ -56,9 +60,13 @@ final class FreezingHeimdallRule<T> {
 
   Set<String> _readKnownFindings() {
     final file = File(storePath);
-    if (!file.existsSync()) return {};
+    if (!file.existsSync()) {
+      return {};
+    }
     final decoded = jsonDecode(file.readAsStringSync());
-    if (decoded is! List) return {};
+    if (decoded is! List) {
+      return {};
+    }
     return decoded.whereType<String>().toSet();
   }
 

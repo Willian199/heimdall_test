@@ -62,7 +62,9 @@ final class _NamedTypeFinder extends RecursiveAstVisitor<void> {
 
   @override
   void visitNamedType(NamedType node) {
-    if (node.name.lexeme == target) found = true;
+    if (node.name.lexeme == target) {
+      found = true;
+    }
     super.visitNamedType(node);
   }
 }

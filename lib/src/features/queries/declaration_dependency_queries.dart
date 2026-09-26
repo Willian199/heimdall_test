@@ -9,12 +9,19 @@ List<Directive> dependenciesFrom(
   HeimdallProject project,
 ) {
   final file = project.filesByPath[item.sourcePath];
-  if (file == null) return const [];
+  if (file == null) {
+    return const [];
+  }
+
   return [
-    ...file.typeReferenceDirectives,
+    ...file.importDirectives,
+    ...file.partDirectives,
     if (file.partOfDirectives.isNotEmpty)
       for (final owner in project.files)
-        if (owner.partDirectives.any((part) => part.targetFiles.contains(file))) ...owner.typeReferenceDirectives,
+        if (owner.partDirectives.any((part) => part.targetFiles.contains(file))) ...[
+          ...owner.importDirectives,
+          ...owner.partDirectives,
+        ],
   ];
 }
 
@@ -24,6 +31,21 @@ List<DeclarationDependency> declarationDependenciesFrom(
   HeimdallProject project,
 ) {
   final references = _ResolvedReferenceVisitor()..collect(item);
+  final libraryFiles = libraryFilesFrom(item, project);
+
+  final localTypeNames = {
+    for (final file in libraryFiles)
+      for (final declaration in [...file.typeDeclarations, ...file.typeAliases]) declaration.name,
+  };
+
+  final localValueNames = {
+    for (final file in libraryFiles)
+      for (final function in file.declarations.whereType<FunctionDeclaration>()) function.name.lexeme,
+    for (final file in libraryFiles)
+      for (final declaration in file.topLevelVariables)
+        for (final variable in declaration.variables.variables) variable.name.lexeme,
+  };
+
   return [
     for (final dependency in dependenciesFrom(item, project))
       for (final resolvedTarget in dependency.resolvedTargets)
@@ -36,12 +58,41 @@ List<DeclarationDependency> declarationDependenciesFrom(
             target,
             dependency,
             references,
+            localTypeNames,
+            localValueNames,
           ))
             DeclarationDependency(
               directive: dependency,
               target: target,
               targetUri: resolvedTarget.uri,
             ),
+  ];
+}
+
+/// Returns the files that share [item]'s library, including its owner and parts.
+List<HeimdallSourceFile> libraryFilesFrom(
+  CompilationUnitMember item,
+  HeimdallProject project,
+) {
+  final file = project.filesByPath[item.sourcePath];
+  if (file == null) {
+    return const [];
+  }
+  final owners = file.partOfDirectives.isEmpty
+      ? [file]
+      : [
+          for (final candidate in project.files)
+            if (candidate.partDirectives.any((part) => part.targetFiles.contains(file))) candidate,
+        ];
+  final seen = <String>{};
+  return [
+    if (seen.add(file.absolutePath)) file,
+    for (final owner in owners) ...[
+      if (seen.add(owner.absolutePath)) owner,
+      for (final part in owner.partDirectives)
+        for (final target in part.targetFiles)
+          if (seen.add(target.absolutePath)) target,
+    ],
   ];
 }
 
@@ -80,7 +131,13 @@ bool _declarationReferencesTarget(
   CompilationUnitMember target,
   Directive directive,
   _ResolvedReferenceVisitor references,
+  Set<String> localTypeNames,
+  Set<String> localValueNames,
 ) {
+  // An unprefixed import cannot supply a name declared in the same library.
+  if (directive is ImportDirective && directive.prefix == null && localTypeNames.contains(target.name)) {
+    return false;
+  }
   final targetElement = target.declaredFragment?.element;
   if (targetElement != null && references.elements.contains(targetElement)) {
     return true;
@@ -89,13 +146,18 @@ bool _declarationReferencesTarget(
   // Conditional directives intentionally model every possible platform branch,
   // while the analyzer binds identifiers only to the active branch.
   final needsSyntaxFallback = directive.targetUris.length > 1 || targetElement == null || references.hasUnresolvedIdentifiers;
-  if (!needsSyntaxFallback) return false;
+  if (!needsSyntaxFallback) {
+    return false;
+  }
 
   final targetName = target.name;
-  if (targetName.startsWith('<')) return false;
+  if (targetName.startsWith('<')) {
+    return false;
+  }
   final visitor = _IdentifierReferenceVisitor(
     targetName,
     importPrefix: directive is ImportDirective ? directive.prefix?.name : null,
+    localValueNames: localValueNames,
   );
   item.accept(visitor);
   return visitor.found;
@@ -131,14 +193,20 @@ final class _ResolvedReferenceVisitor extends RecursiveAstVisitor<void> {
 }
 
 final class _IdentifierReferenceVisitor extends RecursiveAstVisitor<void> {
-  _IdentifierReferenceVisitor(this.targetName, {required this.importPrefix});
+  _IdentifierReferenceVisitor(this.targetName, {required this.importPrefix, required this.localValueNames});
 
   final String targetName;
   final String? importPrefix;
+  final Set<String> localValueNames;
   final List<Set<String>> _scopes = [<String>{}];
+  final List<Set<String>> _valueMemberScopes = [];
   bool found = false;
 
   bool get _isLocalTargetName => _scopes.any((scope) => scope.contains(targetName));
+  bool get _isLocalExpressionTargetName {
+    final name = importPrefix ?? targetName;
+    return localValueNames.contains(name) || _scopes.any((scope) => scope.contains(name)) || _valueMemberScopes.any((scope) => scope.contains(name));
+  }
 
   void _declare(String name) {
     _scopes.last.add(name);
@@ -160,19 +228,38 @@ final class _IdentifierReferenceVisitor extends RecursiveAstVisitor<void> {
     _scopes.removeLast();
   }
 
+  void _withValueMembers(CompilationUnitMember owner, void Function() visit) {
+    _valueMemberScopes.add({
+      for (final field in owner.members.whereType<FieldDeclaration>())
+        for (final variable in field.fields.variables) variable.name.lexeme,
+      for (final method in owner.members.whereType<MethodDeclaration>()) method.name.lexeme,
+      if (owner is ExtensionTypeDeclaration)
+        for (final parameter in owner.primaryConstructor.formalParameters.parameters)
+          if (parameter.name != null) parameter.name!.lexeme,
+    });
+    visit();
+    _valueMemberScopes.removeLast();
+  }
+
   @override
   void visitClassDeclaration(ClassDeclaration node) {
-    _withScope(
-      () => super.visitClassDeclaration(node),
-      names: _classNamePartTypeParameterNames(node.namePart),
+    _withValueMembers(
+      node,
+      () => _withScope(
+        () => super.visitClassDeclaration(node),
+        names: _classNamePartTypeParameterNames(node.namePart),
+      ),
     );
   }
 
   @override
   void visitEnumDeclaration(EnumDeclaration node) {
-    _withScope(
-      () => super.visitEnumDeclaration(node),
-      names: _classNamePartTypeParameterNames(node.namePart),
+    _withValueMembers(
+      node,
+      () => _withScope(
+        () => super.visitEnumDeclaration(node),
+        names: _classNamePartTypeParameterNames(node.namePart),
+      ),
     );
   }
 
@@ -185,6 +272,22 @@ final class _IdentifierReferenceVisitor extends RecursiveAstVisitor<void> {
   }
 
   @override
+  void visitExtensionTypeDeclaration(ExtensionTypeDeclaration node) {
+    _withValueMembers(
+      node,
+      () => _withScope(
+        () => super.visitExtensionTypeDeclaration(node),
+        names: _typeParameterNames(node.primaryConstructor.typeParameters),
+      ),
+    );
+  }
+
+  @override
+  void visitGenericFunctionType(GenericFunctionType node) {
+    _withScope(() => super.visitGenericFunctionType(node), names: _typeParameterNames(node.typeParameters));
+  }
+
+  @override
   void visitGenericTypeAlias(GenericTypeAlias node) {
     _withScope(
       () => super.visitGenericTypeAlias(node),
@@ -194,16 +297,19 @@ final class _IdentifierReferenceVisitor extends RecursiveAstVisitor<void> {
 
   @override
   void visitMixinDeclaration(MixinDeclaration node) {
-    _withScope(
-      () => super.visitMixinDeclaration(node),
-      names: _typeParameterNames(node.typeParameters),
+    _withValueMembers(
+      node,
+      () => _withScope(
+        () => super.visitMixinDeclaration(node),
+        names: _typeParameterNames(node.typeParameters),
+      ),
     );
   }
 
   @override
   void visitAnnotation(Annotation node) {
     final expectedName = importPrefix == null ? targetName : '$importPrefix.$targetName';
-    if (node.name.name == expectedName) {
+    if (node.name.name == expectedName && !_isLocalExpressionTargetName) {
       found = true;
       return;
     }
@@ -222,6 +328,120 @@ final class _IdentifierReferenceVisitor extends RecursiveAstVisitor<void> {
   @override
   void visitBlock(Block node) {
     _withScope(() => super.visitBlock(node));
+  }
+
+  @override
+  void visitCatchClause(CatchClause node) {
+    _withScope(
+      () => super.visitCatchClause(node),
+      names: [
+        if (node.exceptionParameter != null) node.exceptionParameter!.name.lexeme,
+        if (node.stackTraceParameter != null) node.stackTraceParameter!.name.lexeme,
+      ],
+    );
+  }
+
+  @override
+  void visitPatternVariableDeclarationStatement(PatternVariableDeclarationStatement node) {
+    node.declaration.expression.accept(this);
+    node.declaration.pattern.accept(this);
+    _declarePattern(node.declaration.pattern);
+  }
+
+  @override
+  void visitForStatement(ForStatement node) {
+    _withScope(() {
+      final parts = node.forLoopParts;
+      if (parts is ForEachParts) {
+        parts.iterable.accept(this);
+        _declareForEach(parts);
+      } else {
+        parts.accept(this);
+      }
+      node.body.accept(this);
+    });
+  }
+
+  @override
+  void visitForElement(ForElement node) {
+    _withScope(() {
+      final parts = node.forLoopParts;
+      if (parts is ForEachParts) {
+        parts.iterable.accept(this);
+        _declareForEach(parts);
+      } else {
+        parts.accept(this);
+      }
+      node.body.accept(this);
+    });
+  }
+
+  void _declareForEach(ForEachParts parts) {
+    if (parts is ForEachPartsWithDeclaration) {
+      _declare(parts.loopVariable.name.lexeme);
+    }
+    if (parts is ForEachPartsWithPattern) {
+      _declarePattern(parts.pattern);
+    }
+  }
+
+  void _declarePattern(AstNode pattern) {
+    if (pattern is DeclaredVariablePattern) {
+      _declare(pattern.name.lexeme);
+    }
+    if (pattern is DeclaredIdentifier) {
+      _declare(pattern.name.lexeme);
+    }
+    pattern.childEntities.whereType<AstNode>().forEach(_declarePattern);
+  }
+
+  @override
+  void visitIfStatement(IfStatement node) {
+    node.expression.accept(this);
+    final pattern = node.caseClause?.guardedPattern;
+    pattern?.pattern.accept(this);
+    _withScope(() {
+      pattern?.whenClause?.accept(this);
+      node.thenStatement.accept(this);
+    }, names: _declaredPatternNames(pattern?.pattern));
+    node.elseStatement?.accept(this);
+  }
+
+  @override
+  void visitIfElement(IfElement node) {
+    node.expression.accept(this);
+    final pattern = node.caseClause?.guardedPattern;
+    pattern?.pattern.accept(this);
+    _withScope(() {
+      pattern?.whenClause?.accept(this);
+      node.thenElement.accept(this);
+    }, names: _declaredPatternNames(pattern?.pattern));
+    node.elseElement?.accept(this);
+  }
+
+  @override
+  void visitSwitchPatternCase(SwitchPatternCase node) {
+    _withScope(() => super.visitSwitchPatternCase(node), names: _declaredPatternNames(node.guardedPattern.pattern));
+  }
+
+  @override
+  void visitSwitchExpressionCase(SwitchExpressionCase node) {
+    _withScope(() => super.visitSwitchExpressionCase(node), names: _declaredPatternNames(node.guardedPattern.pattern));
+  }
+
+  Iterable<String> _declaredPatternNames(AstNode? pattern) sync* {
+    if (pattern == null) {
+      return;
+    }
+    if (pattern is DeclaredVariablePattern) {
+      yield pattern.name.lexeme;
+    }
+    if (pattern is DeclaredIdentifier) {
+      yield pattern.name.lexeme;
+    }
+    for (final child in pattern.childEntities.whereType<AstNode>()) {
+      yield* _declaredPatternNames(child);
+    }
   }
 
   @override
@@ -257,7 +477,13 @@ final class _IdentifierReferenceVisitor extends RecursiveAstVisitor<void> {
   @override
   void visitMethodInvocation(MethodInvocation node) {
     final target = node.target;
-    if (target != null && _matchesTargetExpression(target) && !_isLocalTargetName) {
+    if (node.methodName.name == targetName &&
+        !_isLocalExpressionTargetName &&
+        (target == null && importPrefix == null || target is SimpleIdentifier && target.name == importPrefix)) {
+      found = true;
+      return;
+    }
+    if (target != null && _matchesTargetExpression(target) && !_isLocalExpressionTargetName) {
       found = true;
       return;
     }
@@ -281,12 +507,17 @@ final class _IdentifierReferenceVisitor extends RecursiveAstVisitor<void> {
   void visitConstructorDeclaration(ConstructorDeclaration node) {
     node.parameters.accept(this);
     final parameterNames = node.parameters.parameters.map((parameter) => parameter.name?.lexeme).whereType<String>();
-    _withScope(() => node.body.accept(this), names: parameterNames);
+    _withScope(() {
+      for (final initializer in node.initializers) {
+        initializer.accept(this);
+      }
+      node.body.accept(this);
+    }, names: parameterNames);
   }
 
   @override
   void visitPrefixedIdentifier(PrefixedIdentifier node) {
-    if (_matchesTargetExpression(node.prefix) && !_isLocalTargetName || _matchesTargetExpression(node) && !_isLocalTargetName) {
+    if (_matchesTargetExpression(node.prefix) && !_isLocalExpressionTargetName || _matchesTargetExpression(node) && !_isLocalExpressionTargetName) {
       found = true;
       return;
     }
@@ -305,7 +536,9 @@ final class _IdentifierReferenceVisitor extends RecursiveAstVisitor<void> {
   @override
   void visitVariableDeclaration(VariableDeclaration node) {
     node.initializer?.accept(this);
-    _declare(node.name.lexeme);
+    if (node.parent?.parent is! FieldDeclaration) {
+      _declare(node.name.lexeme);
+    }
   }
 
   bool _matchesNamedType(NamedType node) {

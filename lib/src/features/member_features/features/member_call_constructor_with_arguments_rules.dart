@@ -239,7 +239,7 @@ HeimdallPredicate<ClassMember> _matches(
   );
   return HeimdallPredicate(
     '${prohibited ? 'not ' : ''}call constructor $typeName.$constructorName with arguments $positionalArguments $namedArguments (exact: $exactArguments)',
-    (item, _) => prohibited ? !scopedExpressions(item).any(match) : scopedExpressions(item).any(match),
+    (item, project) => prohibited ? !hasSyntaxMatch(item, project, match) : hasSyntaxMatch(item, project, match),
   );
 }
 

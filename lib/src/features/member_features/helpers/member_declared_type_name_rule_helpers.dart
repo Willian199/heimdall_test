@@ -84,7 +84,9 @@ bool memberDeclaredTypeIsAssignableTo(
   HeimdallProject project,
 ) {
   final declaredTypeName = _memberDeclaredTypeName(member);
-  if (declaredTypeName == null) return false;
+  if (declaredTypeName == null) {
+    return false;
+  }
 
   return typeNameIsAssignableToFrom(
     member.owner,

@@ -140,11 +140,11 @@ HeimdallCondition<HeimdallSourceFile> _fileShouldHaveAtMostOnePublicClassNamed(S
   });
 }
 
-List<ClassDeclaration> _publicClassesNamed(
+List<CompilationUnitMember> _publicClassesNamed(
   HeimdallSourceFile item,
   String className,
 ) {
-  return item.publicClassDeclarations.where((declaration) => declaration.namePart.typeName.lexeme == className).toList();
+  return item.publicClassDeclarations.where((declaration) => declaration.name == className).toList();
 }
 
 HeimdallPredicate<HeimdallSourceFile> _fileHasMoreThanOnePublicClassNamed(

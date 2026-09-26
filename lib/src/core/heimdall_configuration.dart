@@ -32,10 +32,15 @@ final class HeimdallConfiguration {
   /// Empty lines and lines starting with `#` are ignored.
   static void loadIgnoredViolationPatterns(String path) {
     final file = File(path);
-    if (!file.existsSync()) return;
+    if (!file.existsSync()) {
+      return;
+    }
+
     for (final line in file.readAsLinesSync()) {
       final trimmed = line.trim();
-      if (trimmed.isEmpty || trimmed.startsWith('#')) continue;
+      if (trimmed.isEmpty || trimmed.startsWith('#')) {
+        continue;
+      }
       addIgnoredViolationPattern(trimmed);
     }
   }

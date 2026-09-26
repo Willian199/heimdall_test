@@ -7,8 +7,14 @@ bool isPositionalOrRequiredNamedParameter(
   FormalParameter parameter,
   String name,
 ) {
-  if (parameter.name?.lexeme != name) return false;
-  if (parameter is! DefaultFormalParameter) return true;
-  if (!parameter.isNamed) return true;
+  if (parameter.name?.lexeme != name) {
+    return false;
+  }
+  if (parameter is! DefaultFormalParameter) {
+    return true;
+  }
+  if (!parameter.isNamed) {
+    return true;
+  }
   return parameter.isRequiredNamed;
 }

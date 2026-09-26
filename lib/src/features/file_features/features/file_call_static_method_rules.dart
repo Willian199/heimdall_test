@@ -127,9 +127,9 @@ HeimdallCondition<HeimdallSourceFile> _fileShouldCallStaticMethod(
 ) {
   return HeimdallCondition('call static method $targetType.$methodName', (
     item,
-    _,
+    project,
   ) {
-    final findings = _callsStaticMethod(item, targetType, methodName)
+    final findings = _callsStaticMethod(item, targetType, methodName, project)
         ? const <HeimdallValidationInfo>[]
         : [
             HeimdallValidationInfo(
@@ -151,7 +151,7 @@ HeimdallPredicate<HeimdallSourceFile> _fileCallsStaticMethod(
 ) {
   return HeimdallPredicate(
     'call static method $targetType.$methodName',
-    (item, _) => _callsStaticMethod(item, targetType, methodName),
+    (item, project) => _callsStaticMethod(item, targetType, methodName, project),
   );
 }
 
@@ -159,9 +159,10 @@ bool _callsStaticMethod(
   HeimdallSourceFile item,
   String targetType,
   String methodName,
+  HeimdallProject project,
 ) {
   return item.declarations.any(
-    (declaration) => astNodeHasStaticMethodInvocation(declaration, targetType, methodName),
+    (declaration) => astNodeHasStaticMethodInvocation(declaration, targetType, methodName, project),
   );
 }
 
@@ -171,7 +172,7 @@ HeimdallPredicate<HeimdallSourceFile> _fileDoesNotCallStaticMethod(
 ) {
   return HeimdallPredicate(
     'not call static method $targetType.$methodName',
-    (item, _) => !_callsStaticMethod(item, targetType, methodName),
+    (item, project) => !_callsStaticMethod(item, targetType, methodName, project),
   );
 }
 
@@ -179,8 +180,8 @@ HeimdallCondition<HeimdallSourceFile> _fileShouldNotCallStaticMethod(
   String targetType,
   String methodName,
 ) {
-  return HeimdallCondition('not call static method $targetType.$methodName', (item, _) {
-    final findings = _staticMethodInvocations(item, targetType, methodName)
+  return HeimdallCondition('not call static method $targetType.$methodName', (item, project) {
+    final findings = _staticMethodInvocations(item, targetType, methodName, project)
         .map(
           (invocation) => fileNodeFinding(
             item,
@@ -202,8 +203,9 @@ Iterable<AstNode> _staticMethodInvocations(
   HeimdallSourceFile item,
   String targetType,
   String methodName,
+  HeimdallProject project,
 ) sync* {
   for (final declaration in item.declarations) {
-    yield* astNodeStaticMethodInvocations(declaration, targetType, methodName);
+    yield* astNodeStaticMethodInvocations(declaration, targetType, methodName, project);
   }
 }

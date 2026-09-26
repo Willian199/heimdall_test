@@ -156,9 +156,13 @@ final class HeimdallCondition<T> {
 
   /// Converts an evaluation result into findings for a normal positive rule.
   List<HeimdallValidationInfo> findingsFrom(HeimdallFindings<T> result) {
-    if (result.passed) return const [];
+    if (result.passed) {
+      return const [];
+    }
     // Prefer detailed findings from children; fall back to generic with location.
-    if (result.findings.isNotEmpty) return result.findings;
+    if (result.findings.isNotEmpty) {
+      return result.findings;
+    }
     return [
       HeimdallValidationInfo.forSubject(
         result.subject,
@@ -172,7 +176,9 @@ final class HeimdallCondition<T> {
     HeimdallFindings<T> result,
     String message,
   ) {
-    if (!result.passed) return const [];
+    if (!result.passed) {
+      return const [];
+    }
     if (result.findings.isNotEmpty) {
       return [
         for (final finding in result.findings) finding.withMessage(message),

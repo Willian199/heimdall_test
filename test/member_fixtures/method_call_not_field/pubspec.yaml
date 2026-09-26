@@ -1,0 +1,4 @@
+name: method_call_not_field
+
+environment:
+  sdk: ^3.11.0

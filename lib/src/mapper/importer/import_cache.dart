@@ -39,7 +39,7 @@ final class HeimdallImportCache {
 }
 
 String _importOptionsKey(List<ImportOption> options) {
-  return options.map((option) => option.cacheKey).join('|');
+  return options.map((option) => '${option.cacheKey.length}:${option.cacheKey}').join('|');
 }
 
 @immutable

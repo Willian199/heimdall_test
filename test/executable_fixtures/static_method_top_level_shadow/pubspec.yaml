@@ -1,0 +1,4 @@
+name: static_method_top_level_shadow
+
+environment:
+  sdk: ^3.11.0

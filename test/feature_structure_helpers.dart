@@ -207,7 +207,11 @@ void assertFeatureExtensionVariantCallsStaticMethods({
           _ when RegExp(r'None([A-Z]|$)').hasMatch(name) => 'noneOf',
           _ => null,
         };
-        if (operation == null) continue;
+        
+        if (operation == null) {
+          continue;
+        }
+
         var source = method.body.toSource();
         final visited = <String>{};
         // Follow private helpers rather than requiring redundant combinator
@@ -249,7 +253,9 @@ Iterable<HeimdallValidationInfo> extensionMethodFindings(
   for (final extension in _extensionsOn(file, builderName)) {
     final methodCount = extension.body.members.whereType<MethodDeclaration>().length;
 
-    if (methodCount == target) continue;
+    if (methodCount == target) {
+      continue;
+    }
 
     yield HeimdallValidationInfo(
       filePath: file.absolutePath,
@@ -279,20 +285,28 @@ bool _hasSingularBaseInverse(ExtensionDeclaration extension, HeimdallProject pro
     );
   }
   final methods = extension.body.members.whereType<MethodDeclaration>().toList();
-  if (methods.length < 2) return false;
+  if (methods.length < 2) {
+    return false;
+  }
 
   final baseName = methods.first.name.lexeme;
-  if (baseName.startsWith('not')) return true;
+  if (baseName.startsWith('not')) {
+    return true;
+  }
 
   return methods.skip(1).any((method) {
     final methodName = method.name.lexeme;
-    if (methodName == baseName || (method.parameters?.toSource().contains('Iterable<') ?? false)) return false;
+    if (methodName == baseName || (method.parameters?.toSource().contains('Iterable<') ?? false)) {
+      return false;
+    }
     return !_callsForbiddenNegation(method.body);
   });
 }
 
 bool _callsForbiddenNegation(AstNode node) {
-  if (node is MethodInvocation && node.methodName.name == 'not') return true;
+  if (node is MethodInvocation && node.methodName.name == 'not') {
+    return true;
+  }
   if (node is MethodInvocation &&
       node.methodName.name == 'noneOf' &&
       node.target is SimpleIdentifier &&
@@ -303,7 +317,9 @@ bool _callsForbiddenNegation(AstNode node) {
 }
 
 bool _callsGenericNot(AstNode node) {
-  if (node is MethodInvocation && node.methodName.name == 'not') return true;
+  if (node is MethodInvocation && node.methodName.name == 'not') {
+    return true;
+  }
   return node.childEntities.whereType<AstNode>().any(_callsGenericNot);
 }
 
@@ -328,7 +344,9 @@ bool _hasGeneratedPredicateDescription(
 }
 
 bool _hasGeneratedDescription(Expression? description, String ruleGroupName) {
-  if (description == null) return false;
+  if (description == null) {
+    return false;
+  }
 
   final descriptionSource = description.toSource();
   final generatedDescriptionPattern = RegExp(

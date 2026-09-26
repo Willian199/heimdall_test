@@ -1,6 +1,7 @@
 import 'package:analyzer/dart/ast/visitor.dart';
 import 'package:heimdall_test/heimdall_test.dart';
 import 'package:heimdall_test/src/features/queries/member_queries.dart';
+import 'package:heimdall_test/src/features/queries/value_reference_queries.dart';
 
 /// Predicate-side DSL for executable field access rules.
 extension MemberAccessFieldPredicateRules on MemberPredicateBuilder {
@@ -133,112 +134,45 @@ HeimdallPredicate<ClassMember> _memberDoesNotAccessField(String fieldName) {
 }
 
 bool _memberAccessesField(ClassMember member, String fieldName) {
-  final visitor = _FieldAccessVisitor(
-    fieldName,
-    member.parameters.map((parameter) => parameter.name?.lexeme).whereType<String>().toSet(),
-  );
+  final visitor = _FieldAccessVisitor(fieldName);
   for (final root in member.executableRoots) {
     root.accept(visitor);
-    if (visitor.found) return true;
+    if (visitor.found) {
+      return true;
+    }
   }
   return false;
 }
 
 final class _FieldAccessVisitor extends RecursiveAstVisitor<void> {
-  _FieldAccessVisitor(this.fieldName, Set<String> localNames) : _scopes = [localNames];
+  _FieldAccessVisitor(this.fieldName);
 
   final String fieldName;
-  final List<Set<String>> _scopes;
   bool found = false;
-
-  bool get _isLocalName => _scopes.any((scope) => scope.contains(fieldName));
-
-  void _declare(String name) {
-    _scopes.last.add(name);
-  }
-
-  void _withScope(void Function() visit, {Iterable<String> names = const []}) {
-    _scopes.add(names.toSet());
-    visit();
-    _scopes.removeLast();
-  }
-
-  @override
-  void visitBlock(Block node) {
-    if (found) return;
-    _withScope(() => super.visitBlock(node));
-  }
-
-  @override
-  void visitForEachPartsWithDeclaration(ForEachPartsWithDeclaration node) {
-    if (found) return;
-    _declare(node.loopVariable.name.lexeme);
-    node.iterable.accept(this);
-  }
-
-  @override
-  void visitForPartsWithDeclarations(ForPartsWithDeclarations node) {
-    if (found) return;
-    node.variables.accept(this);
-    node.condition?.accept(this);
-    for (final updater in node.updaters) {
-      updater.accept(this);
-    }
-  }
-
-  @override
-  void visitFunctionDeclaration(FunctionDeclaration node) {
-    if (found) return;
-    _declare(node.name.lexeme);
-    final parameterNames =
-        node.functionExpression.parameters?.parameters.map((parameter) => parameter.name?.lexeme).whereType<String>() ?? const <String>[];
-    _withScope(
-      () => node.functionExpression.body.accept(this),
-      names: parameterNames,
-    );
-  }
-
-  @override
-  void visitFunctionExpression(FunctionExpression node) {
-    if (found) return;
-    final parameterNames = node.parameters?.parameters.map((parameter) => parameter.name?.lexeme).whereType<String>() ?? const <String>[];
-    _withScope(() => node.body.accept(this), names: parameterNames);
-  }
-
-  @override
-  void visitPrefixedIdentifier(PrefixedIdentifier node) {
-    if (found) return;
-    if (node.identifier.name == fieldName) {
-      found = true;
-      return;
-    }
-    super.visitPrefixedIdentifier(node);
-  }
-
-  @override
-  void visitPropertyAccess(PropertyAccess node) {
-    if (found) return;
-    if (node.propertyName.name == fieldName) {
-      found = true;
-      return;
-    }
-    super.visitPropertyAccess(node);
-  }
 
   @override
   void visitSimpleIdentifier(SimpleIdentifier node) {
-    if (found) return;
-    if (node.name == fieldName && !_isLocalName) {
-      found = true;
+    if (found) {
       return;
     }
-    super.visitSimpleIdentifier(node);
-  }
-
-  @override
-  void visitVariableDeclaration(VariableDeclaration node) {
-    if (found) return;
-    node.initializer?.accept(this);
-    _declare(node.name.lexeme);
+    if (node.name != fieldName || !isValueReference(node)) {
+      return;
+    }
+    final parent = node.parent;
+    if (parent is PrefixedIdentifier && identical(parent.identifier, node)) {
+      return;
+    }
+    if (parent is PropertyAccess && identical(parent.propertyName, node)) {
+      if (parent.target is ThisExpression || parent.target is SuperExpression) {
+        found = true;
+      }
+      return;
+    }
+    if (parent is MethodInvocation && identical(parent.methodName, node)) {
+      return;
+    }
+    if (!isShadowedValue(node)) {
+      found = true;
+    }
   }
 }

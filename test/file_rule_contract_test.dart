@@ -196,7 +196,10 @@ String? _fileRuleMethodKey(String methodName) {
     'failOnEmpty',
   };
 
-  if (infrastructureMethods.contains(methodName)) return null;
+  if (infrastructureMethods.contains(methodName)) {
+    return null;
+  }
+  
   return methodName.toLowerCase();
 }
 

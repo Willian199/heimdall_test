@@ -174,7 +174,9 @@ List<String> _targetUrisOf(Directive directive) {
 }
 
 List<String> _conditionalTargetUrisOf(Directive directive) {
-  if (directive is! NamespaceDirective) return const [];
+  if (directive is! NamespaceDirective) {
+    return const [];
+  }
   return [
     for (final configuration in directive.configurations) ?configuration.uri.stringValue,
   ];

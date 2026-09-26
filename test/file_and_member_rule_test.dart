@@ -354,18 +354,21 @@ void main() {
           .should()
           .declareMethod('declareExtensionOn')
           .check(project);
+      final staticProject = const HeimdallFileImporter(useCache: false).importPath(
+        'test/executable_fixtures/static_method_constructor',
+      );
       final staticCall = Heimdall.files()
           .that()
-          .resideInPath('src/features/file_features/features/file_declare_extension_on_rules.dart')
+          .resideInPath('lib/calls.dart')
           .should()
-          .callStaticMethod('HeimdallPredicate', 'allOf')
+          .callStaticMethod('Product', 'staticCall')
           .and()
-          .callAllStaticMethods('HeimdallCondition', ['allOf', 'anyOf', 'noneOf'])
+          .callAllStaticMethods('Product', ['staticCall'])
           .and()
-          .callAnyStaticMethod('HeimdallPredicate', ['missing', 'allOf'])
+          .callAnyStaticMethod('Product', ['missing', 'staticCall'])
           .and()
-          .callNoStaticMethods('HeimdallPredicate', ['missing'])
-          .check(project);
+          .callNoStaticMethods('Product', ['missing'])
+          .check(staticProject);
 
       expect(extension.findings, isEmpty);
       expect(extensionMethod.findings, isEmpty);
@@ -522,7 +525,7 @@ void main() {
           .that()
           .haveName('_nullableAction')
           .should()
-          .receiveParameterAssignableTo('Cubit')
+          .notReceiveParameterAssignableTo('Cubit')
           .check(project);
       final externalParameterMethods = Heimdall.methods()
           .that()
@@ -612,10 +615,11 @@ void main() {
       expect(externalParameterMethods.findings, isEmpty);
       expect(cubitFields.checkedCount, 3);
       expect(cubitFields.findings, isEmpty);
-      expect(assignableCubitFields.checkedCount, 5);
+      expect(assignableCubitFields.checkedCount, 4);
       expect(assignableCubitFields.findings, isEmpty);
       expect(widgetCubitFields.checkedCount, 4);
-      expect(widgetCubitFields.findings, isEmpty);
+      expect(widgetCubitFields.findings, hasLength(1));
+      expect(widgetCubitFields.findings.single.message, contains('optionalCubit'));
       expect(multiCubitFields.findings, isEmpty);
       expect(externalFields.findings, isEmpty);
       expect(objectFields.findings, isEmpty);

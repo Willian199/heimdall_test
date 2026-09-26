@@ -56,6 +56,14 @@ extension HeimdallDeclaration on CompilationUnitMember {
   /// Constructor declarations owned by this declaration.
   List<ConstructorDeclaration> get constructors => _context.constructors;
 
+  /// Number of declared constructors, including an extension type's primary constructor.
+  int get constructorCount => constructors.length + (this is ExtensionTypeDeclaration ? 1 : 0);
+
+  /// Total number of parameters across declared constructors.
+  int get constructorParameterCount =>
+      constructors.fold<int>(0, (count, constructor) => count + constructor.parameters.parameters.length) +
+      (this is ExtensionTypeDeclaration ? (this as ExtensionTypeDeclaration).primaryConstructor.formalParameters.parameters.length : 0);
+
   /// Method declarations owned by this declaration.
   List<MethodDeclaration> get methods => _context.methods;
 
@@ -65,7 +73,7 @@ extension HeimdallDeclaration on CompilationUnitMember {
   /// Individual field variables owned by this declaration.
   List<VariableDeclaration> get fieldVariables => _context.fieldVariables;
 
-  /// `true` when the name starts with `_`.
+  /// `true` when the name starts with `_` or an extension has no name.
   bool get isPrivate => _context.isPrivate;
 
   /// `true` when the name does not start with `_`.
@@ -86,7 +94,7 @@ extension HeimdallDeclaration on CompilationUnitMember {
   /// `true` for declarations that `Heimdall.classes()` treats as types.
   ///
   /// In Dart, this includes classes, mixins, enums, extensions, and extension
-  /// types.
+  /// types, including named mixin applications (class aliases).
   bool get isTypeDeclaration => _context.isTypeDeclaration;
 
   /// `true` for classes with the `abstract` modifier.
@@ -137,17 +145,27 @@ void attachDeclarationContext({
 }
 
 String _nameOf(CompilationUnitMember member) {
-  if (member is ClassDeclaration) return member.namePart.typeName.lexeme;
-  if (member is MixinDeclaration) return member.name.lexeme;
-  if (member is EnumDeclaration) return member.namePart.typeName.lexeme;
+  if (member is ClassDeclaration) {
+    return member.namePart.typeName.lexeme;
+  }
+  if (member is MixinDeclaration) {
+    return member.name.lexeme;
+  }
+  if (member is EnumDeclaration) {
+    return member.namePart.typeName.lexeme;
+  }
   if (member is ExtensionDeclaration) {
     return member.name?.lexeme ?? '<anonymous extension>';
   }
   if (member is ExtensionTypeDeclaration) {
     return member.primaryConstructor.typeName.lexeme;
   }
-  if (member is TypeAlias) return member.name.lexeme;
-  if (member is FunctionDeclaration) return member.name.lexeme;
+  if (member is TypeAlias) {
+    return member.name.lexeme;
+  }
+  if (member is FunctionDeclaration) {
+    return member.name.lexeme;
+  }
   if (member is TopLevelVariableDeclaration) {
     return member.variables.variables.map((variable) => variable.name.lexeme).join(', ');
   }
@@ -155,10 +173,18 @@ String _nameOf(CompilationUnitMember member) {
 }
 
 List<ClassMember> _membersOf(CompilationUnitMember member) {
-  if (member is ClassDeclaration) return _membersFromClassBody(member.body);
-  if (member is MixinDeclaration) return member.body.members;
-  if (member is EnumDeclaration) return member.body.members;
-  if (member is ExtensionDeclaration) return member.body.members;
+  if (member is ClassDeclaration) {
+    return _membersFromClassBody(member.body);
+  }
+  if (member is MixinDeclaration) {
+    return member.body.members;
+  }
+  if (member is EnumDeclaration) {
+    return member.body.members;
+  }
+  if (member is ExtensionDeclaration) {
+    return member.body.members;
+  }
   if (member is ExtensionTypeDeclaration) {
     return _membersFromClassBody(member.body);
   }
@@ -184,15 +210,19 @@ final class _DeclarationContext {
        members = List.unmodifiable(_membersOf(node)),
        isTypeDeclaration =
            node is ClassDeclaration ||
+           node is ClassTypeAlias ||
            node is MixinDeclaration ||
            node is EnumDeclaration ||
            node is ExtensionDeclaration ||
            node is ExtensionTypeDeclaration,
-       isAbstract = node is ClassDeclaration && node.abstractKeyword != null,
-       isSealed = node is ClassDeclaration && node.sealedKeyword != null,
-       isBase = node is ClassDeclaration && node.baseKeyword != null || node is MixinDeclaration && node.baseKeyword != null,
-       isInterface = node is ClassDeclaration && node.interfaceKeyword != null,
-       isFinal = node is ClassDeclaration && node.finalKeyword != null {
+       isAbstract = node is ClassDeclaration && node.abstractKeyword != null || node is ClassTypeAlias && node.abstractKeyword != null,
+       isSealed = node is ClassDeclaration && node.sealedKeyword != null || node is ClassTypeAlias && node.sealedKeyword != null,
+       isBase =
+           node is ClassDeclaration && node.baseKeyword != null ||
+           node is ClassTypeAlias && node.baseKeyword != null ||
+           node is MixinDeclaration && node.baseKeyword != null,
+       isInterface = node is ClassDeclaration && node.interfaceKeyword != null || node is ClassTypeAlias && node.interfaceKeyword != null,
+       isFinal = node is ClassDeclaration && node.finalKeyword != null || node is ClassTypeAlias && node.finalKeyword != null {
     annotations = List.unmodifiable(
       annotationNodes.map((annotation) => annotation.name.name),
     );
@@ -202,7 +232,7 @@ final class _DeclarationContext {
     fieldVariables = List.unmodifiable(
       fields.expand((field) => field.fields.variables),
     );
-    isPrivate = name.startsWith('_');
+    isPrivate = name.startsWith('_') || node is ExtensionDeclaration && node.name == null;
   }
 
   final String sourcePath;

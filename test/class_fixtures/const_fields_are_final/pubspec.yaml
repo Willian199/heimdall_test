@@ -1,0 +1,4 @@
+name: const_fields_are_final
+
+environment:
+  sdk: ^3.11.0

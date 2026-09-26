@@ -62,7 +62,7 @@ HeimdallPredicate<ClassMember> _matches(
   final match = expressionMatcher(expression);
   return HeimdallPredicate(
     '${prohibited ? 'not ' : ''}contain expression $expression',
-    (item, _) => prohibited ? !scopedExpressions(item).any(match) : scopedExpressions(item).any(match),
+    (item, project) => prohibited ? !hasSyntaxMatch(item, project, match) : hasSyntaxMatch(item, project, match),
   );
 }
 

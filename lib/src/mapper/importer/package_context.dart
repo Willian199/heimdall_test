@@ -49,7 +49,9 @@ FeatureSet _readFeatureSet(YamlMap? pubspec) {
   final environment = pubspec == null ? null : _yamlMapValue(pubspec, 'environment');
   final sdkNode = environment is YamlMap ? _yamlMapValue(environment, 'sdk') : null;
   final sdkConstraint = sdkNode is YamlScalar && sdkNode.value is String ? sdkNode.value as String : null;
-  if (sdkConstraint == null) return FeatureSet.latestLanguageVersion();
+  if (sdkConstraint == null) {
+    return FeatureSet.latestLanguageVersion();
+  }
 
   try {
     final constraint = VersionConstraint.parse(sdkConstraint);
@@ -67,7 +69,9 @@ FeatureSet _readFeatureSet(YamlMap? pubspec) {
 
 YamlMap? _readPubspecYaml(String root) {
   final pubspec = File(p.join(root, 'pubspec.yaml'));
-  if (!pubspec.existsSync()) return null;
+  if (!pubspec.existsSync()) {
+    return null;
+  }
   final yaml = loadYamlNode(pubspec.readAsStringSync());
   return yaml is YamlMap ? yaml : null;
 }

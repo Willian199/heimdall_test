@@ -1,0 +1,4 @@
+name: field_shadowed_import
+
+environment:
+  sdk: ^3.11.0

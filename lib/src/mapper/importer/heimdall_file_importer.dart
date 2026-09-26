@@ -4,6 +4,7 @@ import 'package:analyzer/dart/ast/ast.dart';
 import 'package:heimdall_test/src/mapper/importer/import_cache.dart';
 import 'package:heimdall_test/src/mapper/importer/import_options.dart';
 import 'package:heimdall_test/src/mapper/importer/package_context.dart';
+import 'package:heimdall_test/src/mapper/importer/path_matcher.dart';
 import 'package:heimdall_test/src/mapper/importer/source_file_parser.dart';
 import 'package:heimdall_test/src/mapper/model/heimdall_project.dart';
 import 'package:path/path.dart' as p;
@@ -64,7 +65,7 @@ final class HeimdallFileImporter {
     const parser = HeimdallSourceFileParser();
     final sourceFiles =
         _discoverDartFiles(root)
-            .where(_includedByOptions)
+            .where((file) => _includedByOptions(file, context.packageRootPath))
             .map(
               (file) => parser.parse(
                 root,
@@ -97,7 +98,13 @@ final class HeimdallFileImporter {
       ..sort((a, b) => a.path.compareTo(b.path));
   }
 
-  bool _includedByOptions(File file) {
-    return importOptions.every((option) => option.includes(file.path));
+  bool _includedByOptions(File file, String packageRootPath) {
+    final packageRelativePath = normalizePath(p.relative(file.path, from: packageRootPath));
+    return importOptions.every((option) {
+      if (option is PackageRelativeImportOption) {
+        return option.includesRelativePath(packageRelativePath);
+      }
+      return option.includes(file.path);
+    });
   }
 }

@@ -16,6 +16,9 @@ extension HeimdallPublicDynamicSignatureRule on HeimdallCodeSight {
   /// SDK and external package sources are not read. Visible local declarations
   /// and lexical type parameters take precedence over these name lists.
   /// Wildcard parameters are always ignored, including explicit annotations.
+  /// Unannotated top-level functions and non-overriding methods/getters expose
+  /// dynamic returns; Dart does not infer their signatures from their bodies.
+  /// Body inference applies to closures and local functions instead.
   /// Local inference is conservative: unknown types do not produce findings.
   /// It follows same-file calls, visible class members, collection elements,
   /// indexing, await/yield, and direct generic argument inference. It does not
@@ -102,8 +105,12 @@ bool _isIgnoredPublicSignatureDeclaration(
 
 bool _pathMatchesSignatureIgnore(String relativePath, String pattern) {
   final normalizedPattern = normalizePath(pattern);
-  if (pathMatches(relativePath, normalizedPattern)) return true;
-  if (normalizedPattern.endsWith('.dart')) return false;
+  if (pathMatches(relativePath, normalizedPattern)) {
+    return true;
+  }
+  if (normalizedPattern.endsWith('.dart')) {
+    return false;
+  }
   return pathMatches(relativePath, '$normalizedPattern.dart');
 }
 
@@ -120,7 +127,7 @@ List<HeimdallValidationInfo> _publicDynamicSignatureFindings(
       filePath: declaration.sourcePath,
       line: declaration.line,
       type: declaration.returnType,
-      inferredStatus: declaration.returnType == null ? rawGenericTypes.bodyStatus(declaration.functionExpression.body, declaration) : null,
+      inferredStatus: declaration.returnType == null ? rawGenericTypes.functionReturnStatus(declaration, declaration) : null,
       name: declaration.name.lexeme,
       project: project,
       origin: declaration,
@@ -138,7 +145,9 @@ List<HeimdallValidationInfo> _publicDynamicSignatureFindings(
     );
   } else if (declaration is TopLevelVariableDeclaration) {
     for (final variable in declaration.variables.variables) {
-      if (variable.name.lexeme.startsWith('_')) continue;
+      if (variable.name.lexeme.startsWith('_')) {
+        continue;
+      }
       _addVariableTypeFinding(
         findings,
         filePath: declaration.sourcePath,
@@ -162,7 +171,9 @@ List<HeimdallValidationInfo> _publicDynamicSignatureFindings(
 
   for (final field in declaration.fields) {
     for (final variable in field.fields.variables) {
-      if (variable.name.lexeme.startsWith('_')) continue;
+      if (variable.name.lexeme.startsWith('_')) {
+        continue;
+      }
       _addVariableTypeFinding(
         findings,
         filePath: field.sourcePath,
@@ -178,7 +189,9 @@ List<HeimdallValidationInfo> _publicDynamicSignatureFindings(
   }
 
   for (final method in declaration.methods) {
-    if (!method.isPublic) continue;
+    if (!method.isPublic) {
+      continue;
+    }
     final ClassMember methodMember = method;
     _addReturnTypeFinding(
       findings,
@@ -205,7 +218,9 @@ List<HeimdallValidationInfo> _publicDynamicSignatureFindings(
   }
 
   for (final constructor in declaration.constructors) {
-    if (!constructor.isPublic) continue;
+    if (!constructor.isPublic) {
+      continue;
+    }
     final ClassMember constructorMember = constructor;
     _addParameterFindings(
       findings,
@@ -231,7 +246,9 @@ void _addTypeAliasFindings(
 }) {
   switch (declaration) {
     case GenericTypeAlias(:final type):
-      if (rawGenericTypes.isIgnoredType(type)) return;
+      if (rawGenericTypes.isIgnoredType(type)) {
+        return;
+      }
       if (type is GenericFunctionType) {
         _addFunctionTypeAliasFindings(
           findings,
@@ -422,6 +439,23 @@ bool _typeContainsPublicDynamic(
 
 enum _DynamicStatus { dynamicType, known, unknown }
 
+final class _SdkValue {
+  const _SdkValue({required this.name, required this.arguments, this.element});
+
+  final String name;
+  final List<_DynamicStatus> arguments;
+  final _SdkValue? element;
+}
+
+bool _containsNode(AstNode scope, AstNode node) => scope.offset <= node.offset && node.end <= scope.end;
+
+bool _patternDeclaresName(AstNode pattern, String name) {
+  if (pattern is DeclaredVariablePattern && pattern.name.lexeme == name || pattern is DeclaredIdentifier && pattern.name.lexeme == name) {
+    return true;
+  }
+  return pattern.childEntities.whereType<AstNode>().any((child) => _patternDeclaresName(child, name));
+}
+
 // SDK types whose omitted, unbounded arguments default to dynamic.
 // Bounded types such as Expando<T extends Object> are deliberately excluded.
 const _sdkDynamicGenericTypeNames = {
@@ -453,8 +487,12 @@ String _typeKey(String type) {
 _DynamicStatus _combine(Iterable<_DynamicStatus> values) {
   var result = _DynamicStatus.known;
   for (final value in values) {
-    if (value == _DynamicStatus.dynamicType) return value;
-    if (value == _DynamicStatus.unknown) result = value;
+    if (value == _DynamicStatus.dynamicType) {
+      return value;
+    }
+    if (value == _DynamicStatus.unknown) {
+      result = value;
+    }
   }
   return result;
 }
@@ -469,17 +507,25 @@ final class _RawGenericTypeResolver {
   final Expando<String> _typeKeys = Expando<String>();
 
   bool isIgnoredType(TypeAnnotation type) {
-    if (_ignoredTypeKeys.isEmpty) return false;
+    if (_ignoredTypeKeys.isEmpty) {
+      return false;
+    }
     final key = _typeKeys[type] ??= _typeKey(type.toSource());
-    if (_ignoredTypeKeys.contains(key)) return true;
-    if (type is! NamedType) return false;
+    if (_ignoredTypeKeys.contains(key)) {
+      return true;
+    }
+    if (type is! NamedType) {
+      return false;
+    }
     final prefix = type.importPrefix?.name.lexeme;
     final name = prefix == null ? type.name.lexeme : '$prefix.${type.name.lexeme}';
     return _ignoredTypeKeys.contains(name);
   }
 
   bool _isIgnoredLiteralType(String name, TypeArgumentList? arguments) {
-    if (_ignoredTypeKeys.contains(name)) return true;
+    if (_ignoredTypeKeys.contains(name)) {
+      return true;
+    }
     // Empty literals without a contextual type infer dynamic arguments.
     final signature = arguments?.toSource() ?? (name == 'Map' ? '<dynamic, dynamic>' : '<dynamic>');
     return _ignoredTypeKeys.contains(_typeKey('$name$signature'));
@@ -491,10 +537,17 @@ final class _RawGenericTypeResolver {
   final Set<AstNode> _expressionActive = {};
   final Set<AstNode> _typeActive = {};
   Map<TypeParameter, _DynamicStatus> _bindings = {};
+  final Map<FormalParameter, _DynamicStatus> _callbackBindings = {};
+  final Map<FormalParameter, _SdkValue> _callbackValues = {};
+  final Set<Expression> _sdkActive = {};
 
   _DynamicStatus typeStatus(TypeAnnotation? type, CompilationUnitMember origin) {
-    if (type == null) return _DynamicStatus.unknown;
-    if (isIgnoredType(type)) return _DynamicStatus.known;
+    if (type == null) {
+      return _DynamicStatus.unknown;
+    }
+    if (isIgnoredType(type)) {
+      return _DynamicStatus.known;
+    }
     if (type is RecordTypeAnnotation) {
       return _combine([
         for (final field in type.positionalFields) typeStatus(field.type, origin),
@@ -509,15 +562,23 @@ final class _RawGenericTypeResolver {
           if (parameter.bound != null) typeStatus(parameter.bound, origin),
       ]);
     }
-    if (type is! NamedType) return _DynamicStatus.unknown;
-    if (type.importPrefix == null && type.name.lexeme == 'dynamic') return _DynamicStatus.dynamicType;
+    if (type is! NamedType) {
+      return _DynamicStatus.unknown;
+    }
+    if (type.importPrefix == null && type.name.lexeme == 'dynamic') {
+      return _DynamicStatus.dynamicType;
+    }
     final arguments = type.typeArguments?.arguments;
     final argumentStatus = _combine([for (final argument in arguments ?? <TypeAnnotation>[]) typeStatus(argument, origin)]);
-    if (argumentStatus == _DynamicStatus.dynamicType) return argumentStatus;
+    if (argumentStatus == _DynamicStatus.dynamicType) {
+      return argumentStatus;
+    }
     if (type.importPrefix == null) {
       for (var scope = type.parent; scope != null; scope = scope.parent) {
         for (final parameter in _parametersOf(scope)) {
-          if (parameter.name.lexeme == type.name.lexeme) return _bindings[parameter] ?? _DynamicStatus.known;
+          if (parameter.name.lexeme == type.name.lexeme) {
+            return _bindings[parameter] ?? _DynamicStatus.known;
+          }
         }
       }
     }
@@ -532,10 +593,14 @@ final class _RawGenericTypeResolver {
           (prefix != null && _externalGenericTypeNames.contains('$prefix.$name'));
       return arguments == null && recognized ? _DynamicStatus.dynamicType : _DynamicStatus.unknown;
     }
-    if (!_active.add(declaration)) return _DynamicStatus.unknown;
+    if (!_active.add(declaration)) {
+      return _DynamicStatus.unknown;
+    }
     try {
       return _withBindings(declaration, arguments, origin, () {
-        if (declaration is GenericTypeAlias) return typeStatus(declaration.type, declaration);
+        if (declaration is GenericTypeAlias) {
+          return typeStatus(declaration.type, declaration);
+        }
         if (declaration is FunctionTypeAlias) {
           return _combine([
             if (declaration.returnType == null) _DynamicStatus.dynamicType else typeStatus(declaration.returnType, declaration),
@@ -570,8 +635,12 @@ final class _RawGenericTypeResolver {
       // Resolve references between bounds recursively, without guessing cycles.
       final evaluating = <TypeParameter>{};
       _DynamicStatus defaultFor(TypeParameter parameter) {
-        if (_bindings.containsKey(parameter)) return _bindings[parameter]!;
-        if (!evaluating.add(parameter)) return _DynamicStatus.unknown;
+        if (_bindings.containsKey(parameter)) {
+          return _bindings[parameter]!;
+        }
+        if (!evaluating.add(parameter)) {
+          return _DynamicStatus.unknown;
+        }
         final bound = parameter.bound;
         for (final other in parameters) {
           if (other != parameter && !_bindings.containsKey(other) && !evaluating.contains(other)) {
@@ -584,7 +653,9 @@ final class _RawGenericTypeResolver {
       }
 
       for (var i = 0; i < parameters.length; i++) {
-        if (arguments != null) _bindings[parameters[i]] = i < explicit.length ? explicit[i] : _DynamicStatus.unknown;
+        if (arguments != null) {
+          _bindings[parameters[i]] = i < explicit.length ? explicit[i] : _DynamicStatus.unknown;
+        }
       }
       for (final parameter in parameters) {
         _bindings[parameter] = _bindings[parameter] ?? defaultFor(parameter);
@@ -596,10 +667,14 @@ final class _RawGenericTypeResolver {
   }
 
   _DynamicStatus variableStatus(VariableDeclaration variable, CompilationUnitMember origin) {
-    if (!_active.add(variable)) return _DynamicStatus.unknown;
+    if (!_active.add(variable)) {
+      return _DynamicStatus.unknown;
+    }
     try {
       final list = variable.parent;
-      if (list is VariableDeclarationList && list.type != null) return typeStatus(list.type, origin);
+      if (list is VariableDeclarationList && list.type != null) {
+        return typeStatus(list.type, origin);
+      }
       return variable.initializer == null ? _DynamicStatus.dynamicType : expressionStatus(variable.initializer!, origin);
     } finally {
       _active.remove(variable);
@@ -607,7 +682,9 @@ final class _RawGenericTypeResolver {
   }
 
   _DynamicStatus expressionStatus(Expression expression, CompilationUnitMember origin) {
-    if (!_expressionActive.add(expression)) return _DynamicStatus.unknown;
+    if (!_expressionActive.add(expression)) {
+      return _DynamicStatus.unknown;
+    }
     try {
       return _expressionStatus(expression, origin);
     } finally {
@@ -616,21 +693,54 @@ final class _RawGenericTypeResolver {
   }
 
   _DynamicStatus _expressionStatus(Expression expression, CompilationUnitMember origin) {
-    if (expression is ParenthesizedExpression) return expressionStatus(expression.expression, origin);
-    if (expression is AwaitExpression) return expressionStatus(expression.expression, origin);
-    if (expression is PostfixExpression && expression.operator.lexeme == '!') return expressionStatus(expression.operand, origin);
-    if (expression is AsExpression) return typeStatus(expression.type, origin);
-    if (expression is MethodInvocation) return _invocationStatus(expression, origin);
-    if (expression is FunctionExpressionInvocation) return _callValue(expression.function, origin);
+    if (expression is ParenthesizedExpression) {
+      return expressionStatus(expression.expression, origin);
+    }
+    if (expression is AwaitExpression) {
+      return expressionStatus(expression.expression, origin);
+    }
+    if (expression is PostfixExpression && expression.operator.lexeme == '!') {
+      return expressionStatus(expression.operand, origin);
+    }
+    if (expression is PostfixExpression) {
+      return expressionStatus(expression.operand, origin);
+    }
+    if (expression is PrefixExpression) {
+      return expressionStatus(expression.operand, origin);
+    }
+    if (expression is BinaryExpression) {
+      return _combine([expressionStatus(expression.leftOperand, origin), expressionStatus(expression.rightOperand, origin)]);
+    }
+    if (expression is AssignmentExpression) {
+      return _combine([expressionStatus(expression.leftHandSide, origin), expressionStatus(expression.rightHandSide, origin)]);
+    }
+    if (expression is CascadeExpression) {
+      return expressionStatus(expression.target, origin);
+    }
+    if (expression is AsExpression) {
+      return typeStatus(expression.type, origin);
+    }
+    if (expression is MethodInvocation) {
+      return _invocationStatus(expression, origin);
+    }
+    if (expression is FunctionExpressionInvocation) {
+      return _callValue(expression.function, origin);
+    }
     if (expression is PropertyAccess) {
       final target = expression.realTarget;
       return _memberStatus(target, expression.propertyName.name, origin);
     }
-    if (expression is PrefixedIdentifier) return _memberStatus(expression.prefix, expression.identifier.name, origin);
-    if (expression is IndexExpression) return _indexStatus(expression.realTarget, origin);
+    if (expression is PrefixedIdentifier) {
+      return _memberStatus(expression.prefix, expression.identifier.name, origin);
+    }
+    if (expression is IndexExpression) {
+      return _indexStatus(expression.realTarget, origin);
+    }
     if (expression is ListLiteral) {
       final arguments = expression.typeArguments;
-      if ((arguments != null || expression.elements.isEmpty) && _isIgnoredLiteralType('List', arguments)) return _DynamicStatus.known;
+      if ((arguments != null || expression.elements.isEmpty) && _isIgnoredLiteralType('List', arguments)) {
+        return _DynamicStatus.known;
+      }
       return arguments != null
           ? _combine(arguments.arguments.map((type) => typeStatus(type, origin)))
           : expression.elements.isEmpty
@@ -640,7 +750,9 @@ final class _RawGenericTypeResolver {
     if (expression is SetOrMapLiteral) {
       final arguments = expression.typeArguments;
       final name = arguments == null || arguments.arguments.length == 2 ? 'Map' : 'Set';
-      if ((arguments != null || expression.elements.isEmpty) && _isIgnoredLiteralType(name, arguments)) return _DynamicStatus.known;
+      if ((arguments != null || expression.elements.isEmpty) && _isIgnoredLiteralType(name, arguments)) {
+        return _DynamicStatus.known;
+      }
       return arguments != null
           ? _combine(arguments.arguments.map((type) => typeStatus(type, origin)))
           : expression.elements.isEmpty
@@ -658,11 +770,15 @@ final class _RawGenericTypeResolver {
         expression.argumentList,
         origin,
       );
-      if (sdk != null) return sdk;
+      if (sdk != null) {
+        return sdk;
+      }
       if (expression.constructorName.type.typeArguments == null) {
         final type = expression.constructorName.type;
         final declaration = _indexFor(origin, type.importPrefix?.name.lexeme).declarations[type.name.lexeme];
-        if (declaration != null) return _constructorStatus(declaration, expression.constructorName.name?.name, expression.argumentList, origin);
+        if (declaration != null) {
+          return _constructorStatus(declaration, expression.constructorName.name?.name, expression.argumentList, origin);
+        }
       }
       // Constructor inference can supply omitted arguments. Do not treat the
       // constructor name alone as proof of implicit dynamic.
@@ -677,12 +793,19 @@ final class _RawGenericTypeResolver {
     if (expression is ConditionalExpression) {
       return _combine([expressionStatus(expression.thenExpression, origin), expressionStatus(expression.elseExpression, origin)]);
     }
+    if (expression is SwitchExpression) {
+      return _combine(expression.cases.map((branch) => expressionStatus(branch.expression, origin)));
+    }
     if (expression is SimpleIdentifier) {
       final value = _lookupValue(expression.name, expression, origin);
-      if (value != null) return _valueStatus(value, origin);
+      if (value != null) {
+        return _valueStatus(value, origin);
+      }
       return _DynamicStatus.unknown;
     }
-    if (expression is Literal) return _DynamicStatus.known;
+    if (expression is Literal) {
+      return _DynamicStatus.known;
+    }
     return _DynamicStatus.unknown;
   }
 
@@ -690,13 +813,64 @@ final class _RawGenericTypeResolver {
     for (var scope = use.parent; scope != null; scope = scope.parent) {
       if (scope is Block) {
         for (final statement in scope.statements.reversed) {
-          if (statement is FunctionDeclarationStatement && statement.functionDeclaration.name.lexeme == name) return statement.functionDeclaration;
-          if (statement.offset >= use.offset) continue;
+          if (statement is FunctionDeclarationStatement && statement.functionDeclaration.name.lexeme == name) {
+            return statement.functionDeclaration;
+          }
+          if (statement.offset >= use.offset) {
+            continue;
+          }
           if (statement is VariableDeclarationStatement) {
             for (final variable in statement.variables.variables) {
-              if (variable.name.lexeme == name) return variable;
+              if (variable.name.lexeme == name) {
+                return variable;
+              }
             }
           }
+          if (statement is PatternVariableDeclarationStatement && _patternDeclaresName(statement.declaration.pattern, name)) {
+            return statement.declaration.expression;
+          }
+        }
+      }
+      if (scope is IfStatement &&
+          scope.caseClause != null &&
+          _containsNode(scope.thenStatement, use) &&
+          _patternDeclaresName(scope.caseClause!, name)) {
+        return scope.expression;
+      }
+      if (scope is IfElement && scope.caseClause != null && _containsNode(scope.thenElement, use) && _patternDeclaresName(scope.caseClause!, name)) {
+        return scope.expression;
+      }
+      if (scope is SwitchPatternCase && _patternDeclaresName(scope.guardedPattern.pattern, name)) {
+        for (var parent = scope.parent; parent != null; parent = parent.parent) {
+          if (parent is SwitchStatement) {
+            return parent.expression;
+          }
+        }
+      }
+      if (scope is SwitchExpressionCase && _patternDeclaresName(scope.guardedPattern.pattern, name)) {
+        for (var parent = scope.parent; parent != null; parent = parent.parent) {
+          if (parent is SwitchExpression) {
+            return parent.expression;
+          }
+        }
+      }
+      if (scope is ForStatement || scope is ForElement) {
+        final parts = scope is ForStatement ? scope.forLoopParts : (scope as ForElement).forLoopParts;
+        if (parts is ForEachParts && !_containsNode(parts.iterable, use)) {
+          if (parts is ForEachPartsWithDeclaration && parts.loopVariable.name.lexeme == name ||
+              parts is ForEachPartsWithPattern && _patternDeclaresName(parts.pattern, name)) {
+            return parts.iterable;
+          }
+        }
+        if (parts is ForPartsWithDeclarations) {
+          for (final variable in parts.variables.variables) {
+            if (variable.name.lexeme == name) {
+              return variable;
+            }
+          }
+        }
+        if (parts is ForPartsWithPattern && _patternDeclaresName(parts.variables.pattern, name)) {
+          return parts.variables.expression;
         }
       }
       final parameters = switch (scope) {
@@ -706,20 +880,30 @@ final class _RawGenericTypeResolver {
         _ => null,
       };
       for (final parameter in parameters?.parameters ?? <FormalParameter>[]) {
-        if (parameter.name?.lexeme == name) return parameter;
+        if (parameter.name?.lexeme == name) {
+          return parameter;
+        }
       }
     }
     for (final variable in origin.fieldVariables) {
-      if (variable.name.lexeme == name) return variable;
+      if (variable.name.lexeme == name) {
+        return variable;
+      }
     }
     for (final method in origin.methods) {
-      if (method.name.lexeme == name) return method;
+      if (method.name.lexeme == name) {
+        return method;
+      }
     }
     for (final declaration in _project.filesByPath[origin.sourcePath]?.declarations ?? <CompilationUnitMember>[]) {
-      if (declaration is FunctionDeclaration && declaration.name.lexeme == name) return declaration;
+      if (declaration is FunctionDeclaration && declaration.name.lexeme == name) {
+        return declaration;
+      }
       if (declaration is TopLevelVariableDeclaration) {
         for (final variable in declaration.variables.variables) {
-          if (variable.name.lexeme == name) return variable;
+          if (variable.name.lexeme == name) {
+            return variable;
+          }
         }
       }
     }
@@ -729,14 +913,21 @@ final class _RawGenericTypeResolver {
   CompilationUnitMember _owner(AstNode node, CompilationUnitMember fallback) {
     var result = fallback;
     for (AstNode? parent = node; parent != null; parent = parent.parent) {
-      if (parent is CompilationUnitMember) result = parent;
+      if (parent is CompilationUnitMember) {
+        result = parent;
+      }
     }
     return result;
   }
 
   _DynamicStatus _valueStatus(AstNode value, CompilationUnitMember origin) {
     final owner = _owner(value, origin);
-    if (value is VariableDeclaration) return variableStatus(value, owner);
+    if (value is Expression) {
+      return expressionStatus(value, owner);
+    }
+    if (value is VariableDeclaration) {
+      return variableStatus(value, owner);
+    }
     if (value is FormalParameter) {
       ClassMember? member;
       for (var node = value.parent; node != null; node = node.parent) {
@@ -747,30 +938,54 @@ final class _RawGenericTypeResolver {
       }
       return parameterStatus(value, owner, member: member);
     }
-    if (value is MethodDeclaration) return methodReturnStatus(value, owner);
+    if (value is MethodDeclaration) {
+      return methodReturnStatus(value, owner);
+    }
     if (value is FunctionDeclaration) {
       return _combine([
-        _functionReturnStatus(value, owner),
+        functionReturnStatus(value, owner),
         for (final parameter in value.functionExpression.parameters?.parameters ?? <FormalParameter>[]) parameterStatus(parameter, owner),
       ]);
     }
     return _DynamicStatus.unknown;
   }
 
-  _DynamicStatus _functionReturnStatus(FunctionDeclaration function, CompilationUnitMember origin) {
-    return function.returnType == null ? bodyStatus(function.functionExpression.body, origin) : typeStatus(function.returnType, origin);
+  _DynamicStatus functionReturnStatus(FunctionDeclaration function, CompilationUnitMember origin) {
+    if (function.returnType != null) {
+      return typeStatus(function.returnType, origin);
+    }
+    if (function.isSetter) {
+      return _DynamicStatus.known;
+    }
+    return function.parent is CompilationUnit ? _implicitDynamicStatus : bodyStatus(function.functionExpression.body, origin);
   }
 
+  _DynamicStatus get _implicitDynamicStatus => _ignoredTypeKeys.contains('dynamic') ? _DynamicStatus.known : _DynamicStatus.dynamicType;
+
   _DynamicStatus _callValue(Expression expression, CompilationUnitMember origin) {
-    if (expression is ParenthesizedExpression) return _callValue(expression.expression, origin);
-    if (expression is FunctionExpression) return bodyStatus(expression.body, origin);
+    if (expression is ParenthesizedExpression) {
+      return _callValue(expression.expression, origin);
+    }
+    if (expression is FunctionExpression) {
+      return bodyStatus(expression.body, origin);
+    }
     final type = _expressionType(expression, origin);
     if (type != null) {
-      if (type.type is GenericFunctionType) return typeStatus((type.type as GenericFunctionType).returnType, type.origin);
-      if (type.type is NamedType && (type.type as NamedType).name.lexeme == 'dynamic') return _DynamicStatus.dynamicType;
+      if (type.type is GenericFunctionType) {
+        return typeStatus((type.type as GenericFunctionType).returnType, type.origin);
+      }
+      if (type.type is NamedType && (type.type as NamedType).name.lexeme == 'dynamic') {
+        return _DynamicStatus.dynamicType;
+      }
     }
     if (expression is SimpleIdentifier) {
       final value = _lookupValue(expression.name, expression, origin);
+      if (value is FunctionDeclaration) {
+        return functionReturnStatus(value, _owner(value, origin));
+      }
+      if (value is MethodDeclaration) {
+        return methodReturnStatus(value, _owner(value, origin));
+      }
       if (value is VariableDeclaration && value.initializer != null && value.initializer is FunctionExpression) {
         return bodyStatus((value.initializer! as FunctionExpression).body, _owner(value, origin));
       }
@@ -790,7 +1005,7 @@ final class _RawGenericTypeResolver {
           value.functionExpression.parameters,
           invocation.argumentList,
           origin,
-          () => _functionReturnStatus(value, _owner(value, origin)),
+          () => functionReturnStatus(value, _owner(value, origin)),
         );
       }
       if (value is MethodDeclaration) {
@@ -803,16 +1018,24 @@ final class _RawGenericTypeResolver {
           () => methodReturnStatus(value, _owner(value, origin)),
         );
       }
-      if (value != null) return _callValue(invocation.methodName, origin);
+      if (value != null) {
+        return _callValue(invocation.methodName, origin);
+      }
       final declaration = _indexFor(origin, null).declarations[name];
-      if (declaration != null) return _constructorStatus(declaration, null, invocation.argumentList, origin, types: invocation.typeArguments);
+      if (declaration != null) {
+        return _constructorStatus(declaration, null, invocation.argumentList, origin, types: invocation.typeArguments);
+      }
       return _DynamicStatus.unknown;
     }
     if (target is SimpleIdentifier && _lookupValue(target.name, invocation, origin) == null) {
       final sdk = _sdkConstructorStatus(target.name, name, invocation.typeArguments, invocation.argumentList, origin);
-      if (sdk != null) return sdk;
+      if (sdk != null) {
+        return sdk;
+      }
       final declaration = _indexFor(origin, null).declarations[target.name];
-      if (declaration != null) return _declaredMemberStatus(declaration, name, call: true, invocation: invocation);
+      if (declaration != null) {
+        return _declaredMemberStatus(declaration, name, call: true, invocation: invocation);
+      }
     }
     return _memberStatus(target, name, origin, call: true, invocation: invocation);
   }
@@ -856,7 +1079,9 @@ final class _RawGenericTypeResolver {
                 ?.expression;
           } else {
             final positional = arguments.arguments.where((value) => value is! NamedExpression).toList();
-            if (position < positional.length) argument = positional[position];
+            if (position < positional.length) {
+              argument = positional[position];
+            }
             position++;
           }
           if (type is NamedType && type.importPrefix == null && type.name.lexeme == generic.name.lexeme && argument != null) {
@@ -878,8 +1103,12 @@ final class _RawGenericTypeResolver {
     CompilationUnitMember origin, {
     TypeArgumentList? types,
   }) {
-    if (_ignoredTypeKeys.contains(declaration.name)) return _DynamicStatus.known;
-    if (types != null && _isIgnoredLiteralType(declaration.name, types)) return _DynamicStatus.known;
+    if (_ignoredTypeKeys.contains(declaration.name)) {
+      return _DynamicStatus.known;
+    }
+    if (types != null && _isIgnoredLiteralType(declaration.name, types)) {
+      return _DynamicStatus.known;
+    }
     final constructor = declaration.constructors.where((constructor) => constructor.name?.lexeme == name).firstOrNull;
     return _withCallBindings(
       declaration,
@@ -899,43 +1128,75 @@ final class _RawGenericTypeResolver {
     CompilationUnitMember origin,
   ) {
     final index = _indexFor(origin, null);
-    if (index.declarations.containsKey(name) || index.aliases.containsKey(name)) return null;
-    if (!((name == 'Future' || name == 'Stream') && constructor == 'value')) return null;
-    if (_ignoredTypeKeys.contains(name)) return _DynamicStatus.known;
+    if (index.declarations.containsKey(name) || index.aliases.containsKey(name)) {
+      return null;
+    }
+    if (!((name == 'Future' || name == 'Stream') && constructor == 'value')) {
+      return null;
+    }
+    if (_ignoredTypeKeys.contains(name)) {
+      return _DynamicStatus.known;
+    }
     if (arguments != null) {
-      if (_isIgnoredLiteralType(name, arguments)) return _DynamicStatus.known;
+      if (_isIgnoredLiteralType(name, arguments)) {
+        return _DynamicStatus.known;
+      }
       return _combine(arguments.arguments.map((type) => typeStatus(type, origin)));
     }
-    if (values.arguments.isEmpty) return _DynamicStatus.unknown;
+    if (values.arguments.isEmpty) {
+      return _DynamicStatus.unknown;
+    }
     final value = values.arguments.first;
     final key = _expressionKey(value, origin);
-    if (key != null && _ignoredTypeKeys.contains('$name<$key>')) return _DynamicStatus.known;
+    if (key != null && _ignoredTypeKeys.contains('$name<$key>')) {
+      return _DynamicStatus.known;
+    }
     return expressionStatus(value, origin);
   }
 
   ({TypeAnnotation type, CompilationUnitMember origin})? _expressionType(Expression expression, CompilationUnitMember origin) {
-    if (!_typeActive.add(expression)) return null;
+    if (!_typeActive.add(expression)) {
+      return null;
+    }
     try {
-      if (expression is ParenthesizedExpression) return _expressionType(expression.expression, origin);
-      if (expression is AsExpression) return (type: expression.type, origin: origin);
-      if (expression is InstanceCreationExpression) return (type: expression.constructorName.type, origin: origin);
+      if (expression is ParenthesizedExpression) {
+        return _expressionType(expression.expression, origin);
+      }
+      if (expression is AsExpression) {
+        return (type: expression.type, origin: origin);
+      }
+      if (expression is InstanceCreationExpression) {
+        return (type: expression.constructorName.type, origin: origin);
+      }
       AstNode? value;
-      if (expression is SimpleIdentifier) value = _lookupValue(expression.name, expression, origin);
+      if (expression is SimpleIdentifier) {
+        value = _lookupValue(expression.name, expression, origin);
+      }
       if (expression is MethodInvocation && expression.target == null) {
         value = _lookupValue(expression.methodName.name, expression, origin);
-        if (value is FunctionDeclaration && value.returnType != null) return (type: value.returnType!, origin: _owner(value, origin));
-        if (value is MethodDeclaration && value.returnType != null) return (type: value.returnType!, origin: _owner(value, origin));
+        if (value is FunctionDeclaration && value.returnType != null) {
+          return (type: value.returnType!, origin: _owner(value, origin));
+        }
+        if (value is MethodDeclaration && value.returnType != null) {
+          return (type: value.returnType!, origin: _owner(value, origin));
+        }
         return null;
       }
       if (value is VariableDeclaration) {
         final list = value.parent;
         final owner = _owner(value, origin);
-        if (list is VariableDeclarationList && list.type != null) return (type: list.type!, origin: owner);
-        if (value.initializer != null) return _expressionType(value.initializer!, owner);
+        if (list is VariableDeclarationList && list.type != null) {
+          return (type: list.type!, origin: owner);
+        }
+        if (value.initializer != null) {
+          return _expressionType(value.initializer!, owner);
+        }
       }
       if (value is FormalParameter) {
         final type = _formalParameterType(_normalParameter(value));
-        if (type != null) return (type: type, origin: _owner(value, origin));
+        if (type != null) {
+          return (type: type, origin: _owner(value, origin));
+        }
       }
       return null;
     } finally {
@@ -943,8 +1204,222 @@ final class _RawGenericTypeResolver {
     }
   }
 
+  // Keep the container shape separate from the status of its type arguments:
+  // Iterable<dynamic>.length is int, while its first element is dynamic.
+  _SdkValue? _sdkValue(Expression expression, CompilationUnitMember origin) {
+    if (!_sdkActive.add(expression)) {
+      return null;
+    }
+    try {
+      return _inferSdkValue(expression, origin);
+    } finally {
+      _sdkActive.remove(expression);
+    }
+  }
+
+  _SdkValue? _inferSdkValue(Expression expression, CompilationUnitMember origin) {
+    if (expression is ParenthesizedExpression) {
+      return _sdkValue(expression.expression, origin);
+    }
+    if (expression is SimpleIdentifier) {
+      final value = _lookupValue(expression.name, expression, origin);
+      if (value is FormalParameter && _formalParameterType(_normalParameter(value)) == null) {
+        final contextual = _callbackValues[_normalParameter(value)];
+        if (contextual != null) {
+          return contextual;
+        }
+      }
+      if (value is VariableDeclaration &&
+          value.parent is VariableDeclarationList &&
+          (value.parent! as VariableDeclarationList).type == null &&
+          value.initializer != null) {
+        return _sdkValue(value.initializer!, _owner(value, origin));
+      }
+    }
+    if (expression is ListLiteral) {
+      final type = expression.typeArguments?.arguments.firstOrNull;
+      return _SdkValue(
+        name: 'List',
+        arguments: [if (type == null) expressionStatus(expression, origin) else typeStatus(type, origin)],
+        element: type == null ? null : _sdkTypeValue(type, origin),
+      );
+    }
+    final (target, name, invocation) = switch (expression) {
+      PropertyAccess() => (expression.realTarget, expression.propertyName.name, null),
+      PrefixedIdentifier() => (expression.prefix, expression.identifier.name, null),
+      MethodInvocation() => (expression.realTarget, expression.methodName.name, expression),
+      _ => (null, '', null),
+    };
+    if (target != null) {
+      final receiver = _sdkValue(target, origin);
+      if (receiver != null) {
+        return _sdkMember(receiver, name, origin, invocation: invocation);
+      }
+    }
+    final reference = _expressionType(expression, origin);
+    if (reference == null || reference.type is! NamedType) {
+      return null;
+    }
+    return _sdkTypeValue(reference.type, reference.origin);
+  }
+
+  _SdkValue? _sdkTypeValue(TypeAnnotation annotation, CompilationUnitMember origin) {
+    if (annotation is! NamedType) {
+      return null;
+    }
+    final type = annotation;
+    final prefix = type.importPrefix?.name.lexeme;
+    if (_indexFor(origin, prefix).declarations.containsKey(type.name.lexeme) || prefix != null && !_isSdkImportPrefix(origin, prefix)) {
+      return null;
+    }
+    final nameOfType = type.name.lexeme;
+    if (!{'List', 'Set', 'Iterable', 'Iterator', 'Map', 'MapEntry'}.contains(nameOfType)) {
+      return null;
+    }
+    final arguments = type.typeArguments?.arguments;
+    return _SdkValue(
+      name: nameOfType,
+      arguments: arguments == null
+          ? List.filled(nameOfType == 'Map' || nameOfType == 'MapEntry' ? 2 : 1, _DynamicStatus.dynamicType)
+          : [for (final argument in arguments) typeStatus(argument, origin)],
+      element: arguments == null || arguments.length != 1 ? null : _sdkTypeValue(arguments.first, origin),
+    );
+  }
+
+  _SdkValue? _sdkMember(_SdkValue target, String name, CompilationUnitMember origin, {MethodInvocation? invocation}) {
+    final call = invocation != null;
+    final args = target.arguments;
+    _SdkValue scalar(_DynamicStatus status) => _SdkValue(name: status == _DynamicStatus.dynamicType ? 'dynamic' : 'value', arguments: [status]);
+    _SdkValue collection(String type, _DynamicStatus element) => _SdkValue(name: type, arguments: [element], element: target.element);
+    final elementValue = target.element ?? scalar(args.firstOrNull ?? _DynamicStatus.unknown);
+    const known = _SdkValue(name: 'value', arguments: []);
+    final iterable = {'List', 'Set', 'Iterable'}.contains(target.name);
+    if (!call) {
+      if ((iterable || target.name == 'Map') && {'length', 'isEmpty', 'isNotEmpty'}.contains(name)) {
+        return known;
+      }
+      if (iterable && {'first', 'last', 'single'}.contains(name)) {
+        return elementValue;
+      }
+      if (iterable && name == 'iterator') {
+        return collection('Iterator', args.first);
+      }
+      if (target.name == 'List' && name == 'reversed') {
+        return collection('Iterable', args.first);
+      }
+      if (target.name == 'Iterator' && name == 'current') {
+        return elementValue;
+      }
+      if (target.name == 'Map') {
+        if (name == 'keys') {
+          return collection('Iterable', args.first);
+        }
+        if (name == 'values') {
+          return collection('Iterable', args.last);
+        }
+        if (name == 'entries') {
+          return _SdkValue(
+            name: 'Iterable',
+            arguments: [_combine(args)],
+            element: _SdkValue(name: 'MapEntry', arguments: args),
+          );
+        }
+      }
+      if (target.name == 'MapEntry' && {'key', 'value'}.contains(name)) {
+        return scalar(name == 'key' ? args.first : args.last);
+      }
+      return null;
+    }
+    if (target.name == 'Iterator' && name == 'moveNext') {
+      return known;
+    }
+    if (iterable) {
+      if ({'any', 'every', 'contains', 'join', 'forEach'}.contains(name)) {
+        return known;
+      }
+      if ({'firstWhere', 'lastWhere', 'singleWhere', 'elementAt'}.contains(name)) {
+        return elementValue;
+      }
+      if (target.name == 'List' && {'removeAt', 'removeLast'}.contains(name)) {
+        return elementValue;
+      }
+      if (name == 'toList' || target.name == 'List' && name == 'sublist') {
+        return collection('List', args.first);
+      }
+      if (name == 'toSet') {
+        return collection('Set', args.first);
+      }
+      if ({'where', 'skip', 'take', 'skipWhile', 'takeWhile', 'followedBy'}.contains(name) || target.name == 'List' && name == 'getRange') {
+        return collection('Iterable', args.first);
+      }
+      if ({'map', 'expand'}.contains(name)) {
+        final explicit = invocation.typeArguments?.arguments;
+        if (explicit != null) {
+          return _SdkValue(name: 'Iterable', arguments: [typeStatus(explicit.first, origin)], element: _sdkTypeValue(explicit.first, origin));
+        }
+        final callback = invocation.argumentList.arguments.firstOrNull;
+        if (callback is FunctionExpression) {
+          final formal = callback.parameters?.parameters.firstOrNull;
+          final parameter = formal == null || _formalParameterType(_normalParameter(formal)) != null ? null : _normalParameter(formal);
+          final previous = parameter == null ? null : _callbackBindings[parameter];
+          final previousValue = parameter == null ? null : _callbackValues[parameter];
+          if (parameter != null) {
+            _callbackBindings[parameter] = args.first;
+            _callbackValues[parameter] = elementValue;
+          }
+          try {
+            final body = callback.body;
+            final result = body is ExpressionFunctionBody ? _sdkValue(body.expression, origin) : null;
+            return _SdkValue(name: 'Iterable', arguments: [bodyStatus(body, origin)], element: name == 'expand' ? result?.element : result);
+          } finally {
+            if (parameter != null) {
+              if (previousValue == null) {
+                _callbackValues.remove(parameter);
+              } else {
+                _callbackValues[parameter] = previousValue;
+              }
+              if (previous == null) {
+                _callbackBindings.remove(parameter);
+              } else {
+                _callbackBindings[parameter] = previous;
+              }
+            }
+          }
+        }
+        return _SdkValue(name: 'Iterable', arguments: [if (callback == null) _DynamicStatus.unknown else _callValue(callback, origin)]);
+      }
+    }
+    if (target.name == 'Map' && {'remove', 'putIfAbsent', 'update'}.contains(name)) {
+      return scalar(args.last);
+    }
+    if ((iterable || target.name == 'Map') && name == 'cast') {
+      return _SdkValue(
+        name: target.name,
+        element: invocation.typeArguments?.arguments.length == 1 ? _sdkTypeValue(invocation.typeArguments!.arguments.first, origin) : null,
+        arguments: invocation.typeArguments == null
+            ? List.filled(args.length, _DynamicStatus.dynamicType)
+            : [for (final type in invocation.typeArguments!.arguments) typeStatus(type, origin)],
+      );
+    }
+    return null;
+  }
+
   _DynamicStatus _memberStatus(Expression target, String name, CompilationUnitMember origin, {bool call = false, MethodInvocation? invocation}) {
-    if (target is ThisExpression) return _declaredMemberStatus(origin, name, call: call, invocation: invocation);
+    final sdkTarget = _sdkValue(target, origin);
+    if (sdkTarget != null) {
+      final result = _sdkMember(sdkTarget, name, origin, invocation: invocation);
+      if (result != null) {
+        return result.name == 'dynamic' ? _DynamicStatus.dynamicType : _combine(result.arguments);
+      }
+    }
+    final targetType = _expressionType(target, origin)?.type;
+    if ((targetType == null || targetType is NamedType && targetType.name.lexeme == 'dynamic') &&
+        expressionStatus(target, origin) == _DynamicStatus.dynamicType) {
+      return _DynamicStatus.dynamicType;
+    }
+    if (target is ThisExpression) {
+      return _declaredMemberStatus(origin, name, call: call, invocation: invocation);
+    }
     final reference = _expressionType(target, origin);
     if (reference == null) {
       if (target is MethodInvocation && target.target == null && _lookupValue(target.methodName.name, target, origin) == null) {
@@ -973,23 +1448,33 @@ final class _RawGenericTypeResolver {
       }
       return _DynamicStatus.unknown;
     }
-    if (reference.type is! NamedType) return _DynamicStatus.unknown;
+    if (reference.type is! NamedType) {
+      return _DynamicStatus.unknown;
+    }
     final type = reference.type as NamedType;
-    if (type.name.lexeme == 'dynamic' && type.importPrefix == null) return _DynamicStatus.dynamicType;
+    if (type.name.lexeme == 'dynamic' && type.importPrefix == null) {
+      return _DynamicStatus.dynamicType;
+    }
     return _inParent(type, reference.origin, (declaration) => _declaredMemberStatus(declaration, name, call: call, invocation: invocation));
   }
 
   _DynamicStatus _declaredMemberStatus(CompilationUnitMember declaration, String name, {bool call = false, MethodInvocation? invocation}) {
-    if (!_active.add(declaration)) return _DynamicStatus.unknown;
+    if (!_active.add(declaration)) {
+      return _DynamicStatus.unknown;
+    }
     try {
       if (!call) {
         for (final field in declaration.fieldVariables) {
-          if (field.name.lexeme == name) return variableStatus(field, declaration);
+          if (field.name.lexeme == name) {
+            return variableStatus(field, declaration);
+          }
         }
       }
       for (final method in declaration.methods) {
         if (method.name.lexeme == name && (call || method.isGetter)) {
-          if (invocation == null) return methodReturnStatus(method, declaration);
+          if (invocation == null) {
+            return methodReturnStatus(method, declaration);
+          }
           return _withCallBindings(
             method,
             invocation.typeArguments,
@@ -1002,7 +1487,9 @@ final class _RawGenericTypeResolver {
       }
       for (final parent in _parentTypes(declaration)) {
         final status = _inParent(parent, declaration, (parent) => _declaredMemberStatus(parent, name, call: call, invocation: invocation));
-        if (status != _DynamicStatus.unknown) return status;
+        if (status != _DynamicStatus.unknown) {
+          return status;
+        }
       }
       return _DynamicStatus.unknown;
     } finally {
@@ -1011,15 +1498,21 @@ final class _RawGenericTypeResolver {
   }
 
   _DynamicStatus _indexStatus(Expression? target, CompilationUnitMember origin) {
-    if (target == null) return _DynamicStatus.unknown;
+    if (target == null) {
+      return _DynamicStatus.unknown;
+    }
     final reference = _expressionType(target, origin);
     if (reference != null && reference.type is NamedType) {
       final type = reference.type as NamedType;
-      if (type.name.lexeme == 'dynamic') return _DynamicStatus.dynamicType;
+      if (type.name.lexeme == 'dynamic') {
+        return _DynamicStatus.dynamicType;
+      }
       final local = _indexFor(reference.origin, type.importPrefix?.name.lexeme).declarations[type.name.lexeme];
       if (local == null && {'List', 'Map'}.contains(type.name.lexeme)) {
         final arguments = type.typeArguments?.arguments;
-        if (arguments == null) return _DynamicStatus.dynamicType;
+        if (arguments == null) {
+          return _DynamicStatus.dynamicType;
+        }
         return typeStatus(arguments.last, reference.origin);
       }
       return _inParent(type, reference.origin, (declaration) => _declaredMemberStatus(declaration, '[]', call: true));
@@ -1028,9 +1521,13 @@ final class _RawGenericTypeResolver {
       final arguments = target.typeArguments?.arguments;
       return arguments != null ? typeStatus(arguments.first, origin) : _combine(target.elements.map((element) => _elementStatus(element, origin)));
     }
-    if (target is SetOrMapLiteral && target.typeArguments?.arguments.length == 2) return typeStatus(target.typeArguments!.arguments.last, origin);
+    if (target is SetOrMapLiteral && target.typeArguments?.arguments.length == 2) {
+      return typeStatus(target.typeArguments!.arguments.last, origin);
+    }
     if (target is SetOrMapLiteral && target.typeArguments == null) {
-      if (target.elements.isEmpty) return _DynamicStatus.dynamicType;
+      if (target.elements.isEmpty) {
+        return _DynamicStatus.dynamicType;
+      }
       return _combine(
         target.elements.map((element) => element is MapLiteralEntry ? expressionStatus(element.value, origin) : _DynamicStatus.unknown),
       );
@@ -1049,7 +1546,9 @@ final class _RawGenericTypeResolver {
   }
 
   _DynamicStatus _collectionStatus(String name, Iterable<CollectionElement> elements, CompilationUnitMember origin) {
-    if (_ignoredTypeKeys.contains(name)) return _DynamicStatus.known;
+    if (_ignoredTypeKeys.contains(name)) {
+      return _DynamicStatus.known;
+    }
     final keys = <String>{};
     final values = <String>{};
     for (final element in elements) {
@@ -1064,39 +1563,63 @@ final class _RawGenericTypeResolver {
     }
     if (values.length == 1 && !values.contains('?') && (name != 'Map' || keys.length == 1 && !keys.contains('?'))) {
       final key = name == 'Map' ? 'Map<${keys.single},${values.single}>' : '$name<${values.single}>';
-      if (_ignoredTypeKeys.contains(key)) return _DynamicStatus.known;
+      if (_ignoredTypeKeys.contains(key)) {
+        return _DynamicStatus.known;
+      }
     }
     return _combine(elements.map((element) => _elementStatus(element, origin)));
   }
 
   String? _expressionKey(Expression expression, CompilationUnitMember origin) {
-    if (expression is StringLiteral) return 'String';
-    if (expression is IntegerLiteral) return 'int';
-    if (expression is DoubleLiteral) return 'double';
-    if (expression is BooleanLiteral) return 'bool';
+    if (expression is StringLiteral) {
+      return 'String';
+    }
+    if (expression is IntegerLiteral) {
+      return 'int';
+    }
+    if (expression is DoubleLiteral) {
+      return 'double';
+    }
+    if (expression is BooleanLiteral) {
+      return 'bool';
+    }
     final reference = _expressionType(expression, origin);
     return reference?.type.toSource().replaceAll(_typeWhitespace, '');
   }
 
   _DynamicStatus _elementStatus(CollectionElement element, CompilationUnitMember origin) {
-    if (element is Expression) return expressionStatus(element, origin);
-    if (element is MapLiteralEntry) return _combine([expressionStatus(element.key, origin), expressionStatus(element.value, origin)]);
-    if (element is SpreadElement) return expressionStatus(element.expression, origin);
+    if (element is Expression) {
+      return expressionStatus(element, origin);
+    }
+    if (element is MapLiteralEntry) {
+      return _combine([expressionStatus(element.key, origin), expressionStatus(element.value, origin)]);
+    }
+    if (element is SpreadElement) {
+      return expressionStatus(element.expression, origin);
+    }
     if (element is IfElement) {
       return _combine([
         _elementStatus(element.thenElement, origin),
         if (element.elseElement != null) _elementStatus(element.elseElement!, origin),
       ]);
     }
-    if (element is ForElement) return _elementStatus(element.body, origin);
+    if (element is ForElement) {
+      return _elementStatus(element.body, origin);
+    }
     return _DynamicStatus.unknown;
   }
 
   _DynamicStatus bodyStatus(FunctionBody body, CompilationUnitMember origin) {
-    if (body is ExpressionFunctionBody) return expressionStatus(body.expression, origin);
-    if (body is! BlockFunctionBody) return _DynamicStatus.unknown;
+    if (body is ExpressionFunctionBody) {
+      return expressionStatus(body.expression, origin);
+    }
+    if (body is! BlockFunctionBody) {
+      return _DynamicStatus.unknown;
+    }
     Iterable<_DynamicStatus> returns(AstNode node) sync* {
-      if (node is FunctionExpression || node is FunctionDeclaration) return;
+      if (node is FunctionExpression || node is FunctionDeclaration) {
+        return;
+      }
       if (node is ReturnStatement) {
         yield node.expression == null ? _DynamicStatus.known : expressionStatus(node.expression!, origin);
         return;
@@ -1114,17 +1637,30 @@ final class _RawGenericTypeResolver {
   }
 
   _DynamicStatus methodReturnStatus(MethodDeclaration method, CompilationUnitMember origin) {
-    if (method.returnType != null) return typeStatus(method.returnType, origin);
+    if (method.returnType != null) {
+      return typeStatus(method.returnType, origin);
+    }
     if (!method.isStatic) {
       final inherited = _inheritedSignature(method, null, origin);
-      if (inherited != null) return inherited;
+      if (inherited != null) {
+        return inherited;
+      }
     }
-    return bodyStatus(method.body, origin);
+    if (method.isSetter || method.isOperator && method.name.lexeme == '[]=') {
+      return _DynamicStatus.known;
+    }
+    return _implicitDynamicStatus;
   }
 
   _DynamicStatus parameterStatus(FormalParameter parameter, CompilationUnitMember origin, {ClassMember? member}) {
     final normal = _normalParameter(parameter);
-    if (_isWildcardParameter(normal)) return _DynamicStatus.known;
+    final contextualStatus = _callbackBindings[normal];
+    if (contextualStatus != null) {
+      return contextualStatus;
+    }
+    if (_isWildcardParameter(normal)) {
+      return _DynamicStatus.known;
+    }
     if (normal is FunctionTypedFormalParameter) {
       return _combine([
         if (normal.returnType == null) _DynamicStatus.dynamicType else typeStatus(normal.returnType, origin),
@@ -1132,30 +1668,42 @@ final class _RawGenericTypeResolver {
       ]);
     }
     final type = _formalParameterType(normal);
-    if (type != null) return typeStatus(type, origin);
-    if (!_active.add(normal)) return _DynamicStatus.unknown;
+    if (type != null) {
+      return typeStatus(type, origin);
+    }
+    if (!_active.add(normal)) {
+      return _DynamicStatus.unknown;
+    }
     try {
       if (normal is FieldFormalParameter) {
         for (final variable in origin.fieldVariables) {
-          if (variable.name.lexeme == normal.name.lexeme) return variableStatus(variable, origin);
+          if (variable.name.lexeme == normal.name.lexeme) {
+            return variableStatus(variable, origin);
+          }
         }
         return _DynamicStatus.unknown;
       }
       if (normal is SuperFormalParameter && member is ConstructorDeclaration && origin is ClassDeclaration) {
         final superclass = origin.extendsClause?.superclass;
-        if (superclass == null) return _DynamicStatus.unknown;
+        if (superclass == null) {
+          return _DynamicStatus.unknown;
+        }
         return _inParent(superclass, origin, (parent) {
           final invocation = member.initializers.whereType<SuperConstructorInvocation>().firstOrNull;
           final constructorName = invocation?.constructorName?.name ?? '';
           final constructor = parent.constructors.where((candidate) => (candidate.name?.lexeme ?? '') == constructorName).firstOrNull;
-          if (constructor == null) return _DynamicStatus.unknown;
+          if (constructor == null) {
+            return _DynamicStatus.unknown;
+          }
           final target = _matchingParameter(parameter, member.parameters.parameters, constructor.parameters.parameters);
           return target == null ? _DynamicStatus.unknown : parameterStatus(target, parent, member: constructor);
         });
       }
       if (member is MethodDeclaration && !member.isStatic) {
         final inherited = _inheritedSignature(member, parameter, origin);
-        if (inherited != null) return inherited;
+        if (inherited != null) {
+          return inherited;
+        }
       }
       return _DynamicStatus.dynamicType;
     } finally {
@@ -1167,7 +1715,9 @@ final class _RawGenericTypeResolver {
     final index = _indexFor(origin, type.importPrefix?.name.lexeme);
     final alias = index.aliases[type.name.lexeme];
     if (alias is GenericTypeAlias && alias.type is NamedType) {
-      if (!_active.add(alias)) return _DynamicStatus.unknown;
+      if (!_active.add(alias)) {
+        return _DynamicStatus.unknown;
+      }
       try {
         return _withBindings(alias, type.typeArguments?.arguments, origin, () => _inParent(alias.type as NamedType, alias, inspect));
       } finally {
@@ -1175,18 +1725,24 @@ final class _RawGenericTypeResolver {
       }
     }
     final parent = index.declarations[type.name.lexeme];
-    if (parent == null) return _DynamicStatus.unknown;
+    if (parent == null) {
+      return _DynamicStatus.unknown;
+    }
     return _withBindings(parent, type.typeArguments?.arguments, origin, () => inspect(parent));
   }
 
   _DynamicStatus? _inheritedSignature(MethodDeclaration method, FormalParameter? parameter, CompilationUnitMember origin) {
     final parents = _parentTypes(origin).toList();
-    if (parents.isEmpty) return null;
+    if (parents.isEmpty) {
+      return null;
+    }
     final matches = <_DynamicStatus>[];
     for (final type in parents) {
       var found = true;
       final status = _inParent(type, origin, (parent) {
-        if (!_active.add(parent)) return _DynamicStatus.unknown;
+        if (!_active.add(parent)) {
+          return _DynamicStatus.unknown;
+        }
         try {
           final inherited = parent.methods.where((candidate) => candidate.name.lexeme == method.name.lexeme && !candidate.isStatic).firstOrNull;
           if (inherited == null) {
@@ -1194,14 +1750,18 @@ final class _RawGenericTypeResolver {
             found = ancestor != null;
             return ancestor ?? _DynamicStatus.unknown;
           }
-          if (parameter == null) return methodReturnStatus(inherited, parent);
+          if (parameter == null) {
+            return methodReturnStatus(inherited, parent);
+          }
           final target = _matchingParameter(parameter, method.parameters?.parameters ?? [], inherited.parameters?.parameters ?? []);
           return target == null ? _DynamicStatus.unknown : parameterStatus(target, parent, member: inherited);
         } finally {
           _active.remove(parent);
         }
       });
-      if (found) matches.add(status);
+      if (found) {
+        matches.add(status);
+      }
     }
     return matches.isEmpty ? null : _combine(matches);
   }
@@ -1259,11 +1819,15 @@ Iterable<NamedType> _parentTypes(CompilationUnitMember declaration) sync* {
       yield* node.childEntities.whereType<NamedType>();
     }
   }
-  if (declaration is ClassTypeAlias) yield declaration.superclass;
+  if (declaration is ClassTypeAlias) {
+    yield declaration.superclass;
+  }
 }
 
 FormalParameter? _matchingParameter(FormalParameter parameter, List<FormalParameter> source, List<FormalParameter> target) {
-  if (parameter.isNamed) return target.where((candidate) => candidate.isNamed && candidate.name?.lexeme == parameter.name?.lexeme).firstOrNull;
+  if (parameter.isNamed) {
+    return target.where((candidate) => candidate.isNamed && candidate.name?.lexeme == parameter.name?.lexeme).firstOrNull;
+  }
   final sourcePositional = source.where((candidate) => !candidate.isNamed).toList();
   final position = sourcePositional.indexOf(parameter);
   final targetPositional = target.where((candidate) => !candidate.isNamed).toList();
@@ -1277,7 +1841,9 @@ void _addSignatureHeaderFindings(
   _RawGenericTypeResolver resolver,
 ) {
   void inspect(TypeAnnotation type, String position) {
-    if (resolver.typeStatus(type, declaration) != _DynamicStatus.dynamicType) return;
+    if (resolver.typeStatus(type, declaration) != _DynamicStatus.dynamicType) {
+      return;
+    }
     findings.add(
       HeimdallValidationInfo(
         filePath: declaration.sourcePath,
@@ -1288,10 +1854,18 @@ void _addSignatureHeaderFindings(
   }
 
   void visit(AstNode node) {
-    if (node is FunctionBody || node is Expression || node is Annotation) return;
-    if (node is TypeAnnotation && resolver.isIgnoredType(node)) return;
-    if (node is ClassMember && !node.isPublic) return;
-    if (node is FormalParameter && _isWildcardParameter(_normalParameter(node))) return;
+    if (node is FunctionBody || node is Expression || node is Annotation) {
+      return;
+    }
+    if (node is TypeAnnotation && resolver.isIgnoredType(node)) {
+      return;
+    }
+    if (node is ClassMember && !node.isPublic) {
+      return;
+    }
+    if (node is FormalParameter && _isWildcardParameter(_normalParameter(node))) {
+      return;
+    }
     if (node is FunctionDeclaration && node.functionExpression.typeParameters != null) {
       visit(node.functionExpression.typeParameters!);
     }
@@ -1310,7 +1884,9 @@ void _addSignatureHeaderFindings(
         );
       }
     }
-    if (node is TypeParameter && node.bound != null) inspect(node.bound!, 'type parameter bound');
+    if (node is TypeParameter && node.bound != null) {
+      inspect(node.bound!, 'type parameter bound');
+    }
     if (node is ExtendsClause || node is ImplementsClause || node is WithClause || node is MixinOnClause || node is ExtensionOnClause) {
       for (final type in node.childEntities.whereType<TypeAnnotation>()) {
         inspect(type, 'supertype or extension target');
@@ -1320,5 +1896,7 @@ void _addSignatureHeaderFindings(
   }
 
   visit(declaration);
-  if (declaration is ClassTypeAlias) inspect(declaration.superclass, 'supertype');
+  if (declaration is ClassTypeAlias) {
+    inspect(declaration.superclass, 'supertype');
+  }
 }

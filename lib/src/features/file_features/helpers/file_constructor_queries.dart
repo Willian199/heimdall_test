@@ -5,6 +5,9 @@ Iterable<ConstructorDeclaration> fileConstructors(
   HeimdallSourceFile item, {
   String? className,
 }) {
-  if (className == null) return item.constructors;
+  if (className == null) {
+    return item.constructors;
+  }
+
   return item.constructors.where((constructor) => constructor.ownerName == className);
 }

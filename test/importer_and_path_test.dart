@@ -373,6 +373,8 @@ void main() {
 
 Iterable<String> _classMemberNames(ClassDeclaration declaration) {
   final body = declaration.body;
-  if (body is! BlockClassBody) return const [];
+  if (body is! BlockClassBody) {
+    return const [];
+  }
   return body.members.map((member) => member.name);
 }

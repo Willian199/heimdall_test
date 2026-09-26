@@ -22,6 +22,11 @@ void main() {
           'resultFromMethod',
           'inferredFromMethod',
           'resultFromReceiver',
+          'safeAwaited',
+          'safeGenerated',
+          'safeCycle',
+          'safeShadowing',
+          'safeFromMethod',
         ])
           '$name has public dynamic return type',
         for (final name in [
@@ -63,7 +68,9 @@ void main() {
     for (final name in ['resultFromMethod', 'inferredFromMethod', 'resultFromReceiver']) {
       expect(messages, contains('$name has public dynamic return type'));
     }
-    expect(messages.any((message) => message.startsWith('safeFromMethod ')), isFalse);
+    // A getter without an annotation or inherited signature returns dynamic,
+    // even when its body invokes a generic method with a concrete type.
+    expect(messages, contains('safeFromMethod has public dynamic return type'));
   });
 
   test('inferred collections and SDK factories respect ignored types', () {
@@ -209,12 +216,13 @@ void main() {
       'safeInitializer',
       'safeScalar',
       'inferredConstructor',
-      'safeParameter',
-      'safeLocal',
       'safeReturn',
       'cycle',
     ]) {
       expect(messages.any((message) => message.startsWith('$safe ')), isFalse, reason: safe);
+    }
+    for (final name in ['safeParameter', 'safeLocal']) {
+      expect(messages, contains('$name has public dynamic return type'));
     }
     expect(messages.any((message) => message.contains('parameter renamed')), isFalse);
   });

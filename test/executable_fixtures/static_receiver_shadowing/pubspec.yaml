@@ -1,0 +1,4 @@
+name: static_receiver_shadowing
+
+environment:
+  sdk: ^3.11.0

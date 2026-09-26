@@ -126,7 +126,9 @@ String? _memberRuleMethodKey(String methodName) {
     'failOnEmpty',
   };
 
-  if (infrastructureMethods.contains(methodName)) return null;
+  if (infrastructureMethods.contains(methodName)) {
+    return null;
+  }
   return _stripFluentPrefix(methodName).toLowerCase();
 }
 

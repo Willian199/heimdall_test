@@ -8,7 +8,7 @@ extension ClassConstructorCountPredicateRules on ClassPredicateBuilder {
     return satisfy(
       HeimdallPredicate(
         'have constructor count $count',
-        (item, _) => item.constructors.length == count,
+        (item, _) => item.constructorCount == count,
       ),
     );
   }
@@ -18,7 +18,7 @@ extension ClassConstructorCountPredicateRules on ClassPredicateBuilder {
     return satisfy(
       HeimdallPredicate(
         'not have constructor count $count',
-        (item, _) => item.constructors.length != count,
+        (item, _) => item.constructorCount != count,
       ),
     );
   }
@@ -28,7 +28,7 @@ extension ClassConstructorCountPredicateRules on ClassPredicateBuilder {
     return satisfy(
       HeimdallPredicate(
         'have more than $count constructors',
-        (item, _) => item.constructors.length > count,
+        (item, _) => item.constructorCount > count,
       ),
     );
   }
@@ -38,7 +38,7 @@ extension ClassConstructorCountPredicateRules on ClassPredicateBuilder {
     return satisfy(
       HeimdallPredicate(
         'have at most $count constructors',
-        (item, _) => item.constructors.length <= count,
+        (item, _) => item.constructorCount <= count,
       ),
     );
   }
@@ -51,7 +51,7 @@ extension ClassConstructorCountShouldRules on ClassShouldBuilder {
     return satisfy(
       declarationCondition(
         'have constructor count $count',
-        (item) => item.constructors.length == count,
+        (item) => item.constructorCount == count,
       ),
     );
   }
@@ -61,7 +61,7 @@ extension ClassConstructorCountShouldRules on ClassShouldBuilder {
     return satisfy(
       declarationCondition(
         'not have constructor count $count',
-        (item) => item.constructors.length != count,
+        (item) => item.constructorCount != count,
       ),
     );
   }
@@ -71,7 +71,7 @@ extension ClassConstructorCountShouldRules on ClassShouldBuilder {
     return satisfy(
       declarationCondition(
         'have more than $count constructors',
-        (item) => item.constructors.length > count,
+        (item) => item.constructorCount > count,
       ),
     );
   }
@@ -81,7 +81,7 @@ extension ClassConstructorCountShouldRules on ClassShouldBuilder {
     return satisfy(
       declarationCondition(
         'have at most $count constructors',
-        (item) => item.constructors.length <= count,
+        (item) => item.constructorCount <= count,
       ),
     );
   }

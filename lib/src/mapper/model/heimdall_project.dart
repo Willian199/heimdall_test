@@ -122,43 +122,44 @@ final class HeimdallProject {
     for (final file in files) ...file.privateTypeDeclarations,
   ]);
 
-  /// Class declarations found in imported files.
-  late final List<ClassDeclaration> classDeclarations = List.unmodifiable([
+  /// Classes and named mixin applications ([ClassTypeAlias]) in imported files.
+  /// Use `whereType<ClassDeclaration>()` when only class bodies are needed.
+  late final List<CompilationUnitMember> classDeclarations = List.unmodifiable([
     for (final file in files) ...file.classDeclarations,
   ]);
 
   /// Public class declarations found in imported files.
-  late final List<ClassDeclaration> publicClassDeclarations = List.unmodifiable([
+  late final List<CompilationUnitMember> publicClassDeclarations = List.unmodifiable([
     for (final file in files) ...file.publicClassDeclarations,
   ]);
 
   /// Private class declarations found in imported files.
-  late final List<ClassDeclaration> privateClassDeclarations = List.unmodifiable([
+  late final List<CompilationUnitMember> privateClassDeclarations = List.unmodifiable([
     for (final file in files) ...file.privateClassDeclarations,
   ]);
 
   /// Abstract class declarations found in imported files.
-  late final List<ClassDeclaration> abstractClasses = List.unmodifiable([
+  late final List<CompilationUnitMember> abstractClasses = List.unmodifiable([
     for (final file in files) ...file.abstractClasses,
   ]);
 
   /// Sealed class declarations found in imported files.
-  late final List<ClassDeclaration> sealedClasses = List.unmodifiable([
+  late final List<CompilationUnitMember> sealedClasses = List.unmodifiable([
     for (final file in files) ...file.sealedClasses,
   ]);
 
   /// Base class declarations found in imported files.
-  late final List<ClassDeclaration> baseClasses = List.unmodifiable([
+  late final List<CompilationUnitMember> baseClasses = List.unmodifiable([
     for (final file in files) ...file.baseClasses,
   ]);
 
   /// Interface class declarations found in imported files.
-  late final List<ClassDeclaration> interfaceClasses = List.unmodifiable([
+  late final List<CompilationUnitMember> interfaceClasses = List.unmodifiable([
     for (final file in files) ...file.interfaceClasses,
   ]);
 
   /// Final class declarations found in imported files.
-  late final List<ClassDeclaration> finalClasses = List.unmodifiable([
+  late final List<CompilationUnitMember> finalClasses = List.unmodifiable([
     for (final file in files) ...file.finalClasses,
   ]);
 
@@ -452,7 +453,12 @@ final class HeimdallProject {
 
   /// Package imports that target another package.
   late final List<ImportDirective> externalPackageImports = List.unmodifiable(
-    packageImports.where((directive) => !_isInternalPackageDirective(directive)),
+    packageImports.where(
+      (directive) => directive.targetUris
+          .map(Uri.tryParse)
+          .whereType<Uri>()
+          .any((uri) => uri.scheme == 'package' && uri.pathSegments.firstOrNull != packageName),
+    ),
   );
 
   /// Package imports that target a `src/` path.
@@ -560,13 +566,17 @@ final class HeimdallProject {
     HeimdallSourceFile file,
   ) {
     final cached = _exportedTypeDeclarationsCache[file];
-    if (cached != null) return cached;
+    if (cached != null) {
+      return cached;
+    }
 
     List<CompilationUnitMember> collect(
       HeimdallSourceFile current,
       Set<String> visiting,
     ) {
-      if (visiting.contains(current.absolutePath)) return const [];
+      if (visiting.contains(current.absolutePath)) {
+        return const [];
+      }
       final nextVisiting = {...visiting, current.absolutePath};
       final declarations = [
         ...current.publicTypeDeclarations,
@@ -602,7 +612,9 @@ final class HeimdallProject {
     final exported = _dedupeDeclarations([
       for (final targetFile in directive.targetFiles) ...visibleTypeDeclarationsThroughTarget(directive, targetFile),
     ]);
-    if (exported.isEmpty) return const [];
+    if (exported.isEmpty) {
+      return const [];
+    }
     return exported;
   }
 
@@ -611,6 +623,14 @@ final class HeimdallProject {
     Directive directive,
     HeimdallSourceFile targetFile,
   ) {
+    // A part belongs to the same library, so its private declarations are
+    // visible to the owning file even though they are not exported to imports.
+    if (directive is PartDirective) {
+      return List.unmodifiable([
+        ...targetFile.typeDeclarations,
+        ...targetFile.typeAliases,
+      ]);
+    }
     final exported = exportedTypeDeclarationsOf(targetFile);
     if (directive is ImportDirective) {
       return _applyCombinators(exported, directive.combinators);
@@ -624,8 +644,9 @@ final class HeimdallProject {
   void _resolveDependencies() {
     for (final file in files) {
       for (final dependency in file.dependencies) {
-        final primaryPath = dependency is PartOfDirective ? null : _resolveUri(file.absolutePath, dependency.targetUri);
-        final resolvedTargets = dependency is PartOfDirective
+        final namedPartOf = dependency is PartOfDirective && dependency.uri == null;
+        final primaryPath = namedPartOf ? null : _resolveUri(file.absolutePath, dependency.targetUri);
+        final resolvedTargets = namedPartOf
             ? const <({String uri, String path, HeimdallSourceFile? file})>[]
             : [
                 for (final uri in dependency.targetUris)
@@ -652,12 +673,16 @@ final class HeimdallProject {
   }
 
   String? _resolveUri(String originPath, String? uri) {
-    if (uri == null || uri.isEmpty) return null;
+    if (uri == null || uri.isEmpty) {
+      return null;
+    }
     final parsed = Uri.tryParse(uri);
     if (parsed == null || parsed.hasQuery || parsed.hasFragment) {
       return null;
     }
-    if (parsed.scheme == 'dart') return null;
+    if (parsed.scheme == 'dart') {
+      return null;
+    }
     if (parsed.scheme == 'package') {
       if (parsed.pathSegments.isEmpty || parsed.pathSegments.first != packageName) {
         return null;
@@ -665,13 +690,17 @@ final class HeimdallProject {
       final rest = parsed.pathSegments.skip(1).join('/');
       return p.normalize(p.join(packageRootPath, 'lib', rest));
     }
-    if (parsed.hasScheme || parsed.path.isEmpty) return null;
+    if (parsed.hasScheme || parsed.path.isEmpty) {
+      return null;
+    }
     return p.normalize(p.join(p.dirname(originPath), parsed.path));
   }
 
   bool _isInternalPackageDirective(UriBasedDirective directive) {
     final name = packageName;
-    if (name == null) return false;
+    if (name == null) {
+      return false;
+    }
     return directive.targetUris
         .map(Uri.tryParse)
         .whereType<Uri>()

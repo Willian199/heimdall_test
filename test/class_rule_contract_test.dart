@@ -879,12 +879,16 @@ String? _classRuleMethodKey(String methodName) {
     'failOnEmpty',
   };
 
-  if (infrastructureMethods.contains(methodName)) return null;
+  if (infrastructureMethods.contains(methodName)) {
+    return null;
+  }
   return _stripFluentPrefix(methodName).toLowerCase();
 }
 
 String _stripFluentPrefix(String methodName) {
-  if (methodName.startsWith('notBe')) return 'Not${methodName.substring(5)}';
+  if (methodName.startsWith('notBe')) {
+    return 'Not${methodName.substring(5)}';
+  }
   for (final prefix in ['are', 'be']) {
     if (methodName.startsWith(prefix) && methodName.length > prefix.length && _isUppercase(methodName.codeUnitAt(prefix.length))) {
       return methodName.substring(prefix.length);

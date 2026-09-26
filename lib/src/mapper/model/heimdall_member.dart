@@ -1,6 +1,5 @@
 import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/source/line_info.dart';
-
 import 'package:heimdall_test/src/features/queries/type_annotation_queries.dart';
 import 'package:heimdall_test/src/mapper/model/executable_ast_index.dart';
 import 'package:heimdall_test/src/mapper/model/heimdall_declaration.dart';
@@ -57,6 +56,7 @@ extension HeimdallMember on ClassMember {
   List<FormalParameter> get parameters => _context.parameters;
 
   /// AST roots that can contain executable references inside this member.
+  /// Includes parameter defaults, constructor initializers, and bodies.
   List<AstNode> get executableRoots => _context.executableRoots;
 
   /// Cached expressions in this member's executable roots.
@@ -199,8 +199,12 @@ String _nameOf(ClassMember member) {
   if (member is FieldDeclaration) {
     return member.fields.variables.map((variable) => variable.name.lexeme).join(', ');
   }
-  if (member is MethodDeclaration) return member.name.lexeme;
-  if (member is ConstructorDeclaration) return member.name?.lexeme ?? 'new';
+  if (member is MethodDeclaration) {
+    return member.name.lexeme;
+  }
+  if (member is ConstructorDeclaration) {
+    return member.name?.lexeme ?? 'new';
+  }
   return member.toSource().split(RegExp(r'\s+')).take(3).join(' ');
 }
 
@@ -223,8 +227,12 @@ List<FormalParameter> _parametersOf(ClassMember member) {
 }
 
 List<AstNode> _executableRootsOf(ClassMember member) {
-  if (member is MethodDeclaration) return [member.body];
-  if (member is ConstructorDeclaration) return [...member.initializers, member.body];
+  if (member is MethodDeclaration) {
+    return [?member.parameters, member.body];
+  }
+  if (member is ConstructorDeclaration) {
+    return [member.parameters, ...member.initializers, member.body];
+  }
   if (member is FieldDeclaration) {
     return member.fields.variables.map((variable) => variable.initializer).whereType<Expression>().toList();
   }

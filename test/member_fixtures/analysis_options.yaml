@@ -1,0 +1,15 @@
+include: ../../analysis_options.yaml
+
+# These sources are parsed as fixtures. Their declarations and statement forms
+# are part of the cases under test, so style-only lints do not apply here.
+analyzer:
+  errors:
+    always_use_package_imports: ignore
+    avoid_catches_without_on_clauses: ignore
+    avoid_print: ignore
+    avoid_single_cascade_in_expression_statements: ignore
+    prefer_const_declarations: ignore
+    prefer_final_locals: ignore
+    prefer_foreach: ignore
+    public_member_api_docs: ignore
+    sort_constructors_first: ignore

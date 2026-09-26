@@ -20,7 +20,8 @@ final class HeimdallDependencySight {
                   (dependency) => HeimdallValidationInfo(
                     filePath: item.absolutePath,
                     line: dependency.line,
-                    message: '${item.relativePath} imports ${dependency.targetUri}',
+                    message:
+                        '${item.relativePath} imports ${dependency.targetUris.where((uri) => uri == '..' || uri.startsWith('../') || uri.contains('/../')).join(', ')}',
                   ),
                 )
                 .toList();
@@ -135,9 +136,13 @@ final class HeimdallDependencySight {
             ];
             for (final section in sections) {
               final dependencies = _yamlMapValue(yaml, section);
-              if (dependencies is! YamlMap) continue;
+              if (dependencies is! YamlMap) {
+                continue;
+              }
               final dependencyNode = _yamlMapValue(dependencies, packageName);
-              if (dependencyNode == null) continue;
+              if (dependencyNode == null) {
+                continue;
+              }
               final span = dependencyNode.span;
               findings.add(
                 HeimdallValidationInfo(
@@ -168,7 +173,9 @@ bool _allProjects(HeimdallProject _, HeimdallProject project) => true;
 String? _captureFeature(String path, Iterable<String> featurePatterns) {
   for (final pattern in featurePatterns) {
     final feature = captureSlicePathSegment(path, pattern);
-    if (feature != null) return feature;
+    if (feature != null) {
+      return feature;
+    }
   }
   return null;
 }

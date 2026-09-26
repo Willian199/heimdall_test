@@ -9,16 +9,42 @@ bool typeNameIsAssignableToFrom(
   String expectedTypeName,
   HeimdallProject project,
 ) {
+  final actualName = actualTypeName.trim();
+  final expectedName = expectedTypeName.trim();
+  final expectedAcceptsNull = expectedName.endsWith('?') || expectedName == 'dynamic' || expectedName == 'Null';
+  if ((actualName.endsWith('?') || actualName == 'Null') && !expectedAcceptsNull) {
+    return false;
+  }
+  if (actualName == 'Null' && expectedAcceptsNull) {
+    return true;
+  }
   final actual = _normalizeAssignableTypeName(actualTypeName);
   final expected = _normalizeAssignableTypeName(expectedTypeName);
 
-  if (typeNamesMatchFrom(source, actual, expected, project)) return true;
-  if (_isTopLikeType(expected)) return actual != 'void';
-  if (actual == 'Never') return expected != 'void';
-  if (actual == 'dynamic') return expected != 'void';
-  if (actual == 'void') return false;
+  if (typeNamesMatchFrom(source, actual, expected, project)) {
+    return true;
+  }
+  if (_isTopLikeType(expected)) {
+    return actual != 'void';
+  }
+  if (actual == 'Never') {
+    return expected != 'void';
+  }
+  if (actual == 'dynamic') {
+    return expected != 'void';
+  }
+  if (actual == 'void') {
+    return false;
+  }
 
-  final declaration = declarationNamedFrom(source, project, actual);
+  // Type arguments belong to the instance, not to the declaration's name.
+  // Preserve them above for exact comparisons, but omit them for hierarchy lookup.
+  final genericStart = actual.indexOf('<');
+  final declarationName = genericStart < 0 ? actual : actual.substring(0, genericStart);
+  if (typeNamesMatchFrom(source, declarationName, expected, project)) {
+    return true;
+  }
+  final declaration = declarationNamedFrom(source, project, declarationName);
   return declaration != null && isAssignableTo(declaration, expected, project);
 }
 

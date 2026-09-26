@@ -22,6 +22,7 @@ final class MemberRelationshipIndex {
 
   /// Direct fields present in every returned list literal. Unknown return
   /// expressions contribute no fields, so they cannot make this check pass.
+  /// Collection-if branches are intersected; loops guarantee no elements.
   late final Set<String> returnedListFieldsInEveryReturn;
 }
 
@@ -54,26 +55,50 @@ final class _ReturnVisitor extends RecursiveAstVisitor<void> {
     } else if (expression is ConditionalExpression) {
       _collect(expression.thenExpression);
       _collect(expression.elseExpression);
+    } else if (expression is SwitchExpression) {
+      for (final branch in expression.cases) {
+        _collect(branch.expression);
+      }
     } else if (expression is ListLiteral) {
       final directFields = <String>{};
       for (final element in expression.elements) {
-        if (element is Expression) {
-          final name = _fieldName(element);
-          if (name != null) directFields.add(name);
-        }
+        directFields.addAll(_fieldsInElement(element));
       }
       fields.addAll(directFields);
-      returnFields.add(directFields);
+      returnFields.add({for (final element in expression.elements) ..._guaranteedFieldsInElement(element)});
     } else {
       returnFields.add({});
     }
   }
 }
 
+Set<String> _fieldsInElement(CollectionElement element) {
+  if (element is Expression) {
+    final name = _fieldName(element);
+    return name == null ? {} : {name};
+  }
+  if (element is IfElement) {
+    return {
+      ..._fieldsInElement(element.thenElement),
+      if (element.elseElement != null) ..._fieldsInElement(element.elseElement!),
+    };
+  }
+  if (element is ForElement) {
+    return _fieldsInElement(element.body);
+  }
+  return {};
+}
+
 String? _fieldName(Expression expression) {
-  if (expression is ParenthesizedExpression) return _fieldName(expression.expression);
-  if (expression is PropertyAccess && expression.target is ThisExpression) return expression.propertyName.name;
-  if (expression is! SimpleIdentifier || _isShadowed(expression)) return null;
+  if (expression is ParenthesizedExpression) {
+    return _fieldName(expression.expression);
+  }
+  if (expression is PropertyAccess && expression.target is ThisExpression) {
+    return expression.propertyName.name;
+  }
+  if (expression is! SimpleIdentifier || _isShadowed(expression)) {
+    return null;
+  }
   return expression.name;
 }
 
@@ -86,23 +111,76 @@ bool _isShadowed(SimpleIdentifier identifier) {
     if (parent is Block) {
       for (final statement in parent.statements) {
         // A declaration later in the block cannot shadow this reference.
-        if (statement.offset >= identifier.offset) break;
-        if (statement is VariableDeclarationStatement && statement.variables.variables.any((variable) => variable.name.lexeme == name)) return true;
-        if (statement is FunctionDeclarationStatement && statement.functionDeclaration.name.lexeme == name) return true;
-        if (statement is PatternVariableDeclarationStatement && _declaresName(statement.declaration.pattern, name)) return true;
+        if (statement.offset >= identifier.offset) {
+          break;
+        }
+        if (statement is VariableDeclarationStatement && statement.variables.variables.any((variable) => variable.name.lexeme == name)) {
+          return true;
+        }
+        if (statement is FunctionDeclarationStatement && statement.functionDeclaration.name.lexeme == name) {
+          return true;
+        }
+        if (statement is PatternVariableDeclarationStatement && _declaresName(statement.declaration.pattern, name)) {
+          return true;
+        }
       }
     }
-    if (parent is ForStatement && _declaresName(parent.forLoopParts, name)) return true;
-    if (parent is CatchClause && (parent.exceptionParameter?.name.lexeme == name || parent.stackTraceParameter?.name.lexeme == name)) return true;
-    if (parent is IfStatement && parent.caseClause != null && _declaresName(parent.caseClause!, name)) return true;
-    if (parent is SwitchPatternCase && _declaresName(parent.guardedPattern.pattern, name)) return true;
+    if (parent is ForStatement &&
+        !(parent.forLoopParts is ForEachParts && _contains((parent.forLoopParts as ForEachParts).iterable, identifier)) &&
+        _declaresName(parent.forLoopParts, name)) {
+      return true;
+    }
+    if (parent is ForElement && _declaresName(parent.forLoopParts, name)) {
+      return true;
+    }
+    if (parent is CatchClause && (parent.exceptionParameter?.name.lexeme == name || parent.stackTraceParameter?.name.lexeme == name)) {
+      return true;
+    }
+    if (parent is IfStatement &&
+        parent.caseClause != null &&
+        parent.thenStatement.offset <= identifier.offset &&
+        identifier.end <= parent.thenStatement.end &&
+        _declaresName(parent.caseClause!, name)) {
+      return true;
+    }
+    if (parent is SwitchPatternCase && _declaresName(parent.guardedPattern.pattern, name)) {
+      return true;
+    }
+    if (parent is IfElement &&
+        parent.caseClause != null &&
+        _contains(parent.thenElement, identifier) &&
+        _declaresName(parent.caseClause!.guardedPattern.pattern, name)) {
+      return true;
+    }
+    if (parent is SwitchExpressionCase && _declaresName(parent.guardedPattern.pattern, name)) {
+      return true;
+    }
   }
   return false;
 }
 
 bool _declaresName(AstNode node, String name) {
-  if (node is VariableDeclaration && node.name.lexeme == name) return true;
-  if (node is DeclaredIdentifier && node.name.lexeme == name) return true;
-  if (node is DeclaredVariablePattern && node.name.lexeme == name) return true;
+  if (node is VariableDeclaration && node.name.lexeme == name) {
+    return true;
+  }
+  if (node is DeclaredIdentifier && node.name.lexeme == name) {
+    return true;
+  }
+  if (node is DeclaredVariablePattern && node.name.lexeme == name) {
+    return true;
+  }
   return node.childEntities.whereType<AstNode>().any((child) => _declaresName(child, name));
+}
+
+bool _contains(AstNode scope, AstNode node) => scope.offset <= node.offset && node.end <= scope.end;
+
+Set<String> _guaranteedFieldsInElement(CollectionElement element) {
+  if (element is IfElement) {
+    return _guaranteedFieldsInElement(element.thenElement)
+      ..retainAll(element.elseElement == null ? <String>{} : _guaranteedFieldsInElement(element.elseElement!));
+  }
+  if (element is ForElement) {
+    return {};
+  }
+  return _fieldsInElement(element);
 }

@@ -148,7 +148,9 @@ Iterable<String> _documentationComments(HeimdallSourceFile file) sync* {
     );
   for (final node in nodes) {
     final comment = node.documentationComment;
-    if (comment == null) continue;
+    if (comment == null) {
+      continue;
+    }
     yield comment.tokens.map((token) => token.lexeme).join('\n');
   }
 }
@@ -171,9 +173,13 @@ HeimdallCondition<HeimdallSourceFile> _fileShouldNotHaveDocumentationCommentMatc
     final nodes = [...item.directives, ...item.declarations]..sort((a, b) => a.offset.compareTo(b.offset));
     for (final node in nodes) {
       final comment = node.documentationComment;
-      if (comment == null) continue;
+      if (comment == null) {
+        continue;
+      }
       final source = comment.tokens.map((token) => token.lexeme).join('\n');
-      if (!source.contains(pattern)) continue;
+      if (!source.contains(pattern)) {
+        continue;
+      }
       findings.add(
         fileNodeFinding(
           item,

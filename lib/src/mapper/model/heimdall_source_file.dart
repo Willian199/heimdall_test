@@ -115,7 +115,9 @@ final class HeimdallSourceFile {
   late final List<ImportDirective> unresolvedLocalImports = List.unmodifiable(importDirectives.where(_isUnresolvedLocalDirective));
 
   /// Imports that point outside the imported source set.
-  late final List<ImportDirective> externalImports = List.unmodifiable(importDirectives.where((directive) => directive.targetFiles.isEmpty));
+  late final List<ImportDirective> externalImports = List.unmodifiable(
+    importDirectives.where((directive) => directive.targetUris.any((uri) => !directive.resolvedTargets.any((target) => target.uri == uri))),
+  );
 
   /// Imports with `deferred` loading.
   late final List<ImportDirective> deferredImports = List.unmodifiable(importDirectives.where((directive) => directive.deferredKeyword != null));
@@ -142,7 +144,9 @@ final class HeimdallSourceFile {
   late final List<ExportDirective> unresolvedLocalExports = List.unmodifiable(exportDirectives.where(_isUnresolvedLocalDirective));
 
   /// Exports that point outside the imported source set.
-  late final List<ExportDirective> externalExports = List.unmodifiable(exportDirectives.where((directive) => directive.targetFiles.isEmpty));
+  late final List<ExportDirective> externalExports = List.unmodifiable(
+    exportDirectives.where((directive) => directive.targetUris.any((uri) => !directive.resolvedTargets.any((target) => target.uri == uri))),
+  );
 
   /// Exports with `show` or `hide` combinators.
   late final List<ExportDirective> combinatorExports = List.unmodifiable(exportDirectives.where((directive) => directive.combinators.isNotEmpty));
@@ -196,31 +200,34 @@ final class HeimdallSourceFile {
     typeDeclarations.where((declaration) => declaration.isPrivate),
   );
 
-  /// Class declarations in this file.
-  late final List<ClassDeclaration> classDeclarations = List.unmodifiable(
-    declarations.whereType<ClassDeclaration>(),
+  /// Classes and named mixin applications ([ClassTypeAlias]) in this file.
+  /// Use `whereType<ClassDeclaration>()` when only class bodies are needed.
+  late final List<CompilationUnitMember> classDeclarations = List.unmodifiable(
+    declarations.where((node) => node is ClassDeclaration || node is ClassTypeAlias),
   );
 
   /// Public class declarations in this file.
-  late final List<ClassDeclaration> publicClassDeclarations = List.unmodifiable(classDeclarations.where((declaration) => declaration.isPublic));
+  late final List<CompilationUnitMember> publicClassDeclarations = List.unmodifiable(classDeclarations.where((declaration) => declaration.isPublic));
 
   /// Private class declarations in this file.
-  late final List<ClassDeclaration> privateClassDeclarations = List.unmodifiable(classDeclarations.where((declaration) => declaration.isPrivate));
+  late final List<CompilationUnitMember> privateClassDeclarations = List.unmodifiable(
+    classDeclarations.where((declaration) => declaration.isPrivate),
+  );
 
   /// Abstract class declarations in this file.
-  late final List<ClassDeclaration> abstractClasses = List.unmodifiable(classDeclarations.where((declaration) => declaration.isAbstract));
+  late final List<CompilationUnitMember> abstractClasses = List.unmodifiable(classDeclarations.where((declaration) => declaration.isAbstract));
 
   /// Sealed class declarations in this file.
-  late final List<ClassDeclaration> sealedClasses = List.unmodifiable(classDeclarations.where((declaration) => declaration.isSealed));
+  late final List<CompilationUnitMember> sealedClasses = List.unmodifiable(classDeclarations.where((declaration) => declaration.isSealed));
 
   /// Base class declarations in this file.
-  late final List<ClassDeclaration> baseClasses = List.unmodifiable(classDeclarations.where((declaration) => declaration.isBase));
+  late final List<CompilationUnitMember> baseClasses = List.unmodifiable(classDeclarations.where((declaration) => declaration.isBase));
 
   /// Interface class declarations in this file.
-  late final List<ClassDeclaration> interfaceClasses = List.unmodifiable(classDeclarations.where((declaration) => declaration.isInterface));
+  late final List<CompilationUnitMember> interfaceClasses = List.unmodifiable(classDeclarations.where((declaration) => declaration.isInterface));
 
   /// Final class declarations in this file.
-  late final List<ClassDeclaration> finalClasses = List.unmodifiable(classDeclarations.where((declaration) => declaration.isFinal));
+  late final List<CompilationUnitMember> finalClasses = List.unmodifiable(classDeclarations.where((declaration) => declaration.isFinal));
 
   /// Mixin declarations in this file.
   late final List<MixinDeclaration> mixinDeclarations = List.unmodifiable(declarations.whereType<MixinDeclaration>());
@@ -439,6 +446,7 @@ final class HeimdallSourceUri {
     final parsed = uri;
     isValid =
         parsed != null &&
+        (!parsed.hasScheme || parsed.scheme == 'dart' || parsed.scheme == 'package') &&
         !parsed.hasQuery &&
         !parsed.hasFragment &&
         !parsed.hasAuthority &&
@@ -489,22 +497,34 @@ bool _hasSameDirectoryRelativeUri(UriBasedDirective directive) {
     if (uri.contains(':') || uri == '..' || uri.startsWith('../') || uri.contains('/../')) {
       return false;
     }
-    if (!uri.contains('/')) return true;
+    if (!uri.contains('/')) {
+      return true;
+    }
     return uri.startsWith('./') && !uri.substring(2).contains('/');
   });
 }
 
 bool _isUnresolvedLocalDirective(UriBasedDirective directive) {
-  return directive.targetFile == null && (_hasRelativeUri(directive) || _hasPackageUri(directive));
+  return directive.targetUris.any(
+    (uri) =>
+        (uri._uriKind == _DirectiveUriKind.relative || uri._uriKind == _DirectiveUriKind.package) &&
+        !directive.resolvedTargets.any((target) => target.uri == uri),
+  );
 }
 
 enum _DirectiveUriKind { dart, package, relative, other }
 
 extension _StringUriKind on String {
   _DirectiveUriKind get _uriKind {
-    if (startsWith('dart:')) return _DirectiveUriKind.dart;
-    if (startsWith('package:')) return _DirectiveUriKind.package;
-    if (!contains(':')) return _DirectiveUriKind.relative;
+    if (startsWith('dart:')) {
+      return _DirectiveUriKind.dart;
+    }
+    if (startsWith('package:')) {
+      return _DirectiveUriKind.package;
+    }
+    if (!contains(':')) {
+      return _DirectiveUriKind.relative;
+    }
     return _DirectiveUriKind.other;
   }
 }

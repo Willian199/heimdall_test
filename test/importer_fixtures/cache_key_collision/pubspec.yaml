@@ -1,0 +1,3 @@
+name: cache_key_collision
+environment:
+  sdk: ^3.11.0

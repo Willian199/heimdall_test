@@ -1,0 +1,4 @@
+name: import_export_same_type
+
+environment:
+  sdk: ^3.11.0

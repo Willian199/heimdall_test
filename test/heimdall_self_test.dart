@@ -205,7 +205,9 @@ HeimdallCondition<CompilationUnitMember> _notHaveMeaninglessRuleWrappers() {
     final findings = <HeimdallValidationInfo>[];
     for (final method in declaration.members.whereType<MethodDeclaration>()) {
       final wrappedRuleName = _singleReturnedLocalMethodName(method);
-      if (wrappedRuleName == null) continue;
+      if (wrappedRuleName == null) {
+        continue;
+      }
 
       findings.add(
         HeimdallValidationInfo(
@@ -225,20 +227,34 @@ HeimdallCondition<CompilationUnitMember> _notHaveMeaninglessRuleWrappers() {
 
 String? _singleReturnedLocalMethodName(MethodDeclaration method) {
   final body = method.body;
-  if (body is! BlockFunctionBody) return null;
+  if (body is! BlockFunctionBody) {
+    return null;
+  }
 
   final statements = body.block.statements.where((statement) => statement is! EmptyStatement).toList();
-  if (statements.length != 1) return null;
+  if (statements.length != 1) {
+    return null;
+  }
 
   final statement = statements.single;
-  if (statement is! ReturnStatement) return null;
+  if (statement is! ReturnStatement) {
+    return null;
+  }
 
   final expression = statement.expression;
-  if (expression is! MethodInvocation) return null;
-  if (expression.target != null) return null;
+  if (expression is! MethodInvocation) {
+    return null;
+  }
+  if (expression.target != null) {
+    return null;
+  }
 
   final wrappedRuleName = expression.methodName.name;
-  if (wrappedRuleName == method.name.lexeme) return null;
-  if (wrappedRuleName.startsWith(RegExp('[A-Z]'))) return null;
+  if (wrappedRuleName == method.name.lexeme) {
+    return null;
+  }
+  if (wrappedRuleName.startsWith(RegExp('[A-Z]'))) {
+    return null;
+  }
   return wrappedRuleName;
 }

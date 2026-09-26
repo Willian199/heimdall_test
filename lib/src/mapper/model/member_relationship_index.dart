@@ -82,14 +82,22 @@ Set<String> _fieldsInElement(CollectionElement element) {
       if (element.elseElement != null) ..._fieldsInElement(element.elseElement!),
     };
   }
-  if (element is ForElement) return _fieldsInElement(element.body);
+  if (element is ForElement) {
+    return _fieldsInElement(element.body);
+  }
   return {};
 }
 
 String? _fieldName(Expression expression) {
-  if (expression is ParenthesizedExpression) return _fieldName(expression.expression);
-  if (expression is PropertyAccess && expression.target is ThisExpression) return expression.propertyName.name;
-  if (expression is! SimpleIdentifier || _isShadowed(expression)) return null;
+  if (expression is ParenthesizedExpression) {
+    return _fieldName(expression.expression);
+  }
+  if (expression is PropertyAccess && expression.target is ThisExpression) {
+    return expression.propertyName.name;
+  }
+  if (expression is! SimpleIdentifier || _isShadowed(expression)) {
+    return null;
+  }
   return expression.name;
 }
 
@@ -102,10 +110,18 @@ bool _isShadowed(SimpleIdentifier identifier) {
     if (parent is Block) {
       for (final statement in parent.statements) {
         // A declaration later in the block cannot shadow this reference.
-        if (statement.offset >= identifier.offset) break;
-        if (statement is VariableDeclarationStatement && statement.variables.variables.any((variable) => variable.name.lexeme == name)) return true;
-        if (statement is FunctionDeclarationStatement && statement.functionDeclaration.name.lexeme == name) return true;
-        if (statement is PatternVariableDeclarationStatement && _declaresName(statement.declaration.pattern, name)) return true;
+        if (statement.offset >= identifier.offset) {
+          break;
+        }
+        if (statement is VariableDeclarationStatement && statement.variables.variables.any((variable) => variable.name.lexeme == name)) {
+          return true;
+        }
+        if (statement is FunctionDeclarationStatement && statement.functionDeclaration.name.lexeme == name) {
+          return true;
+        }
+        if (statement is PatternVariableDeclarationStatement && _declaresName(statement.declaration.pattern, name)) {
+          return true;
+        }
       }
     }
     if (parent is ForStatement &&
@@ -113,8 +129,12 @@ bool _isShadowed(SimpleIdentifier identifier) {
         _declaresName(parent.forLoopParts, name)) {
       return true;
     }
-    if (parent is ForElement && _declaresName(parent.forLoopParts, name)) return true;
-    if (parent is CatchClause && (parent.exceptionParameter?.name.lexeme == name || parent.stackTraceParameter?.name.lexeme == name)) return true;
+    if (parent is ForElement && _declaresName(parent.forLoopParts, name)) {
+      return true;
+    }
+    if (parent is CatchClause && (parent.exceptionParameter?.name.lexeme == name || parent.stackTraceParameter?.name.lexeme == name)) {
+      return true;
+    }
     if (parent is IfStatement &&
         parent.caseClause != null &&
         parent.thenStatement.offset <= identifier.offset &&
@@ -122,15 +142,32 @@ bool _isShadowed(SimpleIdentifier identifier) {
         _declaresName(parent.caseClause!, name)) {
       return true;
     }
-    if (parent is SwitchPatternCase && _declaresName(parent.guardedPattern.pattern, name)) return true;
+    if (parent is SwitchPatternCase && _declaresName(parent.guardedPattern.pattern, name)) {
+      return true;
+    }
+    if (parent is IfElement &&
+        parent.caseClause != null &&
+        _contains(parent.thenElement, identifier) &&
+        _declaresName(parent.caseClause!.guardedPattern.pattern, name)) {
+      return true;
+    }
+    if (parent is SwitchExpressionCase && _declaresName(parent.guardedPattern.pattern, name)) {
+      return true;
+    }
   }
   return false;
 }
 
 bool _declaresName(AstNode node, String name) {
-  if (node is VariableDeclaration && node.name.lexeme == name) return true;
-  if (node is DeclaredIdentifier && node.name.lexeme == name) return true;
-  if (node is DeclaredVariablePattern && node.name.lexeme == name) return true;
+  if (node is VariableDeclaration && node.name.lexeme == name) {
+    return true;
+  }
+  if (node is DeclaredIdentifier && node.name.lexeme == name) {
+    return true;
+  }
+  if (node is DeclaredVariablePattern && node.name.lexeme == name) {
+    return true;
+  }
   return node.childEntities.whereType<AstNode>().any((child) => _declaresName(child, name));
 }
 

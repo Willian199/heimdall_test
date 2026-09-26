@@ -198,8 +198,12 @@ String _nameOf(ClassMember member) {
   if (member is FieldDeclaration) {
     return member.fields.variables.map((variable) => variable.name.lexeme).join(', ');
   }
-  if (member is MethodDeclaration) return member.name.lexeme;
-  if (member is ConstructorDeclaration) return member.name?.lexeme ?? 'new';
+  if (member is MethodDeclaration) {
+    return member.name.lexeme;
+  }
+  if (member is ConstructorDeclaration) {
+    return member.name?.lexeme ?? 'new';
+  }
   return member.toSource().split(RegExp(r'\s+')).take(3).join(' ');
 }
 
@@ -222,8 +226,12 @@ List<FormalParameter> _parametersOf(ClassMember member) {
 }
 
 List<AstNode> _executableRootsOf(ClassMember member) {
-  if (member is MethodDeclaration) return [member.body];
-  if (member is ConstructorDeclaration) return [...member.initializers, member.body];
+  if (member is MethodDeclaration) {
+    return [member.body];
+  }
+  if (member is ConstructorDeclaration) {
+    return [...member.initializers, member.body];
+  }
   if (member is FieldDeclaration) {
     return member.fields.variables.map((variable) => variable.initializer).whereType<Expression>().toList();
   }

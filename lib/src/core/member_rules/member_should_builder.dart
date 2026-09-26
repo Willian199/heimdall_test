@@ -153,7 +153,9 @@ final class MemberShouldBuilder implements HeimdallShouldBuilder<ClassMember, Me
 
   Iterable<ClassMember> _selector(HeimdallProject project) {
     final selectorOverride = _selectorOverride;
-    if (selectorOverride != null) return selectorOverride(project);
+    if (selectorOverride != null) {
+      return selectorOverride(project);
+    }
 
     return switch (selection) {
       MemberSelection.members => project.classMembers,

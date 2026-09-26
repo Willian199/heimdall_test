@@ -560,13 +560,17 @@ final class HeimdallProject {
     HeimdallSourceFile file,
   ) {
     final cached = _exportedTypeDeclarationsCache[file];
-    if (cached != null) return cached;
+    if (cached != null) {
+      return cached;
+    }
 
     List<CompilationUnitMember> collect(
       HeimdallSourceFile current,
       Set<String> visiting,
     ) {
-      if (visiting.contains(current.absolutePath)) return const [];
+      if (visiting.contains(current.absolutePath)) {
+        return const [];
+      }
       final nextVisiting = {...visiting, current.absolutePath};
       final declarations = [
         ...current.publicTypeDeclarations,
@@ -602,7 +606,9 @@ final class HeimdallProject {
     final exported = _dedupeDeclarations([
       for (final targetFile in directive.targetFiles) ...visibleTypeDeclarationsThroughTarget(directive, targetFile),
     ]);
-    if (exported.isEmpty) return const [];
+    if (exported.isEmpty) {
+      return const [];
+    }
     return exported;
   }
 
@@ -661,12 +667,16 @@ final class HeimdallProject {
   }
 
   String? _resolveUri(String originPath, String? uri) {
-    if (uri == null || uri.isEmpty) return null;
+    if (uri == null || uri.isEmpty) {
+      return null;
+    }
     final parsed = Uri.tryParse(uri);
     if (parsed == null || parsed.hasQuery || parsed.hasFragment) {
       return null;
     }
-    if (parsed.scheme == 'dart') return null;
+    if (parsed.scheme == 'dart') {
+      return null;
+    }
     if (parsed.scheme == 'package') {
       if (parsed.pathSegments.isEmpty || parsed.pathSegments.first != packageName) {
         return null;
@@ -674,13 +684,17 @@ final class HeimdallProject {
       final rest = parsed.pathSegments.skip(1).join('/');
       return p.normalize(p.join(packageRootPath, 'lib', rest));
     }
-    if (parsed.hasScheme || parsed.path.isEmpty) return null;
+    if (parsed.hasScheme || parsed.path.isEmpty) {
+      return null;
+    }
     return p.normalize(p.join(p.dirname(originPath), parsed.path));
   }
 
   bool _isInternalPackageDirective(UriBasedDirective directive) {
     final name = packageName;
-    if (name == null) return false;
+    if (name == null) {
+      return false;
+    }
     return directive.targetUris
         .map(Uri.tryParse)
         .whereType<Uri>()

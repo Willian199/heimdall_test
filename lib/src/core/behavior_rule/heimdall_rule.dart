@@ -64,7 +64,9 @@ final class HeimdallRule<T> {
 
     for (final item in selector(project)) {
       candidateCount++;
-      if (!predicate.test(item, project)) continue;
+      if (!predicate.test(item, project)) {
+        continue;
+      }
 
       selectedCount++;
       final result = condition.evaluate(item, project);

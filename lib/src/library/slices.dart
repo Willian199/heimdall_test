@@ -67,7 +67,9 @@ final class HeimdallSlices {
     final graph = <String, Set<String>>{};
     for (final file in project.files) {
       final sourceSlice = _sliceId(file.relativePath);
-      if (sourceSlice == null) continue;
+      if (sourceSlice == null) {
+        continue;
+      }
       graph.putIfAbsent(sourceSlice, LinkedHashSet.new);
       for (final dependency in file.resolvedDependencies) {
         for (final targetFile in dependency.targetFiles) {
@@ -109,11 +111,15 @@ List<List<String>> _findCycles(Map<String, Set<String>> graph) {
       cycles.add(stack.skip(stack.indexOf(node)).toList()..add(node));
       return;
     }
-    if (!visited.add(node)) return;
+    if (!visited.add(node)) {
+      return;
+    }
     stack.add(node);
     for (final next in graph[node] ?? const <String>{}) {
       visit(next);
-      if (cycles.length >= 100) return;
+      if (cycles.length >= 100) {
+        return;
+      }
     }
     stack.removeLast();
   }

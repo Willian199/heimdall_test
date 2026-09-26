@@ -200,9 +200,16 @@ HeimdallPredicate<CompilationUnitMember> _classHasStaticMember(
 bool _hasStaticMember(CompilationUnitMember item, String memberName) {
   return item.members.where(_isStaticEligibleMember).any(
     (member) {
-      if (!member.isStatic) return false;
-      if (member.isMethod) return member.name == memberName;
+      if (!member.isStatic) {
+        return false;
+      }
+
+      if (member.isMethod) {
+        return member.name == memberName;
+      }
+
       final field = member as FieldDeclaration;
+
       return field.fields.variables.any(
         (variable) => variable.name.lexeme == memberName,
       );

@@ -9,7 +9,10 @@ List<Directive> dependenciesFrom(
   HeimdallProject project,
 ) {
   final file = project.filesByPath[item.sourcePath];
-  if (file == null) return const [];
+  if (file == null) {
+    return const [];
+  }
+
   return [
     ...file.importDirectives,
     ...file.partDirectives,
@@ -29,10 +32,12 @@ List<DeclarationDependency> declarationDependenciesFrom(
 ) {
   final references = _ResolvedReferenceVisitor()..collect(item);
   final libraryFiles = libraryFilesFrom(item, project);
+
   final localTypeNames = {
     for (final file in libraryFiles)
       for (final declaration in [...file.typeDeclarations, ...file.typeAliases]) declaration.name,
   };
+
   final localValueNames = {
     for (final file in libraryFiles)
       for (final function in file.declarations.whereType<FunctionDeclaration>()) function.name.lexeme,
@@ -40,6 +45,7 @@ List<DeclarationDependency> declarationDependenciesFrom(
       for (final declaration in file.topLevelVariables)
         for (final variable in declaration.variables.variables) variable.name.lexeme,
   };
+
   return [
     for (final dependency in dependenciesFrom(item, project))
       for (final resolvedTarget in dependency.resolvedTargets)
@@ -69,7 +75,9 @@ List<HeimdallSourceFile> libraryFilesFrom(
   HeimdallProject project,
 ) {
   final file = project.filesByPath[item.sourcePath];
-  if (file == null) return const [];
+  if (file == null) {
+    return const [];
+  }
   final owners = file.partOfDirectives.isEmpty
       ? [file]
       : [
@@ -138,10 +146,14 @@ bool _declarationReferencesTarget(
   // Conditional directives intentionally model every possible platform branch,
   // while the analyzer binds identifiers only to the active branch.
   final needsSyntaxFallback = directive.targetUris.length > 1 || targetElement == null || references.hasUnresolvedIdentifiers;
-  if (!needsSyntaxFallback) return false;
+  if (!needsSyntaxFallback) {
+    return false;
+  }
 
   final targetName = target.name;
-  if (targetName.startsWith('<')) return false;
+  if (targetName.startsWith('<')) {
+    return false;
+  }
   final visitor = _IdentifierReferenceVisitor(
     targetName,
     importPrefix: directive is ImportDirective ? directive.prefix?.name : null,
@@ -191,9 +203,10 @@ final class _IdentifierReferenceVisitor extends RecursiveAstVisitor<void> {
   bool found = false;
 
   bool get _isLocalTargetName => _scopes.any((scope) => scope.contains(targetName));
-  bool get _isLocalExpressionTargetName =>
-      importPrefix == null &&
-      (localValueNames.contains(targetName) || _isLocalTargetName || _valueMemberScopes.any((scope) => scope.contains(targetName)));
+  bool get _isLocalExpressionTargetName {
+    final name = importPrefix ?? targetName;
+    return localValueNames.contains(name) || _scopes.any((scope) => scope.contains(name)) || _valueMemberScopes.any((scope) => scope.contains(name));
+  }
 
   void _declare(String name) {
     _scopes.last.add(name);
@@ -364,29 +377,45 @@ final class _IdentifierReferenceVisitor extends RecursiveAstVisitor<void> {
   }
 
   void _declareForEach(ForEachParts parts) {
-    if (parts is ForEachPartsWithDeclaration) _declare(parts.loopVariable.name.lexeme);
-    if (parts is ForEachPartsWithPattern) _declarePattern(parts.pattern);
+    if (parts is ForEachPartsWithDeclaration) {
+      _declare(parts.loopVariable.name.lexeme);
+    }
+    if (parts is ForEachPartsWithPattern) {
+      _declarePattern(parts.pattern);
+    }
   }
 
   void _declarePattern(AstNode pattern) {
-    if (pattern is DeclaredVariablePattern) _declare(pattern.name.lexeme);
-    if (pattern is DeclaredIdentifier) _declare(pattern.name.lexeme);
+    if (pattern is DeclaredVariablePattern) {
+      _declare(pattern.name.lexeme);
+    }
+    if (pattern is DeclaredIdentifier) {
+      _declare(pattern.name.lexeme);
+    }
     pattern.childEntities.whereType<AstNode>().forEach(_declarePattern);
   }
 
   @override
   void visitIfStatement(IfStatement node) {
     node.expression.accept(this);
-    node.caseClause?.accept(this);
-    _withScope(() => node.thenStatement.accept(this), names: _declaredPatternNames(node.caseClause));
+    final pattern = node.caseClause?.guardedPattern;
+    pattern?.pattern.accept(this);
+    _withScope(() {
+      pattern?.whenClause?.accept(this);
+      node.thenStatement.accept(this);
+    }, names: _declaredPatternNames(pattern?.pattern));
     node.elseStatement?.accept(this);
   }
 
   @override
   void visitIfElement(IfElement node) {
     node.expression.accept(this);
-    node.caseClause?.accept(this);
-    _withScope(() => node.thenElement.accept(this), names: _declaredPatternNames(node.caseClause));
+    final pattern = node.caseClause?.guardedPattern;
+    pattern?.pattern.accept(this);
+    _withScope(() {
+      pattern?.whenClause?.accept(this);
+      node.thenElement.accept(this);
+    }, names: _declaredPatternNames(pattern?.pattern));
     node.elseElement?.accept(this);
   }
 
@@ -401,9 +430,15 @@ final class _IdentifierReferenceVisitor extends RecursiveAstVisitor<void> {
   }
 
   Iterable<String> _declaredPatternNames(AstNode? pattern) sync* {
-    if (pattern == null) return;
-    if (pattern is DeclaredVariablePattern) yield pattern.name.lexeme;
-    if (pattern is DeclaredIdentifier) yield pattern.name.lexeme;
+    if (pattern == null) {
+      return;
+    }
+    if (pattern is DeclaredVariablePattern) {
+      yield pattern.name.lexeme;
+    }
+    if (pattern is DeclaredIdentifier) {
+      yield pattern.name.lexeme;
+    }
     for (final child in pattern.childEntities.whereType<AstNode>()) {
       yield* _declaredPatternNames(child);
     }
@@ -443,7 +478,8 @@ final class _IdentifierReferenceVisitor extends RecursiveAstVisitor<void> {
   void visitMethodInvocation(MethodInvocation node) {
     final target = node.target;
     if (node.methodName.name == targetName &&
-        (target == null && importPrefix == null && !_isLocalExpressionTargetName || target is SimpleIdentifier && target.name == importPrefix)) {
+        !_isLocalExpressionTargetName &&
+        (target == null && importPrefix == null || target is SimpleIdentifier && target.name == importPrefix)) {
       found = true;
       return;
     }
@@ -500,7 +536,9 @@ final class _IdentifierReferenceVisitor extends RecursiveAstVisitor<void> {
   @override
   void visitVariableDeclaration(VariableDeclaration node) {
     node.initializer?.accept(this);
-    if (node.parent?.parent is! FieldDeclaration) _declare(node.name.lexeme);
+    if (node.parent?.parent is! FieldDeclaration) {
+      _declare(node.name.lexeme);
+    }
   }
 
   bool _matchesNamedType(NamedType node) {

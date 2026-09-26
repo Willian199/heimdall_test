@@ -83,8 +83,12 @@ bool _isAssignableTo(
   HeimdallProject project,
   Set<String> visited,
 ) {
-  if (typeNamesMatchFrom(item, item.name, typeName, project)) return true;
-  if (!visited.add('${item.sourcePath}:${item.name}')) return false;
+  if (typeNamesMatchFrom(item, item.name, typeName, project)) {
+    return true;
+  }
+  if (!visited.add('${item.sourcePath}:${item.name}')) {
+    return false;
+  }
 
   final directTypes = _directAssignableTypes(item);
 
@@ -93,7 +97,9 @@ bool _isAssignableTo(
   }
 
   final candidateNames = _expandedTypeNamesFrom(item, directTypes, project);
-  if (candidateNames.isEmpty) return false;
+  if (candidateNames.isEmpty) {
+    return false;
+  }
 
   for (final candidateName in candidateNames) {
     final target = declarationNamedFrom(item, project, candidateName);
@@ -111,7 +117,9 @@ bool _isAssignableToTypeNamedWhere(
   bool Function(String typeName) test,
   Set<String> visited,
 ) {
-  if (typeNameMatchesWhereFrom(item, item.name, project, test)) return true;
+  if (typeNameMatchesWhereFrom(item, item.name, project, test)) {
+    return true;
+  }
   if (!visited.add('${item.sourcePath}:${item.name}:assignableWhere')) {
     return false;
   }
@@ -137,15 +145,21 @@ bool _extendsType(
   HeimdallProject project,
   Set<String> visited,
 ) {
-  if (item is! ClassDeclaration) return false;
+  if (item is! ClassDeclaration) {
+    return false;
+  }
   if (!visited.add('${item.sourcePath}:${item.name}:extends')) {
     return false;
   }
 
   final superclass = item.extendsClause?.superclass;
-  if (superclass == null) return false;
+  if (superclass == null) {
+    return false;
+  }
   final superclassName = namedTypeReferenceName(superclass);
-  if (typeNamesMatchFrom(item, superclassName, typeName, project)) return true;
+  if (typeNamesMatchFrom(item, superclassName, typeName, project)) {
+    return true;
+  }
 
   final target = declarationNamedFrom(item, project, superclassName);
   return target != null && _extendsType(target, typeName, project, visited);
@@ -157,15 +171,21 @@ bool _extendsTypeNamedWhere(
   bool Function(String typeName) test,
   Set<String> visited,
 ) {
-  if (item is! ClassDeclaration) return false;
+  if (item is! ClassDeclaration) {
+    return false;
+  }
   if (!visited.add('${item.sourcePath}:${item.name}:extendsWhere')) {
     return false;
   }
 
   final superclass = item.extendsClause?.superclass;
-  if (superclass == null) return false;
+  if (superclass == null) {
+    return false;
+  }
   final superclassName = namedTypeReferenceName(superclass);
-  if (typeNameMatchesWhereFrom(item, superclassName, project, test)) return true;
+  if (typeNameMatchesWhereFrom(item, superclassName, project, test)) {
+    return true;
+  }
 
   final target = declarationNamedFrom(item, project, superclassName);
   return target != null && _extendsTypeNamedWhere(target, project, test, visited);
@@ -194,7 +214,9 @@ bool _implementsType(
   }
 
   final superclass = item is ClassDeclaration ? item.extendsClause?.superclass : null;
-  if (superclass == null) return false;
+  if (superclass == null) {
+    return false;
+  }
   final target = declarationNamedFrom(item, project, namedTypeReferenceName(superclass));
   return target != null && _implementsType(target, typeName, project, visited);
 }
@@ -222,7 +244,9 @@ bool _implementsTypeNamedWhere(
   }
 
   final superclass = item is ClassDeclaration ? item.extendsClause?.superclass : null;
-  if (superclass == null) return false;
+  if (superclass == null) {
+    return false;
+  }
   final target = declarationNamedFrom(item, project, namedTypeReferenceName(superclass));
   return target != null && _implementsTypeNamedWhere(target, project, test, visited);
 }
@@ -233,7 +257,9 @@ bool _mixesInType(
   HeimdallProject project,
   Set<String> visited,
 ) {
-  if (!visited.add('${item.sourcePath}:${item.name}:mixins')) return false;
+  if (!visited.add('${item.sourcePath}:${item.name}:mixins')) {
+    return false;
+  }
 
   final mixins = _directMixedInTypes(item);
   if (mixins.any((mixin) => typeNamesMatchFrom(item, mixin, typeName, project))) {
@@ -241,7 +267,9 @@ bool _mixesInType(
   }
 
   final superclass = item is ClassDeclaration ? item.extendsClause?.superclass : null;
-  if (superclass == null) return false;
+  if (superclass == null) {
+    return false;
+  }
   final target = declarationNamedFrom(item, project, namedTypeReferenceName(superclass));
   return target != null && _mixesInType(target, typeName, project, visited);
 }
@@ -252,7 +280,9 @@ bool _mixesInTypeNamedWhere(
   bool Function(String typeName) test,
   Set<String> visited,
 ) {
-  if (!visited.add('${item.sourcePath}:${item.name}:mixinsWhere')) return false;
+  if (!visited.add('${item.sourcePath}:${item.name}:mixinsWhere')) {
+    return false;
+  }
 
   final mixins = _directMixedInTypes(item);
   if (mixins.any((mixin) => typeNameMatchesWhereFrom(item, mixin, project, test))) {
@@ -260,13 +290,17 @@ bool _mixesInTypeNamedWhere(
   }
 
   final superclass = item is ClassDeclaration ? item.extendsClause?.superclass : null;
-  if (superclass == null) return false;
+  if (superclass == null) {
+    return false;
+  }
   final target = declarationNamedFrom(item, project, namedTypeReferenceName(superclass));
   return target != null && _mixesInTypeNamedWhere(target, project, test, visited);
 }
 
 List<String> _directAssignableTypes(CompilationUnitMember item) {
   return [
+    if (item is ClassDeclaration || item is MixinDeclaration || item is EnumDeclaration) 'Object',
+    if (item is EnumDeclaration) 'Enum',
     ..._directExtendedTypes(item),
     ..._directImplementedTypes(item),
     ..._directMixedInTypes(item),

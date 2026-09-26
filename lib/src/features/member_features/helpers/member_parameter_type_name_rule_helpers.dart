@@ -6,6 +6,8 @@ import 'package:heimdall_test/src/mapper/model/heimdall_declaration.dart';
 import 'package:heimdall_test/src/mapper/model/heimdall_member.dart';
 import 'package:heimdall_test/src/mapper/model/heimdall_project.dart';
 
+final _typeParameterReferencePattern = RegExp(r'[A-Za-z_$][A-Za-z0-9_$]*(?:\.[A-Za-z_$][A-Za-z0-9_$]*)*\??');
+
 /// Returns whether [member] receives a parameter whose resolved type name satisfies [test].
 bool memberReceivesResolvedParameterTypeNameWhere(
   ClassMember member,
@@ -34,7 +36,9 @@ bool memberReceivesParameterAssignableTo(
       member: member,
       project: project,
     );
-    if (parameterTypeName == null) return false;
+    if (parameterTypeName == null) {
+      return false;
+    }
 
     return typeNameIsAssignableToFrom(
       member.owner,
@@ -52,7 +56,9 @@ String? _resolvedParameterTypeName(
   Set<String>? visited,
 }) {
   final explicitType = _parameterTypeName(parameter);
-  if (explicitType != null) return explicitType;
+  if (explicitType != null) {
+    return explicitType;
+  }
 
   final inner = parameter is DefaultFormalParameter ? parameter.parameter : parameter;
   return switch (inner) {
@@ -73,7 +79,7 @@ String? _parameterTypeName(FormalParameter parameter) {
     SimpleFormalParameter(:final type) => typeAnnotationName(type),
     FieldFormalParameter(:final type) => typeAnnotationName(type),
     SuperFormalParameter(:final type) => typeAnnotationName(type),
-    FunctionTypedFormalParameter(:final returnType) => typeAnnotationName(returnType),
+    FunctionTypedFormalParameter() => 'Function${inner.question == null ? '' : '?'}',
     _ => null,
   };
 }
@@ -102,25 +108,58 @@ String? _superParameterTypeName(
     final NamedType type => namedTypeReferenceName(type),
     null => null,
   };
-  if (superclassName == null) return null;
+  if (superclassName == null) {
+    return null;
+  }
 
   final superclass = declarationNamedFrom(owner, project, superclassName);
-  if (superclass == null) return null;
+  if (superclass == null) {
+    return null;
+  }
 
   final constructorName = _superConstructorName(member);
   final targetConstructor = _constructorNamed(superclass, constructorName);
-  if (targetConstructor == null) return null;
+  if (targetConstructor == null) {
+    return null;
+  }
 
   final key = '${superclass.sourcePath}:${superclass.name}:$constructorName:$parameterName';
-  if (!visited.add(key)) return null;
+  if (!visited.add(key)) {
+    return null;
+  }
 
   for (final parameter in (targetConstructor as ClassMember).parameters) {
-    if (parameter.name?.lexeme != parameterName) continue;
-    return _resolvedParameterTypeName(
+    if (parameter.name?.lexeme != parameterName) {
+      continue;
+    }
+    final inheritedType = _resolvedParameterTypeName(
       parameter,
       member: targetConstructor,
       project: project,
       visited: visited,
+    );
+    if (inheritedType == null || superclass is! ClassDeclaration) {
+      return inheritedType;
+    }
+    final typeParameters = superclass.namePart.typeParameters?.typeParameters;
+    final typeArguments = owner.extendsClause?.superclass.typeArguments?.arguments;
+    if (typeParameters == null || typeArguments == null) {
+      return inheritedType;
+    }
+    final substitutions = <String, String>{
+      for (var i = 0; i < typeParameters.length && i < typeArguments.length; i++) typeParameters[i].name.lexeme: typeArguments[i].toSource(),
+    };
+    return inheritedType.replaceAllMapped(
+      _typeParameterReferencePattern,
+      (match) {
+        final name = match[0]!;
+        final nullable = name.endsWith('?');
+        final replacement = substitutions[nullable ? name.substring(0, name.length - 1) : name];
+        if (replacement == null) {
+          return name;
+        }
+        return nullable && !replacement.endsWith('?') ? '$replacement?' : replacement;
+      },
     );
   }
   return null;
@@ -131,7 +170,9 @@ ConstructorDeclaration? _constructorNamed(
   String constructorName,
 ) {
   for (final constructor in declaration.constructors) {
-    if ((constructor.name?.lexeme ?? '') == constructorName) return constructor;
+    if ((constructor.name?.lexeme ?? '') == constructorName) {
+      return constructor;
+    }
   }
   return null;
 }

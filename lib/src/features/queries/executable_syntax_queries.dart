@@ -42,9 +42,13 @@ SyntaxMatch invocationMatcher(
   List<String>? positionalArguments,
   bool exactArguments = false,
 }) {
-  if (name.trim().isEmpty) throw ArgumentError.value(name, 'name', 'Must not be empty');
+  if (name.trim().isEmpty) {
+    throw ArgumentError.value(name, 'name', 'Must not be empty');
+  }
+
   final named = namedArguments.map((name, source) => MapEntry(name, _expressionKey(source)));
   final positional = positionalArguments?.map(_expressionKey).toList();
+  
   return (expression, project) {
     ArgumentList? arguments;
     if (constructor) {
@@ -57,17 +61,25 @@ SyntaxMatch invocationMatcher(
         final matches = (typeName == name || type.name.lexeme == name) && actualName == constructorName;
         // The parser can represent `new Type.named()` as a prefixed type.
         final splitNamed = actualName.isEmpty && prefix == name && type.name.lexeme == constructorName;
-        if (!matches && !splitNamed) return false;
+        if (!matches && !splitNamed) {
+          return false;
+        }
         arguments = expression.argumentList;
       } else if (expression is MethodInvocation) {
-        if (!_matchesConstructorReference(expression, name, constructorName, project)) return false;
+        if (!_matchesConstructorReference(expression, name, constructorName, project)) {
+          return false;
+        }
         arguments = expression.argumentList;
       }
     } else if (expression is MethodInvocation && expression.methodName.name == name) {
-      if (receiver != null && (expression.realTarget?.toSource() ?? '') != receiver) return false;
+      if (receiver != null && (expression.realTarget?.toSource() ?? '') != receiver) {
+        return false;
+      }
       arguments = expression.argumentList;
     }
-    if (arguments == null) return false;
+    if (arguments == null) {
+      return false;
+    }
     final actualNamed = <String, Expression>{};
     final actualPositional = <Expression>[];
     for (final argument in arguments.arguments) {
@@ -79,12 +91,18 @@ SyntaxMatch invocationMatcher(
     }
     for (final entry in named.entries) {
       final actual = actualNamed[entry.key];
-      if (actual == null || _tokenKey(actual) != entry.value) return false;
+      if (actual == null || _tokenKey(actual) != entry.value) {
+        return false;
+      }
     }
     if (positional != null) {
-      if (actualPositional.length != positional.length) return false;
+      if (actualPositional.length != positional.length) {
+        return false;
+      }
       for (var index = 0; index < positional.length; index++) {
-        if (_tokenKey(actualPositional[index]) != positional[index]) return false;
+        if (_tokenKey(actualPositional[index]) != positional[index]) {
+          return false;
+        }
       }
     }
     return !exactArguments || (actualNamed.length == named.length && actualPositional.length == (positional?.length ?? 0));
@@ -92,20 +110,28 @@ SyntaxMatch invocationMatcher(
 }
 
 bool _matchesConstructorReference(MethodInvocation invocation, String typeName, String constructorName, HeimdallProject project) {
-  if (invocation.isCascaded) return false;
+  if (invocation.isCascaded) {
+    return false;
+  }
   final target = invocation.target?.toSource();
   final reference = target == null ? invocation.methodName.name : '$target.${invocation.methodName.name}';
   final expected = constructorName.isEmpty ? typeName : '$typeName.$constructorName';
   String effectiveType;
   if (reference == expected) {
     if (typeName.contains('.')) {
-      if (!_hasImportPrefix(invocation, typeName.substring(0, typeName.lastIndexOf('.')))) return false;
+      if (!_hasImportPrefix(invocation, typeName.substring(0, typeName.lastIndexOf('.')))) {
+        return false;
+      }
     }
     effectiveType = typeName;
   } else {
-    if (!reference.endsWith('.$expected')) return false;
+    if (!reference.endsWith('.$expected')) {
+      return false;
+    }
     final prefix = reference.substring(0, reference.length - expected.length - 1);
-    if (!_hasImportPrefix(invocation, prefix)) return false;
+    if (!_hasImportPrefix(invocation, prefix)) {
+      return false;
+    }
     effectiveType = '$prefix.$typeName';
   }
 
@@ -113,9 +139,13 @@ bool _matchesConstructorReference(MethodInvocation invocation, String typeName, 
   while (node != null && node is! CompilationUnitMember) {
     node = node.parent;
   }
-  if (node is! CompilationUnitMember) return true;
+  if (node is! CompilationUnitMember) {
+    return true;
+  }
   final declaration = declarationNamedFrom(node, project, effectiveType);
-  if (declaration == null) return true;
+  if (declaration == null) {
+    return true;
+  }
   if (constructorName.isEmpty) {
     return declaration is ExtensionTypeDeclaration ||
         declaration is ClassDeclaration &&
@@ -170,7 +200,9 @@ String _expressionKey(String source) {
     throw ArgumentError.value(source, 'expression', 'Expected a single Dart expression');
   }
   final expression = declaration.variables.variables.single.initializer;
-  if (expression == null) throw ArgumentError.value(source, 'expression', 'Expected a Dart expression');
+  if (expression == null) {
+    throw ArgumentError.value(source, 'expression', 'Expected a Dart expression');
+  }
   return _tokenKey(expression);
 }
 
@@ -179,9 +211,13 @@ String _tokenKey(AstNode node) {
   var token = node.beginToken;
   while (true) {
     lexemes.add(token.lexeme);
-    if (identical(token, node.endToken) || token.isEof) break;
+    if (identical(token, node.endToken) || token.isEof) {
+      break;
+    }
     final next = token.next;
-    if (next == null) break;
+    if (next == null) {
+      break;
+    }
     token = next;
   }
   return jsonEncode(lexemes);

@@ -71,7 +71,9 @@ final class _HasStaticMethodInvocationVisitor extends RecursiveAstVisitor<void> 
 
   @override
   void visitMethodInvocation(MethodInvocation node) {
-    if (found) return;
+    if (found) {
+      return;
+    }
     if (_matchesStaticMethodInvocation(node, targetType, methodName, project)) {
       found = true;
       return;
@@ -81,7 +83,9 @@ final class _HasStaticMethodInvocationVisitor extends RecursiveAstVisitor<void> 
 
   @override
   void visitFunctionExpressionInvocation(FunctionExpressionInvocation node) {
-    if (found) return;
+    if (found) {
+      return;
+    }
     if (_matchesStaticFunctionInvocation(node, targetType, methodName, project)) {
       found = true;
       return;
@@ -115,8 +119,12 @@ bool _matchesStaticFunctionInvocation(
 
 bool _matchesTargetType(AstNode invocation, Expression? target, String expected, HeimdallProject project) {
   final actual = _qualifiedName(target);
-  if (actual == expected) return true;
-  if (actual == null || !actual.endsWith('.$expected')) return false;
+  if (actual == expected) {
+    return true;
+  }
+  if (actual == null || !actual.endsWith('.$expected')) {
+    return false;
+  }
   for (var ancestor = invocation.parent; ancestor != null; ancestor = ancestor.parent) {
     if (ancestor is CompilationUnitMember) {
       final typeReference = invocation is MethodInvocation ? actual : actual.substring(0, actual.lastIndexOf('.'));
@@ -129,27 +137,45 @@ bool _matchesTargetType(AstNode invocation, Expression? target, String expected,
 bool _hasValueReceiver(AstNode node, String targetType, HeimdallProject project) {
   final receiverName = targetType.split('.').first;
   for (var ancestor = node.parent; ancestor != null; ancestor = ancestor.parent) {
-    if (ancestor is MethodDeclaration && _parametersDeclare(ancestor.parameters, receiverName)) return true;
-    if (ancestor is ConstructorDeclaration && _parametersDeclare(ancestor.parameters, receiverName)) return true;
-    if (ancestor is FunctionExpression && _parametersDeclare(ancestor.parameters, receiverName)) return true;
+    if (ancestor is MethodDeclaration && _parametersDeclare(ancestor.parameters, receiverName)) {
+      return true;
+    }
+    if (ancestor is ConstructorDeclaration && _parametersDeclare(ancestor.parameters, receiverName)) {
+      return true;
+    }
+    if (ancestor is FunctionExpression && _parametersDeclare(ancestor.parameters, receiverName)) {
+      return true;
+    }
     if (ancestor is Block) {
       for (final statement in ancestor.statements) {
-        if (statement.offset >= node.offset) break;
+        if (statement.offset >= node.offset) {
+          break;
+        }
         if (statement is VariableDeclarationStatement && statement.variables.variables.any((variable) => variable.name.lexeme == receiverName)) {
           return true;
         }
-        if (statement is PatternVariableDeclarationStatement && _declaresName(statement.declaration.pattern, receiverName)) return true;
+        if (statement is PatternVariableDeclarationStatement && _declaresName(statement.declaration.pattern, receiverName)) {
+          return true;
+        }
       }
     }
     if (ancestor is ForStatement) {
       final parts = ancestor.forLoopParts;
-      if (parts is ForEachParts && _containsNode(parts.iterable, node)) continue;
-      if (_forLoopDeclaresName(parts, receiverName)) return true;
+      if (parts is ForEachParts && _containsNode(parts.iterable, node)) {
+        continue;
+      }
+      if (_forLoopDeclaresName(parts, receiverName)) {
+        return true;
+      }
     }
     if (ancestor is ForElement) {
       final parts = ancestor.forLoopParts;
-      if (parts is ForEachParts && _containsNode(parts.iterable, node)) continue;
-      if (_forLoopDeclaresName(parts, receiverName)) return true;
+      if (parts is ForEachParts && _containsNode(parts.iterable, node)) {
+        continue;
+      }
+      if (_forLoopDeclaresName(parts, receiverName)) {
+        return true;
+      }
     }
     if (ancestor is CatchClause &&
         (ancestor.exceptionParameter?.name.lexeme == receiverName || ancestor.stackTraceParameter?.name.lexeme == receiverName)) {
@@ -167,9 +193,15 @@ bool _hasValueReceiver(AstNode node, String targetType, HeimdallProject project)
         _declaresName(ancestor.caseClause!, receiverName)) {
       return true;
     }
-    if (ancestor is SwitchPatternCase && _declaresName(ancestor.guardedPattern.pattern, receiverName)) return true;
-    if (ancestor is SwitchExpressionCase && _declaresName(ancestor.guardedPattern.pattern, receiverName)) return true;
-    if (ancestor is CompilationUnitMember && _valueMembersDeclareInHierarchy(ancestor, receiverName, project, <String>{})) return true;
+    if (ancestor is SwitchPatternCase && _declaresName(ancestor.guardedPattern.pattern, receiverName)) {
+      return true;
+    }
+    if (ancestor is SwitchExpressionCase && _declaresName(ancestor.guardedPattern.pattern, receiverName)) {
+      return true;
+    }
+    if (ancestor is CompilationUnitMember && _valueMembersDeclareInHierarchy(ancestor, receiverName, project, <String>{})) {
+      return true;
+    }
     if (ancestor is CompilationUnit &&
         ancestor.declarations.any(
           (declaration) => switch (declaration) {
@@ -213,8 +245,12 @@ bool _valueMembersDeclareInHierarchy(
   Set<String> visited, {
   bool inherited = false,
 }) {
-  if (!visited.add('${owner.sourcePath}:${owner.name}')) return false;
-  if (_valueMembersDeclare(owner, name, inherited: inherited)) return true;
+  if (!visited.add('${owner.sourcePath}:${owner.name}')) {
+    return false;
+  }
+  if (_valueMembersDeclare(owner, name, inherited: inherited)) {
+    return true;
+  }
 
   final inheritedTypes = switch (owner) {
     ClassDeclaration(:final extendsClause, :final withClause) => [
@@ -226,15 +262,23 @@ bool _valueMembersDeclareInHierarchy(
   };
   for (final type in inheritedTypes) {
     final inherited = declarationNamedFrom(owner, project, namedTypeReferenceName(type));
-    if (inherited != null && _valueMembersDeclareInHierarchy(inherited, name, project, visited, inherited: true)) return true;
+    if (inherited != null && _valueMembersDeclareInHierarchy(inherited, name, project, visited, inherited: true)) {
+      return true;
+    }
   }
   return false;
 }
 
 bool _declaresName(AstNode node, String name) {
-  if (node is VariableDeclaration && node.name.lexeme == name) return true;
-  if (node is DeclaredIdentifier && node.name.lexeme == name) return true;
-  if (node is DeclaredVariablePattern && node.name.lexeme == name) return true;
+  if (node is VariableDeclaration && node.name.lexeme == name) {
+    return true;
+  }
+  if (node is DeclaredIdentifier && node.name.lexeme == name) {
+    return true;
+  }
+  if (node is DeclaredVariablePattern && node.name.lexeme == name) {
+    return true;
+  }
   return node.childEntities.whereType<AstNode>().any((child) => _declaresName(child, name));
 }
 

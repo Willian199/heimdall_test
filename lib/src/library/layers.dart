@@ -194,12 +194,16 @@ final class _LayerConstraint {
   final _LayerConstraintDirection direction;
 
   bool allowsAccessTo(String targetLayer) {
-    if (direction != _LayerConstraintDirection.access) return true;
+    if (direction != _LayerConstraintDirection.access) {
+      return true;
+    }
     return layers.contains(targetLayer);
   }
 
   bool allowsAccessFrom(String sourceLayer) {
-    if (direction != _LayerConstraintDirection.beAccessedBy) return true;
+    if (direction != _LayerConstraintDirection.beAccessedBy) {
+      return true;
+    }
     return layers.contains(sourceLayer);
   }
 }

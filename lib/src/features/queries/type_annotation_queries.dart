@@ -4,6 +4,7 @@ import 'package:analyzer/dart/ast/ast.dart';
 String? typeAnnotationName(TypeAnnotation? type) {
   return switch (type) {
     NamedType() => _namedTypeName(type),
+    GenericFunctionType() => 'Function${type.question == null ? '' : '?'}',
     _ => null,
   };
 }
@@ -13,14 +14,18 @@ String? _namedTypeName(NamedType type) {
 
   final arguments = type.typeArguments?.arguments.map(typeAnnotationName).toList();
   if (arguments != null) {
-    if (arguments.any((argument) => argument == null)) return null;
+    if (arguments.any((argument) => argument == null)) {
+      return null;
+    }
     buffer
       ..write('<')
       ..write(arguments.whereType<String>().join(', '))
       ..write('>');
   }
 
-  if (type.question != null) buffer.write('?');
+  if (type.question != null) {
+    buffer.write('?');
+  }
   return buffer.toString();
 }
 

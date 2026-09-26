@@ -45,12 +45,16 @@ PublicClassNameMismatch? publicClassNameMismatch(
         (declaration) => className == null || _classNameOf(declaration) == className,
       )
       .toList();
-  if (classes.length != 1) return null;
+  if (classes.length != 1) {
+    return null;
+  }
 
   final declaration = classes.single;
   final expected = _camelToSnake(_classNameOf(declaration));
   final actual = p.basenameWithoutExtension(item.relativePath);
-  if (actual == expected) return null;
+  if (actual == expected) {
+    return null;
+  }
   return PublicClassNameMismatch(declaration, expected);
 }
 

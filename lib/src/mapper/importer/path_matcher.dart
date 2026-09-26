@@ -57,7 +57,9 @@ bool pathMatches(String path, String pattern) {
 String? captureSlicePathSegment(String path, String pattern) {
   final normalizedPath = normalizePath(path);
   final normalizedPattern = normalizePath(pattern);
-  if (!normalizedPattern.contains('(*)')) return null;
+  if (!normalizedPattern.contains('(*)')) {
+    return null;
+  }
   return _sliceCaptureRegex(normalizedPattern).firstMatch(normalizedPath)?.group(1);
 }
 
@@ -65,7 +67,9 @@ String? captureSlicePathSegment(String path, String pattern) {
 String normalizePath(String path) => p.normalize(path).replaceAll(r'\', '/');
 
 bool _isSegmentWildcardPattern(String pattern) {
-  if (!pattern.startsWith('..') || !pattern.endsWith('..')) return false;
+  if (!pattern.startsWith('..') || !pattern.endsWith('..')) {
+    return false;
+  }
   final token = pattern.replaceAll('..', '').replaceAll('/', '');
   return token.isNotEmpty && !pattern.contains('/') && !token.contains('*') && !token.contains('(');
 }

@@ -132,7 +132,11 @@ bool _memberHasRequiredParameter(ClassMember member, String parameterName) {
 }
 
 bool _isRequiredParameter(FormalParameter parameter, String name) {
-  if (parameter.name?.lexeme != name) return false;
-  if (parameter is! DefaultFormalParameter) return true;
+  if (parameter.name?.lexeme != name) {
+    return false;
+  }
+  if (parameter is! DefaultFormalParameter) {
+    return true;
+  }
   return parameter.isRequiredNamed;
 }

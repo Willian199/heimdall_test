@@ -15,7 +15,9 @@ MethodInvocation? memberMethodInvocationWhere(
   final visitor = _MethodCallVisitor(test);
   for (final root in member.executableRoots) {
     root.accept(visitor);
-    if (visitor.foundNode != null) return visitor.foundNode;
+    if (visitor.foundNode != null) {
+      return visitor.foundNode;
+    }
   }
   return null;
 }
@@ -28,7 +30,9 @@ bool memberHasMethodInvocationWhere(
   final visitor = _HasMethodCallVisitor(test);
   for (final root in member.executableRoots) {
     root.accept(visitor);
-    if (visitor.found) return true;
+    if (visitor.found) {
+      return true;
+    }
   }
   return false;
 }
@@ -42,7 +46,9 @@ AstNode? memberConstructorCallWhere(
   final visitor = _ConstructorCallVisitor(member, project, test);
   for (final root in member.executableRoots) {
     root.accept(visitor);
-    if (visitor.foundNode != null) return visitor.foundNode;
+    if (visitor.foundNode != null) {
+      return visitor.foundNode;
+    }
   }
   return null;
 }
@@ -64,7 +70,9 @@ final class _MethodCallVisitor extends RecursiveAstVisitor<void> {
 
   @override
   void visitMethodInvocation(MethodInvocation node) {
-    if (foundNode != null) return;
+    if (foundNode != null) {
+      return;
+    }
     if (test(node.methodName.name)) {
       foundNode = node;
       return;
@@ -81,7 +89,9 @@ final class _HasMethodCallVisitor extends RecursiveAstVisitor<void> {
 
   @override
   void visitMethodInvocation(MethodInvocation node) {
-    if (found) return;
+    if (found) {
+      return;
+    }
     if (test(node.methodName.name)) {
       found = true;
       return;
@@ -100,7 +110,9 @@ final class _ConstructorCallVisitor extends RecursiveAstVisitor<void> {
 
   String? _declaredConstructorType(String reference, String? constructorName) {
     final declaration = declarationNamedFrom(member.owner, project, reference);
-    if (declaration == null) return null;
+    if (declaration == null) {
+      return null;
+    }
     if (constructorName != null && !declaration.constructors.any((constructor) => constructor.name?.lexeme == constructorName)) {
       return null;
     }
@@ -109,7 +121,9 @@ final class _ConstructorCallVisitor extends RecursiveAstVisitor<void> {
 
   @override
   void visitInstanceCreationExpression(InstanceCreationExpression node) {
-    if (foundNode != null) return;
+    if (foundNode != null) {
+      return;
+    }
     final constructor = node.constructorName;
     final type = constructor.type;
     final prefix = type.importPrefix?.name.lexeme;
@@ -128,7 +142,9 @@ final class _ConstructorCallVisitor extends RecursiveAstVisitor<void> {
 
   @override
   void visitMethodInvocation(MethodInvocation node) {
-    if (foundNode != null) return;
+    if (foundNode != null) {
+      return;
+    }
     final target = node.target;
     final targetName = switch (target) {
       SimpleIdentifier(:final name) => name,

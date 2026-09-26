@@ -1,0 +1,3 @@
+name: inherited_value_shadow
+environment:
+  sdk: ^3.11.0

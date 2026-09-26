@@ -137,7 +137,9 @@ bool _memberAccessesField(ClassMember member, String fieldName) {
   final visitor = _FieldAccessVisitor(fieldName);
   for (final root in member.executableRoots) {
     root.accept(visitor);
-    if (visitor.found) return true;
+    if (visitor.found) {
+      return true;
+    }
   }
   return false;
 }
@@ -150,17 +152,25 @@ final class _FieldAccessVisitor extends RecursiveAstVisitor<void> {
 
   @override
   void visitSimpleIdentifier(SimpleIdentifier node) {
-    if (found) return;
-    if (node.name != fieldName || !isValueReference(node)) return;
+    if (found) {
+      return;
+    }
+    if (node.name != fieldName || !isValueReference(node)) {
+      return;
+    }
     final parent = node.parent;
     if (parent is PrefixedIdentifier && identical(parent.identifier, node)) {
       return;
     }
     if (parent is PropertyAccess && identical(parent.propertyName, node)) {
-      if (parent.target is ThisExpression || parent.target is SuperExpression) found = true;
+      if (parent.target is ThisExpression || parent.target is SuperExpression) {
+        found = true;
+      }
       return;
     }
-    if (parent is MethodInvocation && identical(parent.methodName, node)) return;
+    if (parent is MethodInvocation && identical(parent.methodName, node)) {
+      return;
+    }
     if (!isShadowedValue(node)) {
       found = true;
     }

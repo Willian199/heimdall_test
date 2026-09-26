@@ -16,7 +16,9 @@ String canonicalTypeNameFrom(
   while (seen.add('${source.sourcePath}:$current')) {
     final alias = _typeAliasNamedFrom(source, project, current);
     final target = _typeAliasTargetName(alias);
-    if (target == null) return current;
+    if (target == null) {
+      return current;
+    }
     current = target;
     source = alias!;
   }
@@ -26,7 +28,9 @@ String canonicalTypeNameFrom(
 String? _typeAliasTargetName(TypeAlias? alias) {
   if (alias is GenericTypeAlias) {
     final type = alias.type;
-    if (type is NamedType) return namedTypeReferenceName(type);
+    if (type is NamedType) {
+      return namedTypeReferenceName(type);
+    }
   }
   return null;
 }
@@ -64,7 +68,9 @@ CompilationUnitMember? _declarationNamedFrom(
   Set<String> visited,
 ) {
   final key = '${item.sourcePath}:$typeName';
-  if (!visited.add(key)) return null;
+  if (!visited.add(key)) {
+    return null;
+  }
 
   final alias = _typeAliasNamedFrom(item, project, typeName);
   final aliasTarget = _typeAliasTargetName(alias);
@@ -78,7 +84,9 @@ CompilationUnitMember? _declarationNamedFrom(
     project,
     importPrefix: reference.prefix,
   )) {
-    if (declaration is TypeAlias) continue;
+    if (declaration is TypeAlias) {
+      continue;
+    }
     if (declaration.name == reference.name) {
       return declaration;
     }
@@ -96,7 +104,9 @@ List<CompilationUnitMember> visibleTypeReferenceDeclarationsFrom(
   required String? importPrefix,
 }) {
   final file = project.filesByPath[item.sourcePath];
-  if (file == null) return [...project.typeDeclarations, ...project.typeAliases];
+  if (file == null) {
+    return [...project.typeDeclarations, ...project.typeAliases];
+  }
   return _dedupeDeclarations([
     if (importPrefix == null)
       for (final libraryFile in libraryFilesFrom(item, project)) ...[
@@ -149,7 +159,9 @@ bool typeNameMatchesWhereFrom(
 }
 
 bool _typeReferenceNamesMatch(String actual, String expected) {
-  if (actual == expected) return true;
+  if (actual == expected) {
+    return true;
+  }
   final actualReference = _TypeReference.parse(actual);
   final expectedReference = _TypeReference.parse(expected);
   return expectedReference.prefix == null && actualReference.name == expectedReference.name;
@@ -160,7 +172,9 @@ final class _TypeReference {
 
   factory _TypeReference.parse(String value) {
     final separator = value.indexOf('.');
-    if (separator < 0) return _TypeReference(prefix: null, name: value);
+    if (separator < 0) {
+      return _TypeReference(prefix: null, name: value);
+    }
     return _TypeReference(
       prefix: value.substring(0, separator),
       name: value.substring(separator + 1),

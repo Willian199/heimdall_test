@@ -145,17 +145,27 @@ void attachDeclarationContext({
 }
 
 String _nameOf(CompilationUnitMember member) {
-  if (member is ClassDeclaration) return member.namePart.typeName.lexeme;
-  if (member is MixinDeclaration) return member.name.lexeme;
-  if (member is EnumDeclaration) return member.namePart.typeName.lexeme;
+  if (member is ClassDeclaration) {
+    return member.namePart.typeName.lexeme;
+  }
+  if (member is MixinDeclaration) {
+    return member.name.lexeme;
+  }
+  if (member is EnumDeclaration) {
+    return member.namePart.typeName.lexeme;
+  }
   if (member is ExtensionDeclaration) {
     return member.name?.lexeme ?? '<anonymous extension>';
   }
   if (member is ExtensionTypeDeclaration) {
     return member.primaryConstructor.typeName.lexeme;
   }
-  if (member is TypeAlias) return member.name.lexeme;
-  if (member is FunctionDeclaration) return member.name.lexeme;
+  if (member is TypeAlias) {
+    return member.name.lexeme;
+  }
+  if (member is FunctionDeclaration) {
+    return member.name.lexeme;
+  }
   if (member is TopLevelVariableDeclaration) {
     return member.variables.variables.map((variable) => variable.name.lexeme).join(', ');
   }
@@ -163,10 +173,18 @@ String _nameOf(CompilationUnitMember member) {
 }
 
 List<ClassMember> _membersOf(CompilationUnitMember member) {
-  if (member is ClassDeclaration) return _membersFromClassBody(member.body);
-  if (member is MixinDeclaration) return member.body.members;
-  if (member is EnumDeclaration) return member.body.members;
-  if (member is ExtensionDeclaration) return member.body.members;
+  if (member is ClassDeclaration) {
+    return _membersFromClassBody(member.body);
+  }
+  if (member is MixinDeclaration) {
+    return member.body.members;
+  }
+  if (member is EnumDeclaration) {
+    return member.body.members;
+  }
+  if (member is ExtensionDeclaration) {
+    return member.body.members;
+  }
   if (member is ExtensionTypeDeclaration) {
     return _membersFromClassBody(member.body);
   }

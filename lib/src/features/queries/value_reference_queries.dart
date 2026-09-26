@@ -15,8 +15,12 @@ bool isValueReference(SimpleIdentifier node) {
     return false;
   }
   for (var ancestor = parent; ancestor != null; ancestor = ancestor.parent) {
-    if (ancestor is DartPattern) return false;
-    if (ancestor is RecordLiteral || ancestor is NamedExpression) break;
+    if (ancestor is DartPattern) {
+      return false;
+    }
+    if (ancestor is RecordLiteral || ancestor is NamedExpression) {
+      break;
+    }
   }
   return true;
 }
@@ -32,10 +36,18 @@ bool isShadowedValue(SimpleIdentifier reference) {
     }
     if (ancestor is Block) {
       for (final statement in ancestor.statements) {
-        if (statement.offset >= reference.offset) break;
-        if (statement is VariableDeclarationStatement && statement.variables.variables.any((variable) => variable.name.lexeme == name)) return true;
-        if (statement is PatternVariableDeclarationStatement && _declaresName(statement.declaration.pattern, name)) return true;
-        if (statement is FunctionDeclarationStatement && statement.functionDeclaration.name.lexeme == name) return true;
+        if (statement.offset >= reference.offset) {
+          break;
+        }
+        if (statement is VariableDeclarationStatement && statement.variables.variables.any((variable) => variable.name.lexeme == name)) {
+          return true;
+        }
+        if (statement is PatternVariableDeclarationStatement && _declaresName(statement.declaration.pattern, name)) {
+          return true;
+        }
+        if (statement is FunctionDeclarationStatement && statement.functionDeclaration.name.lexeme == name) {
+          return true;
+        }
       }
     }
     if (ancestor is ForStatement && !_insideForEachIterable(ancestor.forLoopParts, reference) && _declaresName(ancestor.forLoopParts, name)) {
@@ -59,8 +71,12 @@ bool isShadowedValue(SimpleIdentifier reference) {
     if (ancestor is CatchClause && (ancestor.exceptionParameter?.name.lexeme == name || ancestor.stackTraceParameter?.name.lexeme == name)) {
       return true;
     }
-    if (ancestor is SwitchPatternCase && _declaresName(ancestor.guardedPattern.pattern, name)) return true;
-    if (ancestor is SwitchExpressionCase && _declaresName(ancestor.guardedPattern.pattern, name)) return true;
+    if (ancestor is SwitchPatternCase && _declaresName(ancestor.guardedPattern.pattern, name)) {
+      return true;
+    }
+    if (ancestor is SwitchExpressionCase && _declaresName(ancestor.guardedPattern.pattern, name)) {
+      return true;
+    }
   }
   return false;
 }

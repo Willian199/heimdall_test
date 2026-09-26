@@ -525,7 +525,7 @@ void main() {
           .that()
           .haveName('_nullableAction')
           .should()
-          .receiveParameterAssignableTo('Cubit')
+          .notReceiveParameterAssignableTo('Cubit')
           .check(project);
       final externalParameterMethods = Heimdall.methods()
           .that()
@@ -615,10 +615,11 @@ void main() {
       expect(externalParameterMethods.findings, isEmpty);
       expect(cubitFields.checkedCount, 3);
       expect(cubitFields.findings, isEmpty);
-      expect(assignableCubitFields.checkedCount, 5);
+      expect(assignableCubitFields.checkedCount, 4);
       expect(assignableCubitFields.findings, isEmpty);
       expect(widgetCubitFields.checkedCount, 4);
-      expect(widgetCubitFields.findings, isEmpty);
+      expect(widgetCubitFields.findings, hasLength(1));
+      expect(widgetCubitFields.findings.single.message, contains('optionalCubit'));
       expect(multiCubitFields.findings, isEmpty);
       expect(externalFields.findings, isEmpty);
       expect(objectFields.findings, isEmpty);

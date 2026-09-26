@@ -489,7 +489,9 @@ bool _hasSameDirectoryRelativeUri(UriBasedDirective directive) {
     if (uri.contains(':') || uri == '..' || uri.startsWith('../') || uri.contains('/../')) {
       return false;
     }
-    if (!uri.contains('/')) return true;
+    if (!uri.contains('/')) {
+      return true;
+    }
     return uri.startsWith('./') && !uri.substring(2).contains('/');
   });
 }
@@ -502,9 +504,15 @@ enum _DirectiveUriKind { dart, package, relative, other }
 
 extension _StringUriKind on String {
   _DirectiveUriKind get _uriKind {
-    if (startsWith('dart:')) return _DirectiveUriKind.dart;
-    if (startsWith('package:')) return _DirectiveUriKind.package;
-    if (!contains(':')) return _DirectiveUriKind.relative;
+    if (startsWith('dart:')) {
+      return _DirectiveUriKind.dart;
+    }
+    if (startsWith('package:')) {
+      return _DirectiveUriKind.package;
+    }
+    if (!contains(':')) {
+      return _DirectiveUriKind.relative;
+    }
     return _DirectiveUriKind.other;
   }
 }

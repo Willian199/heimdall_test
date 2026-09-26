@@ -73,7 +73,9 @@ Iterable<AstNode> _nodes(AstNode root, String relativePath) sync* {
   };
   if (root is MethodInvocation && root.methodName.name == 'test') {
     final name = root.argumentList.arguments.firstOrNull;
-    if (name is SimpleStringLiteral && (jsonTests[relativePath]?.contains(name.value) ?? false)) return;
+    if (name is SimpleStringLiteral && (jsonTests[relativePath]?.contains(name.value) ?? false)) {
+      return;
+    }
   }
   yield root;
   for (final child in root.childEntities.whereType<AstNode>()) {

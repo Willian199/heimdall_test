@@ -33,7 +33,7 @@ void main() {
       expect(report.findings, isEmpty);
     });
 
-    test('$className includes its field in every returned list', () {
+    test('$className requires unconditional inclusion in every returned list', () {
       final report = Heimdall.fields()
           .that()
           .areDeclaredInClassesThat(
@@ -46,7 +46,10 @@ void main() {
           .check(project);
 
       expect(report.checkedCount, 1);
-      expect(report.findings, isEmpty);
+      // A collection-if without else and a loop do not establish that an
+      // element exists. This analysis does not execute conditions or loops.
+      final guaranteed = className == 'CollectionIfElseProps' || className == 'SwitchExpressionProps';
+      expect(report.findings, guaranteed ? isEmpty : hasLength(1));
     });
   }
 }

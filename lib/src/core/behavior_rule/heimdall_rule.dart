@@ -98,7 +98,8 @@ final class HeimdallRule<T> {
       description: description,
       checkedCount: selectedCount,
       findings: visibleFindings,
-      failOnEmptySelection: failOnEmptySelection,
+      // An ignored empty-selection finding must not reappear at assertion time.
+      failOnEmptySelection: failOnEmptySelection && (selectedCount != 0 || visibleFindings.isNotEmpty),
     );
   }
 

@@ -3,6 +3,7 @@ import 'package:analyzer/dart/ast/visitor.dart';
 import 'package:heimdall_test/src/core/heimdall_condition.dart';
 import 'package:heimdall_test/src/core/heimdall_validation_info.dart';
 import 'package:heimdall_test/src/features/queries/declaration_lookup_queries.dart';
+import 'package:heimdall_test/src/features/queries/static_method_queries.dart';
 import 'package:heimdall_test/src/mapper/model/heimdall_declaration.dart';
 import 'package:heimdall_test/src/mapper/model/heimdall_member.dart';
 import 'package:heimdall_test/src/mapper/model/heimdall_project.dart';
@@ -146,6 +147,10 @@ final class _ConstructorCallVisitor extends RecursiveAstVisitor<void> {
       return;
     }
     final target = node.target;
+    if (node.isCascaded || hasValueReceiver(node, target?.toSource() ?? node.methodName.name, project)) {
+      super.visitMethodInvocation(node);
+      return;
+    }
     final targetName = switch (target) {
       SimpleIdentifier(:final name) => name,
       PrefixedIdentifier(:final prefix, :final identifier) => '${prefix.name}.${identifier.name}',

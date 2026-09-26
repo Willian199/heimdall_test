@@ -22,6 +22,7 @@ final class MemberRelationshipIndex {
 
   /// Direct fields present in every returned list literal. Unknown return
   /// expressions contribute no fields, so they cannot make this check pass.
+  /// Collection-if branches are intersected; loops guarantee no elements.
   late final Set<String> returnedListFieldsInEveryReturn;
 }
 
@@ -64,7 +65,7 @@ final class _ReturnVisitor extends RecursiveAstVisitor<void> {
         directFields.addAll(_fieldsInElement(element));
       }
       fields.addAll(directFields);
-      returnFields.add(directFields);
+      returnFields.add({for (final element in expression.elements) ..._guaranteedFieldsInElement(element)});
     } else {
       returnFields.add({});
     }
@@ -172,3 +173,14 @@ bool _declaresName(AstNode node, String name) {
 }
 
 bool _contains(AstNode scope, AstNode node) => scope.offset <= node.offset && node.end <= scope.end;
+
+Set<String> _guaranteedFieldsInElement(CollectionElement element) {
+  if (element is IfElement) {
+    return _guaranteedFieldsInElement(element.thenElement)
+      ..retainAll(element.elseElement == null ? <String>{} : _guaranteedFieldsInElement(element.elseElement!));
+  }
+  if (element is ForElement) {
+    return {};
+  }
+  return _fieldsInElement(element);
+}

@@ -35,7 +35,7 @@ final class HeimdallConfiguration {
     if (!file.existsSync()) {
       return;
     }
-    
+
     for (final line in file.readAsLinesSync()) {
       final trimmed = line.trim();
       if (trimmed.isEmpty || trimmed.startsWith('#')) {

@@ -1,3 +1,14 @@
+## 0.10.2
+
+- **Breaking:** Class collections now include named mixin applications (`ClassTypeAlias`) and expose `CompilationUnitMember` elements. Use `whereType<ClassDeclaration>()` for APIs specific to class bodies.
+- Traverse mixin interfaces and class aliases in inheritance rules; distinguish guaranteed list entries from conditional or loop entries.
+- Respect pattern guards and value shadowing when checking field access and constructor calls, and include parameter defaults in executable checks.
+- Preserve collection generic information in inferred closure signatures. Unannotated top-level functions and non-overriding methods/getters correctly expose dynamic returns.
+- Preserve nested collection types through `map` and `cast`, respect explicit callback parameter types, and detect dynamic returns from function tear-offs.
+- Recognize prefixed constructors even when a method has the same name, and avoid treating local function calls as constructors.
+- Classify each conditional import/export branch independently, reject unsupported directive URI schemes, and report the offending upward URI.
+- Fix default barrel export patterns, empty-path checks, and assertions for ignored empty-selection findings.
+
 ## 0.10.1
 
 - Added strict field checks for list and for matching parameters forwarded to returned constructors.

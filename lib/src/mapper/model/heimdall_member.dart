@@ -56,6 +56,7 @@ extension HeimdallMember on ClassMember {
   List<FormalParameter> get parameters => _context.parameters;
 
   /// AST roots that can contain executable references inside this member.
+  /// Includes parameter defaults, constructor initializers, and bodies.
   List<AstNode> get executableRoots => _context.executableRoots;
 
   /// Cached expressions in this member's executable roots.
@@ -227,10 +228,10 @@ List<FormalParameter> _parametersOf(ClassMember member) {
 
 List<AstNode> _executableRootsOf(ClassMember member) {
   if (member is MethodDeclaration) {
-    return [member.body];
+    return [?member.parameters, member.body];
   }
   if (member is ConstructorDeclaration) {
-    return [...member.initializers, member.body];
+    return [member.parameters, ...member.initializers, member.body];
   }
   if (member is FieldDeclaration) {
     return member.fields.variables.map((variable) => variable.initializer).whereType<Expression>().toList();

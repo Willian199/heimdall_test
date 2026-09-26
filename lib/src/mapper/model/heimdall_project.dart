@@ -122,43 +122,44 @@ final class HeimdallProject {
     for (final file in files) ...file.privateTypeDeclarations,
   ]);
 
-  /// Class declarations found in imported files.
-  late final List<ClassDeclaration> classDeclarations = List.unmodifiable([
+  /// Classes and named mixin applications ([ClassTypeAlias]) in imported files.
+  /// Use `whereType<ClassDeclaration>()` when only class bodies are needed.
+  late final List<CompilationUnitMember> classDeclarations = List.unmodifiable([
     for (final file in files) ...file.classDeclarations,
   ]);
 
   /// Public class declarations found in imported files.
-  late final List<ClassDeclaration> publicClassDeclarations = List.unmodifiable([
+  late final List<CompilationUnitMember> publicClassDeclarations = List.unmodifiable([
     for (final file in files) ...file.publicClassDeclarations,
   ]);
 
   /// Private class declarations found in imported files.
-  late final List<ClassDeclaration> privateClassDeclarations = List.unmodifiable([
+  late final List<CompilationUnitMember> privateClassDeclarations = List.unmodifiable([
     for (final file in files) ...file.privateClassDeclarations,
   ]);
 
   /// Abstract class declarations found in imported files.
-  late final List<ClassDeclaration> abstractClasses = List.unmodifiable([
+  late final List<CompilationUnitMember> abstractClasses = List.unmodifiable([
     for (final file in files) ...file.abstractClasses,
   ]);
 
   /// Sealed class declarations found in imported files.
-  late final List<ClassDeclaration> sealedClasses = List.unmodifiable([
+  late final List<CompilationUnitMember> sealedClasses = List.unmodifiable([
     for (final file in files) ...file.sealedClasses,
   ]);
 
   /// Base class declarations found in imported files.
-  late final List<ClassDeclaration> baseClasses = List.unmodifiable([
+  late final List<CompilationUnitMember> baseClasses = List.unmodifiable([
     for (final file in files) ...file.baseClasses,
   ]);
 
   /// Interface class declarations found in imported files.
-  late final List<ClassDeclaration> interfaceClasses = List.unmodifiable([
+  late final List<CompilationUnitMember> interfaceClasses = List.unmodifiable([
     for (final file in files) ...file.interfaceClasses,
   ]);
 
   /// Final class declarations found in imported files.
-  late final List<ClassDeclaration> finalClasses = List.unmodifiable([
+  late final List<CompilationUnitMember> finalClasses = List.unmodifiable([
     for (final file in files) ...file.finalClasses,
   ]);
 
@@ -452,7 +453,12 @@ final class HeimdallProject {
 
   /// Package imports that target another package.
   late final List<ImportDirective> externalPackageImports = List.unmodifiable(
-    packageImports.where((directive) => !_isInternalPackageDirective(directive)),
+    packageImports.where(
+      (directive) => directive.targetUris
+          .map(Uri.tryParse)
+          .whereType<Uri>()
+          .any((uri) => uri.scheme == 'package' && uri.pathSegments.firstOrNull != packageName),
+    ),
   );
 
   /// Package imports that target a `src/` path.

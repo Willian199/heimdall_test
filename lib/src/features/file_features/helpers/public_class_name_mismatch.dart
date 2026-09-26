@@ -42,7 +42,7 @@ PublicClassNameMismatch? publicClassNameMismatch(
 }) {
   final classes = item.publicClassDeclarations
       .where(
-        (declaration) => className == null || _classNameOf(declaration) == className,
+        (declaration) => className == null || declaration.name == className,
       )
       .toList();
   if (classes.length != 1) {
@@ -50,16 +50,12 @@ PublicClassNameMismatch? publicClassNameMismatch(
   }
 
   final declaration = classes.single;
-  final expected = _camelToSnake(_classNameOf(declaration));
+  final expected = _camelToSnake(declaration.name);
   final actual = p.basenameWithoutExtension(item.relativePath);
   if (actual == expected) {
     return null;
   }
   return PublicClassNameMismatch(declaration, expected);
-}
-
-String _classNameOf(ClassDeclaration declaration) {
-  return declaration.namePart.typeName.lexeme;
 }
 
 String _camelToSnake(String value) {
@@ -81,7 +77,7 @@ final class PublicClassNameMismatch {
   const PublicClassNameMismatch(this.declaration, this.expectedFileName);
 
   /// Public class declaration whose name defines the expected file name.
-  final ClassDeclaration declaration;
+  final CompilationUnitMember declaration;
 
   /// Expected snake_case file name without the `.dart` extension.
   final String expectedFileName;

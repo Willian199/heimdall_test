@@ -66,7 +66,7 @@ HeimdallCondition<HeimdallSourceFile> _fileShouldHavePublicClassNameMatchingFile
             HeimdallValidationInfo(
               filePath: item.absolutePath,
               line: mismatch.declaration.line,
-              message: 'should be named ${mismatch.expectedFileName}.dart for ${mismatch.declaration.namePart.typeName.lexeme}',
+              message: 'should be named ${mismatch.expectedFileName}.dart for ${mismatch.declaration.name}',
             ),
           ];
     return HeimdallFindings(

@@ -58,13 +58,13 @@ bool isShadowedValue(SimpleIdentifier reference) {
     }
     if (ancestor is IfStatement &&
         ancestor.caseClause != null &&
-        _contains(ancestor.thenStatement, reference) &&
+        (_contains(ancestor.thenStatement, reference) || _contains(ancestor.caseClause!, reference)) &&
         _declaresName(ancestor.caseClause!, name)) {
       return true;
     }
     if (ancestor is IfElement &&
         ancestor.caseClause != null &&
-        _contains(ancestor.thenElement, reference) &&
+        (_contains(ancestor.thenElement, reference) || _contains(ancestor.caseClause!, reference)) &&
         _declaresName(ancestor.caseClause!, name)) {
       return true;
     }

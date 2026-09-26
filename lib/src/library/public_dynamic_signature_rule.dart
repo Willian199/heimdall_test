@@ -16,6 +16,9 @@ extension HeimdallPublicDynamicSignatureRule on HeimdallCodeSight {
   /// SDK and external package sources are not read. Visible local declarations
   /// and lexical type parameters take precedence over these name lists.
   /// Wildcard parameters are always ignored, including explicit annotations.
+  /// Unannotated top-level functions and non-overriding methods/getters expose
+  /// dynamic returns; Dart does not infer their signatures from their bodies.
+  /// Body inference applies to closures and local functions instead.
   /// Local inference is conservative: unknown types do not produce findings.
   /// It follows same-file calls, visible class members, collection elements,
   /// indexing, await/yield, and direct generic argument inference. It does not
@@ -124,7 +127,7 @@ List<HeimdallValidationInfo> _publicDynamicSignatureFindings(
       filePath: declaration.sourcePath,
       line: declaration.line,
       type: declaration.returnType,
-      inferredStatus: declaration.returnType == null ? rawGenericTypes.bodyStatus(declaration.functionExpression.body, declaration) : null,
+      inferredStatus: declaration.returnType == null ? rawGenericTypes.functionReturnStatus(declaration, declaration) : null,
       name: declaration.name.lexeme,
       project: project,
       origin: declaration,
@@ -436,6 +439,14 @@ bool _typeContainsPublicDynamic(
 
 enum _DynamicStatus { dynamicType, known, unknown }
 
+final class _SdkValue {
+  const _SdkValue({required this.name, required this.arguments, this.element});
+
+  final String name;
+  final List<_DynamicStatus> arguments;
+  final _SdkValue? element;
+}
+
 bool _containsNode(AstNode scope, AstNode node) => scope.offset <= node.offset && node.end <= scope.end;
 
 bool _patternDeclaresName(AstNode pattern, String name) {
@@ -526,6 +537,9 @@ final class _RawGenericTypeResolver {
   final Set<AstNode> _expressionActive = {};
   final Set<AstNode> _typeActive = {};
   Map<TypeParameter, _DynamicStatus> _bindings = {};
+  final Map<FormalParameter, _DynamicStatus> _callbackBindings = {};
+  final Map<FormalParameter, _SdkValue> _callbackValues = {};
+  final Set<Expression> _sdkActive = {};
 
   _DynamicStatus typeStatus(TypeAnnotation? type, CompilationUnitMember origin) {
     if (type == null) {
@@ -929,16 +943,24 @@ final class _RawGenericTypeResolver {
     }
     if (value is FunctionDeclaration) {
       return _combine([
-        _functionReturnStatus(value, owner),
+        functionReturnStatus(value, owner),
         for (final parameter in value.functionExpression.parameters?.parameters ?? <FormalParameter>[]) parameterStatus(parameter, owner),
       ]);
     }
     return _DynamicStatus.unknown;
   }
 
-  _DynamicStatus _functionReturnStatus(FunctionDeclaration function, CompilationUnitMember origin) {
-    return function.returnType == null ? bodyStatus(function.functionExpression.body, origin) : typeStatus(function.returnType, origin);
+  _DynamicStatus functionReturnStatus(FunctionDeclaration function, CompilationUnitMember origin) {
+    if (function.returnType != null) {
+      return typeStatus(function.returnType, origin);
+    }
+    if (function.isSetter) {
+      return _DynamicStatus.known;
+    }
+    return function.parent is CompilationUnit ? _implicitDynamicStatus : bodyStatus(function.functionExpression.body, origin);
   }
+
+  _DynamicStatus get _implicitDynamicStatus => _ignoredTypeKeys.contains('dynamic') ? _DynamicStatus.known : _DynamicStatus.dynamicType;
 
   _DynamicStatus _callValue(Expression expression, CompilationUnitMember origin) {
     if (expression is ParenthesizedExpression) {
@@ -958,6 +980,12 @@ final class _RawGenericTypeResolver {
     }
     if (expression is SimpleIdentifier) {
       final value = _lookupValue(expression.name, expression, origin);
+      if (value is FunctionDeclaration) {
+        return functionReturnStatus(value, _owner(value, origin));
+      }
+      if (value is MethodDeclaration) {
+        return methodReturnStatus(value, _owner(value, origin));
+      }
       if (value is VariableDeclaration && value.initializer != null && value.initializer is FunctionExpression) {
         return bodyStatus((value.initializer! as FunctionExpression).body, _owner(value, origin));
       }
@@ -977,7 +1005,7 @@ final class _RawGenericTypeResolver {
           value.functionExpression.parameters,
           invocation.argumentList,
           origin,
-          () => _functionReturnStatus(value, _owner(value, origin)),
+          () => functionReturnStatus(value, _owner(value, origin)),
         );
       }
       if (value is MethodDeclaration) {
@@ -1176,16 +1204,215 @@ final class _RawGenericTypeResolver {
     }
   }
 
-  _DynamicStatus _memberStatus(Expression target, String name, CompilationUnitMember origin, {bool call = false, MethodInvocation? invocation}) {
-    final targetType = _expressionType(target, origin)?.type;
-    if (targetType is NamedType && !call) {
-      final arguments = targetType.typeArguments?.arguments;
-      if (arguments != null && arguments.isNotEmpty) {
-        if ({'first', 'last', 'single', 'current', 'values', 'keys'}.contains(name)) {
-          return typeStatus(name == 'keys' ? arguments.first : arguments.last, origin);
+  // Keep the container shape separate from the status of its type arguments:
+  // Iterable<dynamic>.length is int, while its first element is dynamic.
+  _SdkValue? _sdkValue(Expression expression, CompilationUnitMember origin) {
+    if (!_sdkActive.add(expression)) {
+      return null;
+    }
+    try {
+      return _inferSdkValue(expression, origin);
+    } finally {
+      _sdkActive.remove(expression);
+    }
+  }
+
+  _SdkValue? _inferSdkValue(Expression expression, CompilationUnitMember origin) {
+    if (expression is ParenthesizedExpression) {
+      return _sdkValue(expression.expression, origin);
+    }
+    if (expression is SimpleIdentifier) {
+      final value = _lookupValue(expression.name, expression, origin);
+      if (value is FormalParameter && _formalParameterType(_normalParameter(value)) == null) {
+        final contextual = _callbackValues[_normalParameter(value)];
+        if (contextual != null) {
+          return contextual;
         }
       }
+      if (value is VariableDeclaration &&
+          value.parent is VariableDeclarationList &&
+          (value.parent! as VariableDeclarationList).type == null &&
+          value.initializer != null) {
+        return _sdkValue(value.initializer!, _owner(value, origin));
+      }
     }
+    if (expression is ListLiteral) {
+      final type = expression.typeArguments?.arguments.firstOrNull;
+      return _SdkValue(
+        name: 'List',
+        arguments: [if (type == null) expressionStatus(expression, origin) else typeStatus(type, origin)],
+        element: type == null ? null : _sdkTypeValue(type, origin),
+      );
+    }
+    final (target, name, invocation) = switch (expression) {
+      PropertyAccess() => (expression.realTarget, expression.propertyName.name, null),
+      PrefixedIdentifier() => (expression.prefix, expression.identifier.name, null),
+      MethodInvocation() => (expression.realTarget, expression.methodName.name, expression),
+      _ => (null, '', null),
+    };
+    if (target != null) {
+      final receiver = _sdkValue(target, origin);
+      if (receiver != null) {
+        return _sdkMember(receiver, name, origin, invocation: invocation);
+      }
+    }
+    final reference = _expressionType(expression, origin);
+    if (reference == null || reference.type is! NamedType) {
+      return null;
+    }
+    return _sdkTypeValue(reference.type, reference.origin);
+  }
+
+  _SdkValue? _sdkTypeValue(TypeAnnotation annotation, CompilationUnitMember origin) {
+    if (annotation is! NamedType) {
+      return null;
+    }
+    final type = annotation;
+    final prefix = type.importPrefix?.name.lexeme;
+    if (_indexFor(origin, prefix).declarations.containsKey(type.name.lexeme) || prefix != null && !_isSdkImportPrefix(origin, prefix)) {
+      return null;
+    }
+    final nameOfType = type.name.lexeme;
+    if (!{'List', 'Set', 'Iterable', 'Iterator', 'Map', 'MapEntry'}.contains(nameOfType)) {
+      return null;
+    }
+    final arguments = type.typeArguments?.arguments;
+    return _SdkValue(
+      name: nameOfType,
+      arguments: arguments == null
+          ? List.filled(nameOfType == 'Map' || nameOfType == 'MapEntry' ? 2 : 1, _DynamicStatus.dynamicType)
+          : [for (final argument in arguments) typeStatus(argument, origin)],
+      element: arguments == null || arguments.length != 1 ? null : _sdkTypeValue(arguments.first, origin),
+    );
+  }
+
+  _SdkValue? _sdkMember(_SdkValue target, String name, CompilationUnitMember origin, {MethodInvocation? invocation}) {
+    final call = invocation != null;
+    final args = target.arguments;
+    _SdkValue scalar(_DynamicStatus status) => _SdkValue(name: status == _DynamicStatus.dynamicType ? 'dynamic' : 'value', arguments: [status]);
+    _SdkValue collection(String type, _DynamicStatus element) => _SdkValue(name: type, arguments: [element], element: target.element);
+    final elementValue = target.element ?? scalar(args.firstOrNull ?? _DynamicStatus.unknown);
+    const known = _SdkValue(name: 'value', arguments: []);
+    final iterable = {'List', 'Set', 'Iterable'}.contains(target.name);
+    if (!call) {
+      if ((iterable || target.name == 'Map') && {'length', 'isEmpty', 'isNotEmpty'}.contains(name)) {
+        return known;
+      }
+      if (iterable && {'first', 'last', 'single'}.contains(name)) {
+        return elementValue;
+      }
+      if (iterable && name == 'iterator') {
+        return collection('Iterator', args.first);
+      }
+      if (target.name == 'List' && name == 'reversed') {
+        return collection('Iterable', args.first);
+      }
+      if (target.name == 'Iterator' && name == 'current') {
+        return elementValue;
+      }
+      if (target.name == 'Map') {
+        if (name == 'keys') {
+          return collection('Iterable', args.first);
+        }
+        if (name == 'values') {
+          return collection('Iterable', args.last);
+        }
+        if (name == 'entries') {
+          return _SdkValue(
+            name: 'Iterable',
+            arguments: [_combine(args)],
+            element: _SdkValue(name: 'MapEntry', arguments: args),
+          );
+        }
+      }
+      if (target.name == 'MapEntry' && {'key', 'value'}.contains(name)) {
+        return scalar(name == 'key' ? args.first : args.last);
+      }
+      return null;
+    }
+    if (target.name == 'Iterator' && name == 'moveNext') {
+      return known;
+    }
+    if (iterable) {
+      if ({'any', 'every', 'contains', 'join', 'forEach'}.contains(name)) {
+        return known;
+      }
+      if ({'firstWhere', 'lastWhere', 'singleWhere', 'elementAt'}.contains(name)) {
+        return elementValue;
+      }
+      if (target.name == 'List' && {'removeAt', 'removeLast'}.contains(name)) {
+        return elementValue;
+      }
+      if (name == 'toList' || target.name == 'List' && name == 'sublist') {
+        return collection('List', args.first);
+      }
+      if (name == 'toSet') {
+        return collection('Set', args.first);
+      }
+      if ({'where', 'skip', 'take', 'skipWhile', 'takeWhile', 'followedBy'}.contains(name) || target.name == 'List' && name == 'getRange') {
+        return collection('Iterable', args.first);
+      }
+      if ({'map', 'expand'}.contains(name)) {
+        final explicit = invocation.typeArguments?.arguments;
+        if (explicit != null) {
+          return _SdkValue(name: 'Iterable', arguments: [typeStatus(explicit.first, origin)], element: _sdkTypeValue(explicit.first, origin));
+        }
+        final callback = invocation.argumentList.arguments.firstOrNull;
+        if (callback is FunctionExpression) {
+          final formal = callback.parameters?.parameters.firstOrNull;
+          final parameter = formal == null || _formalParameterType(_normalParameter(formal)) != null ? null : _normalParameter(formal);
+          final previous = parameter == null ? null : _callbackBindings[parameter];
+          final previousValue = parameter == null ? null : _callbackValues[parameter];
+          if (parameter != null) {
+            _callbackBindings[parameter] = args.first;
+            _callbackValues[parameter] = elementValue;
+          }
+          try {
+            final body = callback.body;
+            final result = body is ExpressionFunctionBody ? _sdkValue(body.expression, origin) : null;
+            return _SdkValue(name: 'Iterable', arguments: [bodyStatus(body, origin)], element: name == 'expand' ? result?.element : result);
+          } finally {
+            if (parameter != null) {
+              if (previousValue == null) {
+                _callbackValues.remove(parameter);
+              } else {
+                _callbackValues[parameter] = previousValue;
+              }
+              if (previous == null) {
+                _callbackBindings.remove(parameter);
+              } else {
+                _callbackBindings[parameter] = previous;
+              }
+            }
+          }
+        }
+        return _SdkValue(name: 'Iterable', arguments: [if (callback == null) _DynamicStatus.unknown else _callValue(callback, origin)]);
+      }
+    }
+    if (target.name == 'Map' && {'remove', 'putIfAbsent', 'update'}.contains(name)) {
+      return scalar(args.last);
+    }
+    if ((iterable || target.name == 'Map') && name == 'cast') {
+      return _SdkValue(
+        name: target.name,
+        element: invocation.typeArguments?.arguments.length == 1 ? _sdkTypeValue(invocation.typeArguments!.arguments.first, origin) : null,
+        arguments: invocation.typeArguments == null
+            ? List.filled(args.length, _DynamicStatus.dynamicType)
+            : [for (final type in invocation.typeArguments!.arguments) typeStatus(type, origin)],
+      );
+    }
+    return null;
+  }
+
+  _DynamicStatus _memberStatus(Expression target, String name, CompilationUnitMember origin, {bool call = false, MethodInvocation? invocation}) {
+    final sdkTarget = _sdkValue(target, origin);
+    if (sdkTarget != null) {
+      final result = _sdkMember(sdkTarget, name, origin, invocation: invocation);
+      if (result != null) {
+        return result.name == 'dynamic' ? _DynamicStatus.dynamicType : _combine(result.arguments);
+      }
+    }
+    final targetType = _expressionType(target, origin)?.type;
     if ((targetType == null || targetType is NamedType && targetType.name.lexeme == 'dynamic') &&
         expressionStatus(target, origin) == _DynamicStatus.dynamicType) {
       return _DynamicStatus.dynamicType;
@@ -1419,11 +1646,18 @@ final class _RawGenericTypeResolver {
         return inherited;
       }
     }
-    return bodyStatus(method.body, origin);
+    if (method.isSetter || method.isOperator && method.name.lexeme == '[]=') {
+      return _DynamicStatus.known;
+    }
+    return _implicitDynamicStatus;
   }
 
   _DynamicStatus parameterStatus(FormalParameter parameter, CompilationUnitMember origin, {ClassMember? member}) {
     final normal = _normalParameter(parameter);
+    final contextualStatus = _callbackBindings[normal];
+    if (contextualStatus != null) {
+      return contextualStatus;
+    }
     if (_isWildcardParameter(normal)) {
       return _DynamicStatus.known;
     }

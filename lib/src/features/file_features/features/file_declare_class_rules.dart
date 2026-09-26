@@ -14,7 +14,7 @@ extension FileDeclareClassPredicateRules on FilePredicateBuilder {
       HeimdallPredicate(
         'not declare class $className',
         (item, _) => !item.classDeclarations.any(
-          (declaration) => declaration.namePart.typeName.lexeme == className,
+          (declaration) => declaration.name == className,
         ),
       ),
     );
@@ -111,7 +111,7 @@ HeimdallCondition<HeimdallSourceFile> _fileShouldDeclareClass(
 ) {
   return HeimdallCondition('declare class $className', (item, _) {
     final hasClass = item.classDeclarations.any(
-      (declaration) => declaration.namePart.typeName.lexeme == className,
+      (declaration) => declaration.name == className,
     );
     final findings = hasClass
         ? const <HeimdallValidationInfo>[]
@@ -133,7 +133,7 @@ HeimdallPredicate<HeimdallSourceFile> _fileDeclaresClass(String className) {
   return HeimdallPredicate(
     'declare class $className',
     (item, _) => item.classDeclarations.any(
-      (declaration) => declaration.namePart.typeName.lexeme == className,
+      (declaration) => declaration.name == className,
     ),
   );
 }
@@ -144,14 +144,18 @@ HeimdallCondition<HeimdallSourceFile> _fileShouldNotDeclareClass(
   return HeimdallCondition('not declare class $className', (item, _) {
     final findings = item.classDeclarations
         .where(
-          (declaration) => declaration.namePart.typeName.lexeme == className,
+          (declaration) => declaration.name == className,
         )
         .map(
           (declaration) => fileNodeFinding(
             item,
             declaration,
             'declares forbidden class $className',
-            offset: declaration.namePart.typeName.offset,
+            offset: switch (declaration) {
+              ClassDeclaration() => declaration.namePart.typeName.offset,
+              ClassTypeAlias() => declaration.name.offset,
+              _ => declaration.offset,
+            },
           ),
         )
         .toList();

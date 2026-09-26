@@ -94,7 +94,7 @@ extension HeimdallDeclaration on CompilationUnitMember {
   /// `true` for declarations that `Heimdall.classes()` treats as types.
   ///
   /// In Dart, this includes classes, mixins, enums, extensions, and extension
-  /// types.
+  /// types, including named mixin applications (class aliases).
   bool get isTypeDeclaration => _context.isTypeDeclaration;
 
   /// `true` for classes with the `abstract` modifier.
@@ -210,15 +210,19 @@ final class _DeclarationContext {
        members = List.unmodifiable(_membersOf(node)),
        isTypeDeclaration =
            node is ClassDeclaration ||
+           node is ClassTypeAlias ||
            node is MixinDeclaration ||
            node is EnumDeclaration ||
            node is ExtensionDeclaration ||
            node is ExtensionTypeDeclaration,
-       isAbstract = node is ClassDeclaration && node.abstractKeyword != null,
-       isSealed = node is ClassDeclaration && node.sealedKeyword != null,
-       isBase = node is ClassDeclaration && node.baseKeyword != null || node is MixinDeclaration && node.baseKeyword != null,
-       isInterface = node is ClassDeclaration && node.interfaceKeyword != null,
-       isFinal = node is ClassDeclaration && node.finalKeyword != null {
+       isAbstract = node is ClassDeclaration && node.abstractKeyword != null || node is ClassTypeAlias && node.abstractKeyword != null,
+       isSealed = node is ClassDeclaration && node.sealedKeyword != null || node is ClassTypeAlias && node.sealedKeyword != null,
+       isBase =
+           node is ClassDeclaration && node.baseKeyword != null ||
+           node is ClassTypeAlias && node.baseKeyword != null ||
+           node is MixinDeclaration && node.baseKeyword != null,
+       isInterface = node is ClassDeclaration && node.interfaceKeyword != null || node is ClassTypeAlias && node.interfaceKeyword != null,
+       isFinal = node is ClassDeclaration && node.finalKeyword != null || node is ClassTypeAlias && node.finalKeyword != null {
     annotations = List.unmodifiable(
       annotationNodes.map((annotation) => annotation.name.name),
     );

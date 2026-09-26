@@ -145,14 +145,14 @@ bool _extendsType(
   HeimdallProject project,
   Set<String> visited,
 ) {
-  if (item is! ClassDeclaration) {
+  if (item is! ClassDeclaration && item is! ClassTypeAlias) {
     return false;
   }
   if (!visited.add('${item.sourcePath}:${item.name}:extends')) {
     return false;
   }
 
-  final superclass = item.extendsClause?.superclass;
+  final superclass = _superclassOf(item);
   if (superclass == null) {
     return false;
   }
@@ -171,14 +171,14 @@ bool _extendsTypeNamedWhere(
   bool Function(String typeName) test,
   Set<String> visited,
 ) {
-  if (item is! ClassDeclaration) {
+  if (item is! ClassDeclaration && item is! ClassTypeAlias) {
     return false;
   }
   if (!visited.add('${item.sourcePath}:${item.name}:extendsWhere')) {
     return false;
   }
 
-  final superclass = item.extendsClause?.superclass;
+  final superclass = _superclassOf(item);
   if (superclass == null) {
     return false;
   }
@@ -201,7 +201,7 @@ bool _implementsType(
     return false;
   }
 
-  final interfaces = _directImplementedTypes(item);
+  final interfaces = [..._directImplementedTypes(item), ..._directMixedInTypes(item)];
   if (interfaces.any((interface) => typeNamesMatchFrom(item, interface, typeName, project))) {
     return true;
   }
@@ -213,7 +213,7 @@ bool _implementsType(
     }
   }
 
-  final superclass = item is ClassDeclaration ? item.extendsClause?.superclass : null;
+  final superclass = _superclassOf(item);
   if (superclass == null) {
     return false;
   }
@@ -231,7 +231,7 @@ bool _implementsTypeNamedWhere(
     return false;
   }
 
-  final interfaces = _directImplementedTypes(item);
+  final interfaces = [..._directImplementedTypes(item), ..._directMixedInTypes(item)];
   if (interfaces.any((interface) => typeNameMatchesWhereFrom(item, interface, project, test))) {
     return true;
   }
@@ -243,7 +243,7 @@ bool _implementsTypeNamedWhere(
     }
   }
 
-  final superclass = item is ClassDeclaration ? item.extendsClause?.superclass : null;
+  final superclass = _superclassOf(item);
   if (superclass == null) {
     return false;
   }
@@ -266,7 +266,7 @@ bool _mixesInType(
     return true;
   }
 
-  final superclass = item is ClassDeclaration ? item.extendsClause?.superclass : null;
+  final superclass = _superclassOf(item);
   if (superclass == null) {
     return false;
   }
@@ -289,7 +289,7 @@ bool _mixesInTypeNamedWhere(
     return true;
   }
 
-  final superclass = item is ClassDeclaration ? item.extendsClause?.superclass : null;
+  final superclass = _superclassOf(item);
   if (superclass == null) {
     return false;
   }
@@ -309,7 +309,7 @@ List<String> _directAssignableTypes(CompilationUnitMember item) {
 
 List<String> _directExtendedTypes(CompilationUnitMember item) {
   return [
-    if (item is ClassDeclaration && item.extendsClause != null) namedTypeReferenceName(item.extendsClause!.superclass),
+    if (_superclassOf(item) case final superclass?) namedTypeReferenceName(superclass),
   ];
 }
 
@@ -328,6 +328,7 @@ List<String> _directImplementedTypes(CompilationUnitMember item) {
         namedTypeReferenceName,
       ),
     if (item is ExtensionTypeDeclaration) ...?item.implementsClause?.interfaces.map(namedTypeReferenceName),
+    if (item is ClassTypeAlias) ...?item.implementsClause?.interfaces.map(namedTypeReferenceName),
   ];
 }
 
@@ -335,6 +336,7 @@ List<String> _directMixedInTypes(CompilationUnitMember item) {
   return [
     if (item is ClassDeclaration) ...?item.withClause?.mixinTypes.map(namedTypeReferenceName),
     if (item is EnumDeclaration) ...?item.withClause?.mixinTypes.map(namedTypeReferenceName),
+    if (item is ClassTypeAlias) ...item.withClause.mixinTypes.map(namedTypeReferenceName),
   ];
 }
 
@@ -350,3 +352,9 @@ Set<String> _expandedTypeNamesFrom(
     ],
   };
 }
+
+NamedType? _superclassOf(CompilationUnitMember item) => switch (item) {
+  ClassDeclaration() => item.extendsClause?.superclass,
+  ClassTypeAlias() => item.superclass,
+  _ => null,
+};

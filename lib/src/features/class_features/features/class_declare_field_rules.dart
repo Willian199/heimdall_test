@@ -169,7 +169,7 @@ Iterable<({int line, int column})> _matchingFieldVariables(
     if (variable.name.lexeme != fieldName) {
       continue;
     }
-    
+
     yield item.sourceLocationAt(variable.name.offset);
   }
 }

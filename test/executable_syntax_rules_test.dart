@@ -148,7 +148,7 @@ void main() {
     expect(() => method('other').should().containExpression(''), throwsArgumentError);
   });
 
-  test('member syntax includes initializers but excludes parameter defaults', () {
+  test('member syntax includes initializers and parameter defaults', () {
     field('initialized').should().callConstructorWithArguments('Container', exactArguments: true).check(project).assertNoFindings();
     Heimdall.constructors()
         .that()
@@ -157,7 +157,8 @@ void main() {
         .containNullAssertion()
         .check(project)
         .assertNoFindings();
-    method('defaults').should().notCallConstructorWithArguments('Container').check(project).assertNoFindings();
+    method('defaults').should().callConstructorWithArguments('Container').check(project).assertNoFindings();
+    expect(method('defaults').should().notCallConstructorWithArguments('Container').check(project).findings, hasLength(1));
   });
 
   test('cascades preserve their receiver and are not constructor calls', () {

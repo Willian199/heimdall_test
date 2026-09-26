@@ -99,6 +99,9 @@ linter:
 analyzer:
   exclude:
     - test/architecture_fixtures/**
+    - test/bug_audit_fixtures/**
+    - test/bug_audit_regression_test.dart
+    - test/bug_hunt_fixtures/**
     - test/class_fixtures/**
     - test/code_fixtures/**
     - test/dsl_fixtures/**

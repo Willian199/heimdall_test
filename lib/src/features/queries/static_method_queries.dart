@@ -102,7 +102,7 @@ bool _matchesStaticMethodInvocation(
 ) {
   return node.methodName.name == methodName &&
       _matchesTargetType(node, node.target, targetType, project) &&
-      !_hasValueReceiver(node, targetType, project) &&
+      !hasValueReceiver(node, targetType, project) &&
       !_isNamedConstructorReference(node, targetType, methodName, project);
 }
 
@@ -113,7 +113,7 @@ bool _matchesStaticFunctionInvocation(
   HeimdallProject project,
 ) {
   return _matchesTargetType(node, node.function, '$targetType.$methodName', project) &&
-      !_hasValueReceiver(node, targetType, project) &&
+      !hasValueReceiver(node, targetType, project) &&
       !_isNamedConstructorReference(node, targetType, methodName, project);
 }
 
@@ -134,7 +134,8 @@ bool _matchesTargetType(AstNode invocation, Expression? target, String expected,
   return false;
 }
 
-bool _hasValueReceiver(AstNode node, String targetType, HeimdallProject project) {
+/// Whether a lexical value or member hides a type reference at [node].
+bool hasValueReceiver(AstNode node, String targetType, HeimdallProject project) {
   final receiverName = targetType.split('.').first;
   for (var ancestor = node.parent; ancestor != null; ancestor = ancestor.parent) {
     if (ancestor is MethodDeclaration && _parametersDeclare(ancestor.parameters, receiverName)) {
@@ -148,6 +149,9 @@ bool _hasValueReceiver(AstNode node, String targetType, HeimdallProject project)
     }
     if (ancestor is Block) {
       for (final statement in ancestor.statements) {
+        if (statement is FunctionDeclarationStatement && statement.functionDeclaration.name.lexeme == receiverName) {
+          return true;
+        }
         if (statement.offset >= node.offset) {
           break;
         }
@@ -232,8 +236,7 @@ bool _parametersDeclare(FormalParameterList? parameters, String name) =>
 bool _valueMembersDeclare(CompilationUnitMember owner, String name, {bool inherited = false}) => owner.members.any(
   (member) => switch (member) {
     FieldDeclaration(:final fields) => (!inherited || !member.isStatic) && fields.variables.any((variable) => variable.name.lexeme == name),
-    MethodDeclaration() when member.isGetter => (!inherited || !member.isStatic) && member.name.lexeme == name,
-    MethodDeclaration() when !member.isStatic => member.name.lexeme == name,
+    MethodDeclaration() => (!inherited || !member.isStatic) && member.name.lexeme == name,
     _ => false,
   },
 );
@@ -258,6 +261,7 @@ bool _valueMembersDeclareInHierarchy(
       ...?withClause?.mixinTypes,
     ],
     EnumDeclaration(:final withClause) => [...?withClause?.mixinTypes],
+    ClassTypeAlias(:final superclass, :final withClause) => [superclass, ...withClause.mixinTypes],
     _ => <NamedType>[],
   };
   for (final type in inheritedTypes) {

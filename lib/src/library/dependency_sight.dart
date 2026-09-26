@@ -20,7 +20,8 @@ final class HeimdallDependencySight {
                   (dependency) => HeimdallValidationInfo(
                     filePath: item.absolutePath,
                     line: dependency.line,
-                    message: '${item.relativePath} imports ${dependency.targetUri}',
+                    message:
+                        '${item.relativePath} imports ${dependency.targetUris.where((uri) => uri == '..' || uri.startsWith('../') || uri.contains('/../')).join(', ')}',
                   ),
                 )
                 .toList();

@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:analyzer/dart/analysis/utilities.dart';
 import 'package:heimdall_test/heimdall_test.dart';
 import 'package:heimdall_test/src/features/queries/declaration_lookup_queries.dart';
+import 'package:heimdall_test/src/features/queries/static_method_queries.dart';
 
 /// Internal syntax matcher shared by file and member DSL features.
 typedef SyntaxMatch = bool Function(Expression expression, HeimdallProject project);
@@ -48,7 +49,7 @@ SyntaxMatch invocationMatcher(
 
   final named = namedArguments.map((name, source) => MapEntry(name, _expressionKey(source)));
   final positional = positionalArguments?.map(_expressionKey).toList();
-  
+
   return (expression, project) {
     ArgumentList? arguments;
     if (constructor) {
@@ -135,6 +136,9 @@ bool _matchesConstructorReference(MethodInvocation invocation, String typeName, 
     effectiveType = '$prefix.$typeName';
   }
 
+  if (hasValueReceiver(invocation, effectiveType, project)) {
+    return false;
+  }
   AstNode? node = invocation;
   while (node != null && node is! CompilationUnitMember) {
     node = node.parent;

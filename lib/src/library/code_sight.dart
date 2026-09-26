@@ -197,7 +197,7 @@ final class HeimdallCodeSight {
   /// Ensures barrel files export only targets matching allowed patterns.
   HeimdallRule<HeimdallSourceFile> barrelFilesShouldOnlyExport({
     String barrelPattern = 'index.dart',
-    List<String> allowedExportPatterns = const ['.dart'],
+    List<String> allowedExportPatterns = const ['**/*.dart'],
   }) {
     return HeimdallRule(
       descriptionPrefix: 'barrel files',
@@ -237,6 +237,7 @@ HeimdallRule<HeimdallSourceFile> _emptyPathRule(
   final childPattern = normalizedPattern.endsWith('/') ? '$normalizedPattern**' : '$normalizedPattern/**';
   return HeimdallRule(
     customDescription: description,
+    failOnEmptySelection: false,
     selector: (project) => project.files,
     predicate: HeimdallPredicate(
       'reside in path $pathPattern',

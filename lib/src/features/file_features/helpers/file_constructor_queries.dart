@@ -8,6 +8,6 @@ Iterable<ConstructorDeclaration> fileConstructors(
   if (className == null) {
     return item.constructors;
   }
-  
+
   return item.constructors.where((constructor) => constructor.ownerName == className);
 }

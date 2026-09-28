@@ -66,7 +66,7 @@ final class _IdentifierFinder extends RecursiveAstVisitor<void> {
 
   @override
   void visitSimpleIdentifier(SimpleIdentifier node) {
-    if (!node.inDeclarationContext() && node.name == target) {
+    if (!node.inDeclarationContext() && node.parent is! Label && node.name == target) {
       found = true;
     }
     super.visitSimpleIdentifier(node);

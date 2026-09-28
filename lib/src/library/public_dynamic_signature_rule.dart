@@ -20,8 +20,9 @@ extension HeimdallPublicDynamicSignatureRule on HeimdallCodeSight {
   /// dynamic returns; Dart does not infer their signatures from their bodies.
   /// Body inference applies to closures and local functions instead.
   /// Local inference is conservative: unknown types do not produce findings.
-  /// It follows same-file calls, visible class members, collection elements,
-  /// indexing, await/yield, and direct generic argument inference. It does not
+  /// It follows visible local imports and exports, class members, collection
+  /// elements, common SDK collection/Future/Stream returns, indexing,
+  /// await/yield, and direct generic argument inference. It does not
   /// perform full analyzer type resolution or flow-sensitive promotion.
   ///
   /// Use [ignoredPathPatterns] to skip generated, legacy, or intentionally
@@ -72,7 +73,13 @@ extension HeimdallPublicDynamicSignatureRule on HeimdallCodeSight {
         project,
       ) {
         final resolver = resolvers[project] ??= _RawGenericTypeResolver(project, ignoredTypeKeys, externalTypeNames);
-        final findings = _publicDynamicSignatureFindings(item, project, resolver);
+        final findings = _publicDynamicSignatureFindings(
+          item,
+          project,
+          resolver,
+          ignoredVariableNames: ignoredDeclarationNames,
+          ignoredVariableNamePatterns: ignoredDeclarationNamePatterns,
+        );
         return HeimdallFindings(
           subject: item,
           passed: findings.isEmpty,
@@ -97,10 +104,16 @@ bool _isIgnoredPublicSignatureDeclaration(
           pattern,
         ),
       ) ||
-      ignoredDeclarationNames.contains(declaration.name) ||
-      ignoredDeclarationNamePatterns.any(
-        (pattern) => pattern.hasMatch(declaration.name),
-      );
+      (declaration is TopLevelVariableDeclaration
+          ? declaration.variables.variables
+                .where((variable) => !variable.name.lexeme.startsWith('_'))
+                .every(
+                  (variable) =>
+                      ignoredDeclarationNames.contains(variable.name.lexeme) ||
+                      ignoredDeclarationNamePatterns.any((pattern) => pattern.hasMatch(variable.name.lexeme)),
+                )
+          : ignoredDeclarationNames.contains(declaration.name) ||
+                ignoredDeclarationNamePatterns.any((pattern) => pattern.hasMatch(declaration.name)));
 }
 
 bool _pathMatchesSignatureIgnore(String relativePath, String pattern) {
@@ -117,8 +130,10 @@ bool _pathMatchesSignatureIgnore(String relativePath, String pattern) {
 List<HeimdallValidationInfo> _publicDynamicSignatureFindings(
   CompilationUnitMember declaration,
   HeimdallProject project,
-  _RawGenericTypeResolver rawGenericTypes,
-) {
+  _RawGenericTypeResolver rawGenericTypes, {
+  Set<String> ignoredVariableNames = const {},
+  List<RegExp> ignoredVariableNamePatterns = const [],
+}) {
   final findings = <HeimdallValidationInfo>[];
   _addSignatureHeaderFindings(findings, declaration, project, rawGenericTypes);
   if (declaration is FunctionDeclaration) {
@@ -145,7 +160,9 @@ List<HeimdallValidationInfo> _publicDynamicSignatureFindings(
     );
   } else if (declaration is TopLevelVariableDeclaration) {
     for (final variable in declaration.variables.variables) {
-      if (variable.name.lexeme.startsWith('_')) {
+      if (variable.name.lexeme.startsWith('_') ||
+          ignoredVariableNames.contains(variable.name.lexeme) ||
+          ignoredVariableNamePatterns.any((pattern) => pattern.hasMatch(variable.name.lexeme))) {
         continue;
       }
       _addVariableTypeFinding(
@@ -706,13 +723,24 @@ final class _RawGenericTypeResolver {
       return expressionStatus(expression.operand, origin);
     }
     if (expression is PrefixExpression) {
-      return expressionStatus(expression.operand, origin);
+      if (expression.operator.lexeme == '!') {
+        return _DynamicStatus.known;
+      }
+      return _operatorStatus(expression.operand, expression.operator.lexeme, origin);
     }
     if (expression is BinaryExpression) {
-      return _combine([expressionStatus(expression.leftOperand, origin), expressionStatus(expression.rightOperand, origin)]);
+      if (const {'==', '!=', '&&', '||'}.contains(expression.operator.lexeme)) {
+        return _DynamicStatus.known;
+      }
+      if (expression.operator.lexeme == '??') {
+        return _combine([expressionStatus(expression.leftOperand, origin), expressionStatus(expression.rightOperand, origin)]);
+      }
+      return _operatorStatus(expression.leftOperand, expression.operator.lexeme, origin);
     }
     if (expression is AssignmentExpression) {
-      return _combine([expressionStatus(expression.leftHandSide, origin), expressionStatus(expression.rightHandSide, origin)]);
+      return expression.operator.lexeme == '='
+          ? expressionStatus(expression.rightHandSide, origin)
+          : _operatorStatus(expression.leftHandSide, expression.operator.lexeme.replaceAll('=', ''), origin);
     }
     if (expression is CascadeExpression) {
       return expressionStatus(expression.target, origin);
@@ -769,6 +797,7 @@ final class _RawGenericTypeResolver {
         expression.constructorName.type.typeArguments,
         expression.argumentList,
         origin,
+        prefix: expression.constructorName.type.importPrefix?.name.lexeme,
       );
       if (sdk != null) {
         return sdk;
@@ -811,6 +840,14 @@ final class _RawGenericTypeResolver {
 
   AstNode? _lookupValue(String name, AstNode use, CompilationUnitMember origin) {
     for (var scope = use.parent; scope != null; scope = scope.parent) {
+      if (scope is CatchClause) {
+        if (scope.exceptionParameter?.name.lexeme == name) {
+          return scope.exceptionType ?? scope.exceptionParameter;
+        }
+        if (scope.stackTraceParameter?.name.lexeme == name) {
+          return scope.stackTraceParameter;
+        }
+      }
       if (scope is Block) {
         for (final statement in scope.statements.reversed) {
           if (statement is FunctionDeclarationStatement && statement.functionDeclaration.name.lexeme == name) {
@@ -827,7 +864,7 @@ final class _RawGenericTypeResolver {
             }
           }
           if (statement is PatternVariableDeclarationStatement && _patternDeclaresName(statement.declaration.pattern, name)) {
-            return statement.declaration.expression;
+            return _patternVariable(statement.declaration.pattern, name);
           }
         }
       }
@@ -857,6 +894,9 @@ final class _RawGenericTypeResolver {
       if (scope is ForStatement || scope is ForElement) {
         final parts = scope is ForStatement ? scope.forLoopParts : (scope as ForElement).forLoopParts;
         if (parts is ForEachParts && !_containsNode(parts.iterable, use)) {
+          if (parts is ForEachPartsWithDeclaration && parts.loopVariable.name.lexeme == name && parts.loopVariable.type != null) {
+            return parts.loopVariable.type;
+          }
           if (parts is ForEachPartsWithDeclaration && parts.loopVariable.name.lexeme == name ||
               parts is ForEachPartsWithPattern && _patternDeclaresName(parts.pattern, name)) {
             return parts.iterable;
@@ -895,7 +935,7 @@ final class _RawGenericTypeResolver {
         return method;
       }
     }
-    for (final declaration in _project.filesByPath[origin.sourcePath]?.declarations ?? <CompilationUnitMember>[]) {
+    for (final declaration in libraryFilesFrom(origin, _project).expand((file) => file.declarations)) {
       if (declaration is FunctionDeclaration && declaration.name.lexeme == name) {
         return declaration;
       }
@@ -907,7 +947,59 @@ final class _RawGenericTypeResolver {
         }
       }
     }
-    return null;
+    return _importedValue(name, origin);
+  }
+
+  final Map<({String path, String name, String? prefix}), AstNode?> _importedValues = {};
+
+  AstNode? _importedValue(String name, CompilationUnitMember origin, {String? prefix}) {
+    if (name.startsWith('_')) {
+      return null;
+    }
+    final key = (path: origin.sourcePath, name: name, prefix: prefix);
+    if (_importedValues.containsKey(key)) {
+      return _importedValues[key];
+    }
+    bool exposes(Iterable<Combinator> combinators) => combinators.every(
+      (combinator) => switch (combinator) {
+        ShowCombinator() => combinator.shownNames.any((identifier) => identifier.name == name),
+        HideCombinator() => !combinator.hiddenNames.any((identifier) => identifier.name == name),
+      },
+    );
+    final candidates = <AstNode>{};
+    void collect(HeimdallSourceFile file, Set<String> visiting) {
+      if (!visiting.add(file.absolutePath)) {
+        return;
+      }
+      for (final declaration in file.declarations) {
+        if (declaration is FunctionDeclaration && declaration.name.lexeme == name) {
+          candidates.add(declaration);
+        }
+        if (declaration is TopLevelVariableDeclaration) {
+          candidates.addAll(declaration.variables.variables.where((variable) => variable.name.lexeme == name));
+        }
+      }
+      for (final part in file.partDirectives) {
+        for (final target in part.targetFiles) {
+          collect(target, visiting);
+        }
+      }
+      for (final export in file.exportDirectives.where((export) => exposes(export.combinators))) {
+        for (final target in export.targetFiles) {
+          collect(target, visiting);
+        }
+      }
+    }
+
+    for (final import in dependenciesFrom(origin, _project).whereType<ImportDirective>()) {
+      if (import.prefix?.name == prefix && exposes(import.combinators)) {
+        for (final target in import.targetFiles) {
+          collect(target, <String>{});
+        }
+      }
+    }
+    // Ambiguous imports cannot establish the type of a reference.
+    return _importedValues[key] = candidates.length == 1 ? candidates.single : null;
   }
 
   CompilationUnitMember _owner(AstNode node, CompilationUnitMember fallback) {
@@ -922,6 +1014,16 @@ final class _RawGenericTypeResolver {
 
   _DynamicStatus _valueStatus(AstNode value, CompilationUnitMember origin) {
     final owner = _owner(value, origin);
+    if (value is TypeAnnotation) {
+      return typeStatus(value, owner);
+    }
+    if (value is CatchClauseParameter) {
+      final clause = value.parent;
+      return clause is CatchClause && identical(clause.exceptionParameter, value) ? _implicitDynamicStatus : _DynamicStatus.known;
+    }
+    if (value is DeclaredVariablePattern) {
+      return _patternVariableStatus(value, owner);
+    }
     if (value is Expression) {
       return expressionStatus(value, owner);
     }
@@ -939,7 +1041,11 @@ final class _RawGenericTypeResolver {
       return parameterStatus(value, owner, member: member);
     }
     if (value is MethodDeclaration) {
-      return methodReturnStatus(value, owner);
+      return _combine([
+        methodReturnStatus(value, owner),
+        if (!value.isGetter)
+          for (final parameter in value.parameters?.parameters ?? <FormalParameter>[]) parameterStatus(parameter, owner),
+      ]);
     }
     if (value is FunctionDeclaration) {
       return _combine([
@@ -971,6 +1077,10 @@ final class _RawGenericTypeResolver {
     }
     final type = _expressionType(expression, origin);
     if (type != null) {
+      final result = _functionTypeReturn(type.type, type.origin, {});
+      if (result != null) {
+        return result;
+      }
       if (type.type is GenericFunctionType) {
         return typeStatus((type.type as GenericFunctionType).returnType, type.origin);
       }
@@ -990,7 +1100,7 @@ final class _RawGenericTypeResolver {
         return bodyStatus((value.initializer! as FunctionExpression).body, _owner(value, origin));
       }
     }
-    return _DynamicStatus.unknown;
+    return _memberStatus(expression, 'call', origin, call: true);
   }
 
   _DynamicStatus _invocationStatus(MethodInvocation invocation, CompilationUnitMember origin) {
@@ -1025,16 +1135,31 @@ final class _RawGenericTypeResolver {
       if (declaration != null) {
         return _constructorStatus(declaration, null, invocation.argumentList, origin, types: invocation.typeArguments);
       }
+      final sdk = _sdkConstructorStatus(name, null, invocation.typeArguments, invocation.argumentList, origin);
+      if (sdk != null) {
+        return sdk;
+      }
       return _DynamicStatus.unknown;
     }
     if (target is SimpleIdentifier && _lookupValue(target.name, invocation, origin) == null) {
+      final importedType = _indexFor(origin, target.name).declarations[name];
+      if (importedType != null) {
+        return _constructorStatus(importedType, null, invocation.argumentList, origin, types: invocation.typeArguments);
+      }
       final sdk = _sdkConstructorStatus(target.name, name, invocation.typeArguments, invocation.argumentList, origin);
       if (sdk != null) {
         return sdk;
       }
       final declaration = _indexFor(origin, null).declarations[target.name];
       if (declaration != null) {
+        if (declaration.constructors.any((constructor) => (constructor.name?.lexeme ?? 'new') == name)) {
+          return _constructorStatus(declaration, name == 'new' ? null : name, invocation.argumentList, origin, types: invocation.typeArguments);
+        }
         return _declaredMemberStatus(declaration, name, call: true, invocation: invocation);
+      }
+      final alias = _indexFor(origin, null).aliases[target.name];
+      if (alias is GenericTypeAlias) {
+        return _withBindings(alias, invocation.typeArguments?.arguments, origin, () => typeStatus(alias.type, alias));
       }
     }
     return _memberStatus(target, name, origin, call: true, invocation: invocation);
@@ -1088,7 +1213,11 @@ final class _RawGenericTypeResolver {
             inferred.add(expressionStatus(argument, origin));
           }
         }
-        _bindings[generic] = inferred.isEmpty ? _DynamicStatus.unknown : _combine(inferred);
+        _bindings[generic] = inferred.isEmpty
+            ? generic.bound == null
+                  ? _implicitDynamicStatus
+                  : typeStatus(generic.bound, origin)
+            : _combine(inferred);
       }
       return inspect();
     } finally {
@@ -1125,13 +1254,11 @@ final class _RawGenericTypeResolver {
     String? constructor,
     TypeArgumentList? arguments,
     ArgumentList values,
-    CompilationUnitMember origin,
-  ) {
-    final index = _indexFor(origin, null);
-    if (index.declarations.containsKey(name) || index.aliases.containsKey(name)) {
-      return null;
-    }
-    if (!((name == 'Future' || name == 'Stream') && constructor == 'value')) {
+    CompilationUnitMember origin, {
+    String? prefix,
+  }) {
+    final result = _sdkConstructorValue(name, constructor, arguments, values, origin, prefix: prefix);
+    if (result == null) {
       return null;
     }
     if (_ignoredTypeKeys.contains(name)) {
@@ -1143,15 +1270,133 @@ final class _RawGenericTypeResolver {
       }
       return _combine(arguments.arguments.map((type) => typeStatus(type, origin)));
     }
-    if (values.arguments.isEmpty) {
-      return _DynamicStatus.unknown;
-    }
-    final value = values.arguments.first;
-    final key = _expressionKey(value, origin);
+    final key = values.arguments.isEmpty ? null : _expressionKey(values.arguments.first, origin);
     if (key != null && _ignoredTypeKeys.contains('$name<$key>')) {
       return _DynamicStatus.known;
     }
-    return expressionStatus(value, origin);
+    return _combine(result.arguments);
+  }
+
+  _SdkValue _scalar(_DynamicStatus status) => _SdkValue(name: status == _DynamicStatus.dynamicType ? 'dynamic' : 'value', arguments: [status]);
+
+  _SdkValue _container(String name, _SdkValue element) => _SdkValue(name: name, arguments: [_combine(element.arguments)], element: element);
+
+  _SdkValue _callbackResult(Expression? callback, List<_SdkValue> parameters, CompilationUnitMember origin) {
+    if (callback == null) {
+      return _scalar(_DynamicStatus.unknown);
+    }
+    if (callback is! FunctionExpression) {
+      return _scalar(_callValue(callback, origin));
+    }
+    final formals = callback.parameters?.parameters ?? <FormalParameter>[];
+    final previousBindings = {..._callbackBindings};
+    final previousValues = {..._callbackValues};
+    try {
+      for (var i = 0; i < formals.length && i < parameters.length; i++) {
+        final formal = _normalParameter(formals[i]);
+        if (_formalParameterType(formal) == null) {
+          _callbackBindings[formal] = _combine(parameters[i].arguments);
+          _callbackValues[formal] = parameters[i];
+        }
+      }
+      final body = callback.body;
+      return (body is ExpressionFunctionBody ? _sdkValue(body.expression, origin) : null) ?? _scalar(bodyStatus(body, origin));
+    } finally {
+      _callbackBindings
+        ..clear()
+        ..addAll(previousBindings);
+      _callbackValues
+        ..clear()
+        ..addAll(previousValues);
+    }
+  }
+
+  _SdkValue? _sdkConstructorValue(
+    String name,
+    String? constructor,
+    TypeArgumentList? types,
+    ArgumentList values,
+    CompilationUnitMember origin, {
+    String? prefix,
+  }) {
+    if (prefix != null && !_isSdkImportPrefix(origin, prefix)) {
+      return null;
+    }
+    final index = _indexFor(origin, prefix);
+    if (index.declarations.containsKey(name) || index.aliases.containsKey(name)) {
+      return null;
+    }
+    final positional = values.arguments.where((argument) => argument is! NamedExpression).toList();
+    _SdkValue value(int index) => index >= positional.length
+        ? _scalar(_DynamicStatus.unknown)
+        : _sdkValue(positional[index], origin) ?? _scalar(expressionStatus(positional[index], origin));
+    _SdkValue element(int index) {
+      final container = value(index);
+      return container.element ?? _scalar(container.arguments.firstOrNull ?? _DynamicStatus.unknown);
+    }
+
+    _SdkValue callback(int index) => _callbackResult(index < positional.length ? positional[index] : null, [_scalar(_DynamicStatus.known)], origin);
+    const dynamicType = _DynamicStatus.dynamicType;
+    _SdkValue? result;
+    if (name == 'MapEntry' && constructor == null) {
+      result = _SdkValue(name: name, arguments: [_combine(value(0).arguments), _combine(value(1).arguments)]);
+    } else if (name == 'Future') {
+      final item = switch (constructor) {
+        'value' => value(0),
+        'sync' || 'microtask' || null => callback(0),
+        'delayed' => callback(1),
+        'error' => _scalar(dynamicType),
+        'any' || 'wait' => element(0),
+        _ => null,
+      };
+      if (item != null) {
+        final flattened = item.name == 'Future' ? item.element ?? _scalar(_combine(item.arguments)) : item;
+        result = _container(name, constructor == 'wait' ? _container('List', flattened) : flattened);
+      }
+    } else if (name == 'Stream' && {'value', 'empty', 'error', 'fromIterable'}.contains(constructor)) {
+      result = _container(
+        name,
+        constructor == 'value'
+            ? value(0)
+            : constructor == 'fromIterable'
+            ? element(0)
+            : _scalar(dynamicType),
+      );
+    } else if ({'List', 'Set', 'Iterable'}.contains(name)) {
+      final item = switch (constructor) {
+        'from' || 'empty' || 'identity' => _scalar(dynamicType),
+        'of' => element(0),
+        'unmodifiable' => name == 'List' ? _scalar(dynamicType) : element(0),
+        'filled' => value(1),
+        'generate' => callback(1),
+        null when name == 'Set' => _scalar(dynamicType),
+        _ => null,
+      };
+      if (item != null) {
+        result = _container(name, item);
+      }
+    } else if (name == 'Map') {
+      final arguments = switch (constructor) {
+        null || 'from' || 'identity' || 'fromIterable' || 'unmodifiable' => [dynamicType, dynamicType],
+        'of' => value(0).name == 'Map' ? value(0).arguments : [_DynamicStatus.unknown, _DynamicStatus.unknown],
+        'fromEntries' => element(0).name == 'MapEntry' ? element(0).arguments : [_DynamicStatus.unknown, _DynamicStatus.unknown],
+        'fromIterables' => [_combine(element(0).arguments), _combine(element(1).arguments)],
+        _ => null,
+      };
+      if (arguments != null) {
+        result = _SdkValue(name: name, arguments: arguments);
+      }
+    }
+    if (result == null || types == null) {
+      return result;
+    }
+    final arguments = types.arguments.map((type) => typeStatus(type, origin)).toList();
+    final explicit = _SdkValue(
+      name: name,
+      arguments: arguments,
+      element: types.arguments.length == 1 ? _sdkTypeValue(types.arguments.first, origin) ?? _scalar(arguments.first) : null,
+    );
+    return name == 'Future' && constructor == 'wait' ? _container('Future', _container('List', explicit.element!)) : explicit;
   }
 
   ({TypeAnnotation type, CompilationUnitMember origin})? _expressionType(Expression expression, CompilationUnitMember origin) {
@@ -1221,6 +1466,43 @@ final class _RawGenericTypeResolver {
     if (expression is ParenthesizedExpression) {
       return _sdkValue(expression.expression, origin);
     }
+    if (expression is CascadeExpression) {
+      return _sdkValue(expression.target, origin);
+    }
+    if (expression is InstanceCreationExpression) {
+      final type = expression.constructorName.type;
+      final value = _sdkConstructorValue(
+        type.name.lexeme,
+        expression.constructorName.name?.name,
+        type.typeArguments,
+        expression.argumentList,
+        origin,
+        prefix: type.importPrefix?.name.lexeme,
+      );
+      if (value != null) {
+        return value;
+      }
+    }
+    if (expression is MethodInvocation) {
+      final target = expression.realTarget;
+      final typeName = target is SimpleIdentifier
+          ? target.name
+          : target == null
+          ? expression.methodName.name
+          : null;
+      if (typeName != null && _lookupValue(typeName, expression, origin) == null) {
+        final value = _sdkConstructorValue(
+          typeName,
+          target == null ? null : expression.methodName.name,
+          expression.typeArguments,
+          expression.argumentList,
+          origin,
+        );
+        if (value != null) {
+          return value;
+        }
+      }
+    }
     if (expression is SimpleIdentifier) {
       final value = _lookupValue(expression.name, expression, origin);
       if (value is FormalParameter && _formalParameterType(_normalParameter(value)) == null) {
@@ -1269,11 +1551,13 @@ final class _RawGenericTypeResolver {
     }
     final type = annotation;
     final prefix = type.importPrefix?.name.lexeme;
-    if (_indexFor(origin, prefix).declarations.containsKey(type.name.lexeme) || prefix != null && !_isSdkImportPrefix(origin, prefix)) {
+    if (_indexFor(origin, prefix).declarations.containsKey(type.name.lexeme) ||
+        _indexFor(origin, prefix).aliases.containsKey(type.name.lexeme) ||
+        prefix != null && !_isSdkImportPrefix(origin, prefix)) {
       return null;
     }
     final nameOfType = type.name.lexeme;
-    if (!{'List', 'Set', 'Iterable', 'Iterator', 'Map', 'MapEntry'}.contains(nameOfType)) {
+    if (!{'List', 'Set', 'Iterable', 'Iterator', 'Map', 'MapEntry', 'Future', 'Stream', 'StreamSubscription'}.contains(nameOfType)) {
       return null;
     }
     final arguments = type.typeArguments?.arguments;
@@ -1289,12 +1573,35 @@ final class _RawGenericTypeResolver {
   _SdkValue? _sdkMember(_SdkValue target, String name, CompilationUnitMember origin, {MethodInvocation? invocation}) {
     final call = invocation != null;
     final args = target.arguments;
-    _SdkValue scalar(_DynamicStatus status) => _SdkValue(name: status == _DynamicStatus.dynamicType ? 'dynamic' : 'value', arguments: [status]);
     _SdkValue collection(String type, _DynamicStatus element) => _SdkValue(name: type, arguments: [element], element: target.element);
-    final elementValue = target.element ?? scalar(args.firstOrNull ?? _DynamicStatus.unknown);
+    final elementValue = target.element ?? _scalar(args.firstOrNull ?? _DynamicStatus.unknown);
     const known = _SdkValue(name: 'value', arguments: []);
     final iterable = {'List', 'Set', 'Iterable'}.contains(target.name);
+    final stream = target.name == 'Stream';
+    final future = target.name == 'Future';
+    _SdkValue explicitOrCallback(int index, List<_SdkValue> parameters) {
+      final explicit = invocation?.typeArguments?.arguments.firstOrNull;
+      if (explicit != null) {
+        return _sdkTypeValue(explicit, origin) ?? _scalar(typeStatus(explicit, origin));
+      }
+      final values = invocation?.argumentList.arguments;
+      final result = _callbackResult(values != null && index < values.length ? values[index] : null, parameters, origin);
+      return (stream || future) && result.name == 'Future' ? result.element ?? _scalar(_combine(result.arguments)) : result;
+    }
+
     if (!call) {
+      if (stream && {'first', 'last', 'single'}.contains(name)) {
+        return _container('Future', elementValue);
+      }
+      if (stream && name == 'isBroadcast') {
+        return known;
+      }
+      if (stream && {'length', 'isEmpty'}.contains(name)) {
+        return _container('Future', known);
+      }
+      if (iterable && name == 'indexed') {
+        return _container('Iterable', _SdkValue(name: 'Record', arguments: [_DynamicStatus.known, args.first]));
+      }
       if ((iterable || target.name == 'Map') && {'length', 'isEmpty', 'isNotEmpty'}.contains(name)) {
         return known;
       }
@@ -1326,14 +1633,91 @@ final class _RawGenericTypeResolver {
         }
       }
       if (target.name == 'MapEntry' && {'key', 'value'}.contains(name)) {
-        return scalar(name == 'key' ? args.first : args.last);
+        return _scalar(name == 'key' ? args.first : args.last);
       }
       return null;
     }
     if (target.name == 'Iterator' && name == 'moveNext') {
       return known;
     }
+    if (future) {
+      if ({'catchError', 'whenComplete', 'timeout'}.contains(name)) {
+        return target;
+      }
+      if (name == 'asStream') {
+        return _container('Stream', elementValue);
+      }
+      if (name == 'then') {
+        return _container('Future', explicitOrCallback(0, [elementValue]));
+      }
+    }
+    if (stream) {
+      if ({'where', 'take', 'takeWhile', 'skip', 'skipWhile', 'distinct', 'handleError', 'timeout', 'asBroadcastStream'}.contains(name)) {
+        return target;
+      }
+      if ({'firstWhere', 'lastWhere', 'singleWhere', 'elementAt', 'reduce'}.contains(name)) {
+        return _container('Future', elementValue);
+      }
+      if (name == 'toList' || name == 'toSet') {
+        return _container('Future', _container(name == 'toList' ? 'List' : 'Set', elementValue));
+      }
+      if (name == 'listen') {
+        return _container('StreamSubscription', elementValue);
+      }
+      if (name == 'pipe') {
+        return _container('Future', _scalar(_DynamicStatus.dynamicType));
+      }
+      if (name == 'drain') {
+        final explicit = invocation.typeArguments?.arguments.firstOrNull;
+        return _container('Future', explicit == null ? _scalar(_DynamicStatus.dynamicType) : _scalar(typeStatus(explicit, origin)));
+      }
+      if ({'any', 'every', 'contains', 'join', 'forEach'}.contains(name)) {
+        return _container('Future', known);
+      }
+      if ({'map', 'asyncMap', 'expand', 'asyncExpand'}.contains(name)) {
+        final result = explicitOrCallback(0, [elementValue]);
+        final expanded = (name == 'expand' || name == 'asyncExpand') && invocation.typeArguments == null
+            ? result.element ?? _scalar(_combine(result.arguments))
+            : result;
+        return _container('Stream', expanded);
+      }
+    }
+    if ((stream || iterable) && name == 'fold') {
+      final initial = invocation.argumentList.arguments.firstOrNull;
+      final seed = initial == null ? _scalar(_DynamicStatus.unknown) : _sdkValue(initial, origin) ?? _scalar(expressionStatus(initial, origin));
+      final result = explicitOrCallback(1, [seed, elementValue]);
+      return stream ? _container('Future', result) : result;
+    }
+    if (target.name == 'Set') {
+      if (name == 'lookup') {
+        return elementValue;
+      }
+      if ({'union', 'intersection', 'difference'}.contains(name)) {
+        return target;
+      }
+    }
+    if (target.name == 'List' && name == 'asMap') {
+      return _SdkValue(name: 'Map', arguments: [_DynamicStatus.known, args.first]);
+    }
+    if (target.name == 'Map' && name == 'map') {
+      final explicit = invocation.typeArguments?.arguments;
+      if (explicit != null) {
+        return _SdkValue(name: 'Map', arguments: explicit.map((type) => typeStatus(type, origin)).toList());
+      }
+      final result = _callbackResult(invocation.argumentList.arguments.firstOrNull, args.map(_scalar).toList(), origin);
+      return result.name == 'MapEntry' ? _SdkValue(name: 'Map', arguments: result.arguments) : null;
+    }
     if (iterable) {
+      if (name == 'reduce') {
+        return elementValue;
+      }
+      if (name == 'whereType') {
+        final explicit = invocation.typeArguments?.arguments.firstOrNull;
+        return _container(
+          'Iterable',
+          explicit == null ? _scalar(_DynamicStatus.dynamicType) : _sdkTypeValue(explicit, origin) ?? _scalar(typeStatus(explicit, origin)),
+        );
+      }
       if ({'any', 'every', 'contains', 'join', 'forEach'}.contains(name)) {
         return known;
       }
@@ -1357,42 +1741,14 @@ final class _RawGenericTypeResolver {
         if (explicit != null) {
           return _SdkValue(name: 'Iterable', arguments: [typeStatus(explicit.first, origin)], element: _sdkTypeValue(explicit.first, origin));
         }
-        final callback = invocation.argumentList.arguments.firstOrNull;
-        if (callback is FunctionExpression) {
-          final formal = callback.parameters?.parameters.firstOrNull;
-          final parameter = formal == null || _formalParameterType(_normalParameter(formal)) != null ? null : _normalParameter(formal);
-          final previous = parameter == null ? null : _callbackBindings[parameter];
-          final previousValue = parameter == null ? null : _callbackValues[parameter];
-          if (parameter != null) {
-            _callbackBindings[parameter] = args.first;
-            _callbackValues[parameter] = elementValue;
-          }
-          try {
-            final body = callback.body;
-            final result = body is ExpressionFunctionBody ? _sdkValue(body.expression, origin) : null;
-            return _SdkValue(name: 'Iterable', arguments: [bodyStatus(body, origin)], element: name == 'expand' ? result?.element : result);
-          } finally {
-            if (parameter != null) {
-              if (previousValue == null) {
-                _callbackValues.remove(parameter);
-              } else {
-                _callbackValues[parameter] = previousValue;
-              }
-              if (previous == null) {
-                _callbackBindings.remove(parameter);
-              } else {
-                _callbackBindings[parameter] = previous;
-              }
-            }
-          }
-        }
-        return _SdkValue(name: 'Iterable', arguments: [if (callback == null) _DynamicStatus.unknown else _callValue(callback, origin)]);
+        final result = _callbackResult(invocation.argumentList.arguments.firstOrNull, [elementValue], origin);
+        return _container('Iterable', name == 'expand' ? result.element ?? _scalar(_combine(result.arguments)) : result);
       }
     }
     if (target.name == 'Map' && {'remove', 'putIfAbsent', 'update'}.contains(name)) {
-      return scalar(args.last);
+      return _scalar(args.last);
     }
-    if ((iterable || target.name == 'Map') && name == 'cast') {
+    if ((iterable || stream || target.name == 'Map') && name == 'cast') {
       return _SdkValue(
         name: target.name,
         element: invocation.typeArguments?.arguments.length == 1 ? _sdkTypeValue(invocation.typeArguments!.arguments.first, origin) : null,
@@ -1404,7 +1760,135 @@ final class _RawGenericTypeResolver {
     return null;
   }
 
+  _DynamicStatus _operatorStatus(Expression target, String operator, CompilationUnitMember origin) {
+    final result = _memberStatus(target, operator, origin, call: true);
+    if (result != _DynamicStatus.unknown) {
+      return result;
+    }
+    return expressionStatus(target, origin);
+  }
+
+  DeclaredVariablePattern? _patternVariable(AstNode pattern, String name) {
+    if (pattern is DeclaredVariablePattern && pattern.name.lexeme == name) {
+      return pattern;
+    }
+    for (final child in pattern.childEntities.whereType<AstNode>()) {
+      final found = _patternVariable(child, name);
+      if (found != null) {
+        return found;
+      }
+    }
+    return null;
+  }
+
+  _DynamicStatus _patternVariableStatus(DeclaredVariablePattern pattern, CompilationUnitMember origin) {
+    if (pattern.type != null) {
+      return typeStatus(pattern.type, origin);
+    }
+    final declaration = pattern.thisOrAncestorOfType<PatternVariableDeclaration>();
+    if (declaration == null) {
+      return _DynamicStatus.unknown;
+    }
+    final parent = pattern.parent;
+    if (parent is PatternField && parent.parent is RecordPattern) {
+      final record = parent.parent! as RecordPattern;
+      final positional = record.fields.where((field) => field.name == null).toList();
+      final name = parent.name == null ? '\$${positional.indexOf(parent) + 1}' : parent.name!.name?.lexeme ?? pattern.name.lexeme;
+      final component = _recordComponent(declaration.expression, name, origin);
+      if (component is TypeAnnotation) {
+        return typeStatus(component, origin);
+      }
+      if (component is Expression) {
+        return expressionStatus(component, origin);
+      }
+    }
+    return expressionStatus(declaration.expression, origin);
+  }
+
+  _DynamicStatus? _functionTypeReturn(TypeAnnotation type, CompilationUnitMember origin, Set<GenericTypeAlias> active) {
+    if (type is GenericFunctionType) {
+      return typeStatus(type.returnType, origin);
+    }
+    if (type is! NamedType) {
+      return null;
+    }
+    final alias = _indexFor(origin, type.importPrefix?.name.lexeme).aliases[type.name.lexeme];
+    if (alias is! GenericTypeAlias || !active.add(alias)) {
+      return null;
+    }
+    try {
+      _DynamicStatus? result;
+      _withBindings(alias, type.typeArguments?.arguments, origin, () {
+        result = _functionTypeReturn(alias.type, alias, active);
+        return result ?? _DynamicStatus.unknown;
+      });
+      return result;
+    } finally {
+      active.remove(alias);
+    }
+  }
+
+  AstNode? _recordComponent(Expression target, String name, CompilationUnitMember origin) {
+    if (target is ParenthesizedExpression) {
+      return _recordComponent(target.expression, name, origin);
+    }
+    final position = name.startsWith(r'$') ? int.tryParse(name.substring(1)) : null;
+    if (target is RecordLiteral) {
+      if (position != null) {
+        final fields = target.fields.where((field) => field is! NamedExpression).toList();
+        return position > 0 && position <= fields.length ? fields[position - 1] : null;
+      }
+      return target.fields.whereType<NamedExpression>().where((field) => field.name.label.name == name).firstOrNull?.expression;
+    }
+    final type = _expressionType(target, origin)?.type;
+    if (type is RecordTypeAnnotation) {
+      if (position != null) {
+        return position > 0 && position <= type.positionalFields.length ? type.positionalFields[position - 1].type : null;
+      }
+      return type.namedFields?.fields.where((field) => field.name.lexeme == name).firstOrNull?.type;
+    }
+    if (target is SimpleIdentifier) {
+      final value = _lookupValue(target.name, target, origin);
+      if (value is VariableDeclaration && value.initializer != null && _active.add(value)) {
+        try {
+          return _recordComponent(value.initializer!, name, _owner(value, origin));
+        } finally {
+          _active.remove(value);
+        }
+      }
+    }
+    return null;
+  }
+
   _DynamicStatus _memberStatus(Expression target, String name, CompilationUnitMember origin, {bool call = false, MethodInvocation? invocation}) {
+    final record = _recordComponent(target, name, origin);
+    if (record != null) {
+      return record is TypeAnnotation ? typeStatus(record, origin) : expressionStatus(record as Expression, origin);
+    }
+    if (target is SimpleIdentifier && _lookupValue(target.name, target, origin) == null) {
+      final declaration = _indexFor(origin, null).declarations[target.name];
+      if (declaration != null) {
+        return _declaredMemberStatus(declaration, name, call: call, invocation: invocation);
+      }
+      final value = _importedValue(name, origin, prefix: target.name);
+      if (value is FunctionDeclaration && call && invocation != null) {
+        return _withCallBindings(
+          value,
+          invocation.typeArguments,
+          value.functionExpression.parameters,
+          invocation.argumentList,
+          origin,
+          () => functionReturnStatus(value, _owner(value, origin)),
+        );
+      }
+      if (value != null && !call) {
+        return _valueStatus(value, origin);
+      }
+    }
+    // Object's concrete signatures also apply to dynamic receivers.
+    if (call && name == 'toString' || !call && const {'hashCode', 'runtimeType'}.contains(name)) {
+      return _DynamicStatus.known;
+    }
     final sdkTarget = _sdkValue(target, origin);
     if (sdkTarget != null) {
       final result = _sdkMember(sdkTarget, name, origin, invocation: invocation);
@@ -1422,8 +1906,11 @@ final class _RawGenericTypeResolver {
     }
     final reference = _expressionType(target, origin);
     if (reference == null) {
-      if (target is MethodInvocation && target.target == null && _lookupValue(target.methodName.name, target, origin) == null) {
-        final declaration = _indexFor(origin, null).declarations[target.methodName.name];
+      if (target is MethodInvocation &&
+          (target.target == null && _lookupValue(target.methodName.name, target, origin) == null ||
+              target.target is SimpleIdentifier && _lookupValue((target.target! as SimpleIdentifier).name, target, origin) == null)) {
+        final prefix = target.target is SimpleIdentifier ? (target.target! as SimpleIdentifier).name : null;
+        final declaration = _indexFor(origin, prefix).declarations[target.methodName.name];
         if (declaration != null) {
           final constructor = declaration.constructors.where((constructor) => constructor.name == null).firstOrNull;
           return _withCallBindings(
@@ -1463,15 +1950,28 @@ final class _RawGenericTypeResolver {
       return _DynamicStatus.unknown;
     }
     try {
-      if (!call) {
+      {
         for (final field in declaration.fieldVariables) {
           if (field.name.lexeme == name) {
+            if (call) {
+              final list = field.parent;
+              if (list is VariableDeclarationList && list.type != null) {
+                return _functionTypeReturn(list.type!, declaration, {}) ?? _DynamicStatus.unknown;
+              }
+              if (field.initializer != null) {
+                return _callValue(field.initializer!, declaration);
+              }
+              return _implicitDynamicStatus;
+            }
             return variableStatus(field, declaration);
           }
         }
       }
       for (final method in declaration.methods) {
-        if (method.name.lexeme == name && (call || method.isGetter)) {
+        if (method.name.lexeme == name && !method.isSetter) {
+          if (!call && !method.isGetter) {
+            return _valueStatus(method, declaration);
+          }
           if (invocation == null) {
             return methodReturnStatus(method, declaration);
           }
@@ -1588,6 +2088,9 @@ final class _RawGenericTypeResolver {
   }
 
   _DynamicStatus _elementStatus(CollectionElement element, CompilationUnitMember origin) {
+    if (element is NullAwareElement) {
+      return expressionStatus(element.value, origin);
+    }
     if (element is Expression) {
       return expressionStatus(element, origin);
     }
@@ -1744,7 +2247,15 @@ final class _RawGenericTypeResolver {
           return _DynamicStatus.unknown;
         }
         try {
-          final inherited = parent.methods.where((candidate) => candidate.name.lexeme == method.name.lexeme && !candidate.isStatic).firstOrNull;
+          final inherited = parent.methods
+              .where(
+                (candidate) =>
+                    candidate.name.lexeme == method.name.lexeme &&
+                    !candidate.isStatic &&
+                    candidate.isSetter == method.isSetter &&
+                    candidate.isGetter == method.isGetter,
+              )
+              .firstOrNull;
           if (inherited == null) {
             final ancestor = _inheritedSignature(method, parameter, parent);
             found = ancestor != null;

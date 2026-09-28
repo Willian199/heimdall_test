@@ -1,0 +1,53 @@
+import 'dart:async';
+
+Stream<dynamic> _stream = const Stream.empty();
+Future<dynamic> _future = Future.value(1);
+Iterable<dynamic> _items = <dynamic>[];
+Map<dynamic, dynamic> _map = <dynamic, dynamic>{};
+Future<int> _typedFuture = Future.value(1);
+List<int> _ints = <int>[];
+Map<String, int> _typedMap = <String, int>{};
+
+final safeStreamMap = () => _stream.map((event) => 1);
+final safeStreamAsyncMap = () => _stream.asyncMap((event) async => 1);
+final safeStreamExpand = () => _stream.expand((event) => <int>[1]);
+final safeStreamAsyncExpand = () => _stream.asyncExpand((event) => Stream<int>.value(1));
+final safeStreamCast = () => _stream.cast<int>();
+final safeStreamFold = () => _stream.fold<int>(0, (previous, event) => previous);
+final safeStreamJoin = () => _stream.join();
+final safeStreamContains = () => _stream.contains(1);
+final safeStreamDrain = () => _stream.drain<void>();
+final safeStreamMapFirst = () => _stream.map((event) => 1).first;
+final safeFutureThen = () => _future.then((value) => 1);
+final safeFutureThenAsync = () => _future.then((value) async => 1);
+final safeFutureWhenComplete = () => _typedFuture.whenComplete(() => _future);
+final safeFutureCatch = () => _typedFuture.catchError((Object error) => 1);
+final safeFutureTimeout = () => _typedFuture.timeout(Duration.zero);
+final safeFutureAsStream = () => _typedFuture.asStream().first;
+final safeFutureSync = () => Future.sync(() => 1);
+final safeFutureDelayed = () => Future.delayed(Duration.zero, () => 1);
+final safeFutureWait = () => Future.wait<int>(<Future<int>>[]);
+final safeFutureError = () => Future<int>.error(Object());
+final safeWhereType = () => _items.whereType<int>();
+final safeFold = () => _items.fold<int>(0, (previous, value) => previous);
+final safeListOf = () => List.of(_ints);
+final safeListFrom = () => List<int>.from(_items);
+final safeListGenerate = () => List.generate(1, (_) => 1);
+final safeListFilled = () => List.filled(1, 1);
+final safeListEmpty = () => List<int>.empty();
+final safeSetOf = () => Set.of(_ints);
+final safeSetUnmodifiable = () => Set.unmodifiable(_ints);
+final safeSetLookup = () => <int>{1}.lookup(1);
+final safeMapMap = () => _map.map((key, value) => MapEntry('key', 1));
+final safeMapMapToString = () => _map.map((key, value) => MapEntry(key.toString(), value.toString()));
+final safeMapOf = () => Map.of(_typedMap);
+final safeMapFrom = () => Map<String, int>.from(_map);
+final safeMapFromEntries = () => Map.fromEntries(_typedMap.entries);
+final safeEntryKey = () => MapEntry('key', _map).key;
+final safeEntryValue = () => MapEntry(_map, 1).value;
+
+// These factories intentionally accept raw input; they cannot infer E/K/V.
+final rawListFromConcrete = () => List.from(_ints);
+final rawListUnmodifiableConcrete = () => List.unmodifiable(_ints);
+final rawMapFromConcrete = () => Map.from(_typedMap);
+final rawMapUnmodifiableConcrete = () => Map.unmodifiable(_typedMap);

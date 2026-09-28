@@ -6,7 +6,10 @@ import 'package:heimdall_test/heimdall_test.dart';
 /// scope and predicate chain.
 final class ClassShouldBuilder implements HeimdallShouldBuilder<CompilationUnitMember, ClassShouldBuilder> {
   /// Creates a class condition builder.
-  ClassShouldBuilder({required this.predicate, required this.inverted}) : _descriptionPrefix = null, _failOnEmptySelection = true;
+  ClassShouldBuilder({required this.predicate, required this.inverted})
+    : _descriptionPrefix = null,
+      _failOnEmptySelection = true,
+      _selector = ((project) => project.typeDeclarations);
 
   /// Creates a class condition builder that continues an existing [rule].
   ClassShouldBuilder.fromRule(
@@ -16,6 +19,7 @@ final class ClassShouldBuilder implements HeimdallShouldBuilder<CompilationUnitM
        inverted = rule.inverted,
        _condition = rule.condition,
        _useOr = useOr,
+       _selector = rule.selector,
        _descriptionPrefix = rule.descriptionPrefix ?? rule.description,
        _failOnEmptySelection = rule.failOnEmptySelection;
 
@@ -28,6 +32,7 @@ final class ClassShouldBuilder implements HeimdallShouldBuilder<CompilationUnitM
   bool _useOr = false;
   bool _negateNext = false;
   final String? _descriptionPrefix;
+  final Selector<CompilationUnitMember> _selector;
   bool _failOnEmptySelection;
 
   @override
@@ -134,7 +139,7 @@ final class ClassShouldBuilder implements HeimdallShouldBuilder<CompilationUnitM
 
     return HeimdallRule(
       descriptionPrefix: prefix,
-      selector: (project) => project.typeDeclarations,
+      selector: _selector,
       predicate: predicate,
       condition: condition,
       inverted: inverted,

@@ -46,7 +46,20 @@ final class _ReturnVisitor extends RecursiveAstVisitor<void> {
   @override
   void visitFunctionDeclaration(FunctionDeclaration node) {}
 
+  @override
+  void visitTryStatement(TryStatement node) {
+    final finallyBlock = node.finallyBlock;
+    if (finallyBlock != null && _alwaysExits(finallyBlock)) {
+      finallyBlock.accept(this);
+    } else {
+      super.visitTryStatement(node);
+    }
+  }
+
   void _collect(Expression expression) {
+    if (expression is ThrowExpression || expression is RethrowExpression) {
+      return;
+    }
     if (expression is ParenthesizedExpression) {
       _collect(expression.expression);
     } else if (expression is ConditionalExpression) {
@@ -59,9 +72,15 @@ final class _ReturnVisitor extends RecursiveAstVisitor<void> {
     } else {
       final arguments = switch (expression) {
         InstanceCreationExpression(:final constructorName, :final argumentList)
-            when constructorName.type.name.lexeme == ownerName && constructorName.type.importPrefix == null =>
+            when constructorName.type.name.lexeme == ownerName && constructorName.type.importPrefix == null ||
+                constructorName.type.importPrefix?.name.lexeme == ownerName =>
           argumentList,
-        MethodInvocation(:final target, :final methodName, :final argumentList) when target == null && methodName.name == ownerName => argumentList,
+        MethodInvocation(:final target, :final methodName, :final argumentList)
+            when target == null && methodName.name == ownerName && !_hasLocalShadow(methodName) =>
+          argumentList,
+        MethodInvocation(:final target, :final argumentList)
+            when target is SimpleIdentifier && target.name == ownerName && !_hasLocalShadow(target) =>
+          argumentList,
         _ => null,
       };
       if (arguments == null) {
@@ -79,6 +98,14 @@ final class _ReturnVisitor extends RecursiveAstVisitor<void> {
     }
   }
 }
+
+bool _alwaysExits(Statement statement) => switch (statement) {
+  ReturnStatement() => true,
+  ExpressionStatement(:final expression) => expression is ThrowExpression || expression is RethrowExpression,
+  Block(:final statements) => statements.any(_alwaysExits),
+  IfStatement(:final thenStatement, :final elseStatement) => elseStatement != null && _alwaysExits(thenStatement) && _alwaysExits(elseStatement),
+  _ => false,
+};
 
 bool _forwardsParameter(Expression expression, String name) {
   if (expression is ParenthesizedExpression) {

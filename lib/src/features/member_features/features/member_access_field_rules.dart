@@ -1,5 +1,6 @@
 import 'package:analyzer/dart/ast/visitor.dart';
 import 'package:heimdall_test/heimdall_test.dart';
+import 'package:heimdall_test/src/features/queries/declaration_lookup_queries.dart';
 import 'package:heimdall_test/src/features/queries/member_queries.dart';
 import 'package:heimdall_test/src/features/queries/value_reference_queries.dart';
 
@@ -94,8 +95,8 @@ extension MemberAccessFieldShouldRules on MemberShouldBuilder {
 }
 
 HeimdallCondition<ClassMember> _memberShouldAccessField(String fieldName) {
-  return HeimdallCondition('access field $fieldName', (item, _) {
-    final findings = _memberAccessesField(item, fieldName)
+  return HeimdallCondition('access field $fieldName', (item, project) {
+    final findings = _memberAccessesField(item, fieldName, project)
         ? const <HeimdallValidationInfo>[]
         : [
             HeimdallValidationInfo(
@@ -104,6 +105,7 @@ HeimdallCondition<ClassMember> _memberShouldAccessField(String fieldName) {
               message: '${item.ownerName}.${item.name} does not access field $fieldName',
             ),
           ];
+
     return HeimdallFindings(
       subject: item,
       passed: findings.isEmpty,
@@ -115,25 +117,53 @@ HeimdallCondition<ClassMember> _memberShouldAccessField(String fieldName) {
 HeimdallCondition<ClassMember> _memberShouldNotAccessField(String fieldName) {
   return prohibitedMemberCondition(
     'access field $fieldName',
-    (item, project) => _memberAccessesField(item, fieldName),
+    (item, project) => _memberAccessesField(item, fieldName, project),
   );
 }
 
 HeimdallPredicate<ClassMember> _memberMatchesAccessField(String fieldName) {
   return HeimdallPredicate(
     'access field $fieldName',
-    (item, project) => _memberAccessesField(item, fieldName),
+    (item, project) => _memberAccessesField(item, fieldName, project),
   );
 }
 
 HeimdallPredicate<ClassMember> _memberDoesNotAccessField(String fieldName) {
   return HeimdallPredicate(
     'not access field $fieldName',
-    (item, project) => !_memberAccessesField(item, fieldName),
+    (item, project) => !_memberAccessesField(item, fieldName, project),
   );
 }
 
-bool _memberAccessesField(ClassMember member, String fieldName) {
+bool _memberAccessesField(ClassMember member, String fieldName, HeimdallProject project) {
+  final visited = <CompilationUnitMember>{};
+  bool declares(CompilationUnitMember owner) {
+    if (!visited.add(owner)) {
+      return false;
+    }
+
+    if (owner.fieldVariables.any((variable) => variable.name.lexeme == fieldName) ||
+        owner.methods.any((method) => (method.isGetter || method.isSetter) && method.name.lexeme == fieldName)) {
+      return true;
+    }
+
+    final parents = switch (owner) {
+      ClassDeclaration() => [if (owner.extendsClause != null) owner.extendsClause!.superclass, ...?owner.withClause?.mixinTypes],
+      EnumDeclaration() => [...?owner.withClause?.mixinTypes],
+      MixinDeclaration() => [...?owner.onClause?.superclassConstraints],
+      ClassTypeAlias() => [owner.superclass, ...owner.withClause.mixinTypes],
+      _ => <NamedType>[],
+    };
+
+    return parents.any((parent) {
+      final declaration = declarationNamedFrom(owner, project, parent.toSource());
+      return declaration != null && declares(declaration);
+    });
+  }
+
+  if (!declares(member.owner)) {
+    return false;
+  }
   final visitor = _FieldAccessVisitor(fieldName);
   for (final root in member.executableRoots) {
     root.accept(visitor);
@@ -163,7 +193,7 @@ final class _FieldAccessVisitor extends RecursiveAstVisitor<void> {
       return;
     }
     if (parent is PropertyAccess && identical(parent.propertyName, node)) {
-      if (parent.target is ThisExpression || parent.target is SuperExpression) {
+      if (parent.realTarget is ThisExpression || parent.realTarget is SuperExpression) {
         found = true;
       }
       return;

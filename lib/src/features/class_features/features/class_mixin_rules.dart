@@ -1,6 +1,6 @@
 import 'package:heimdall_test/heimdall_test.dart';
 import 'package:heimdall_test/src/features/queries/declaration_rule_predicates.dart';
-import 'package:heimdall_test/src/features/queries/declaration_type_queries.dart';
+import 'package:heimdall_test/src/features/queries/generic_assignability_queries.dart';
 
 /// Predicate-side DSL for exact class mixin rules.
 extension ClassMixinPredicateRules on ClassPredicateBuilder {
@@ -12,7 +12,7 @@ extension ClassMixinPredicateRules on ClassPredicateBuilder {
     return satisfy(
       HeimdallPredicate(
         'not contain mixin $typeName',
-        (item, project) => !mixesInType(item, typeName, project),
+        (item, project) => !instantiatedTypeHasRelationship(item, typeName, project, relationship: 'mixins'),
       ),
     );
   }
@@ -99,7 +99,7 @@ extension ClassMixinShouldRules on ClassShouldBuilder {
 
 HeimdallCondition<CompilationUnitMember> _classShouldMixin(String typeName) {
   return HeimdallCondition('contain mixin $typeName', (item, project) {
-    final findings = mixesInType(item, typeName, project)
+    final findings = instantiatedTypeHasRelationship(item, typeName, project, relationship: 'mixins')
         ? const <HeimdallValidationInfo>[]
         : [
             HeimdallValidationInfo(
@@ -118,7 +118,7 @@ HeimdallCondition<CompilationUnitMember> _classShouldMixin(String typeName) {
 
 HeimdallCondition<CompilationUnitMember> _classShouldNotMixin(String typeName) {
   return HeimdallCondition('not contain mixin $typeName', (item, project) {
-    final findings = !mixesInType(item, typeName, project)
+    final findings = !instantiatedTypeHasRelationship(item, typeName, project, relationship: 'mixins')
         ? const <HeimdallValidationInfo>[]
         : [
             HeimdallValidationInfo(

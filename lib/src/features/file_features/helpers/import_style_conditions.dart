@@ -2,7 +2,7 @@ import 'package:heimdall_test/heimdall_test.dart';
 
 /// Rejects every relative import target, including conditional alternatives.
 ///
-/// Uses the import model's lexical definition of relative (no colon). This
+/// Uses the import model's URI definition of relative (no scheme). This
 /// checks style only; URI validity and package boundaries are separate policies.
 HeimdallCondition<HeimdallSourceFile> fileShouldNotUseRelativeImports({
   String description = 'not use relative imports',
@@ -12,7 +12,7 @@ HeimdallCondition<HeimdallSourceFile> fileShouldNotUseRelativeImports({
     final findings = [
       for (final directive in file.relativeImports)
         for (final target in directive.targetUris)
-          if (!target.contains(':'))
+          if (Uri.tryParse(target)?.hasScheme == false)
             HeimdallValidationInfo(
               filePath: file.absolutePath,
               line: directive.line,

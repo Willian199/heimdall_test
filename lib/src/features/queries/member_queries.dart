@@ -3,6 +3,7 @@ import 'package:analyzer/dart/ast/visitor.dart';
 import 'package:heimdall_test/src/core/heimdall_condition.dart';
 import 'package:heimdall_test/src/core/heimdall_validation_info.dart';
 import 'package:heimdall_test/src/features/queries/declaration_lookup_queries.dart';
+import 'package:heimdall_test/src/features/queries/sdk_type_queries.dart';
 import 'package:heimdall_test/src/features/queries/static_method_queries.dart';
 import 'package:heimdall_test/src/mapper/model/heimdall_declaration.dart';
 import 'package:heimdall_test/src/mapper/model/heimdall_member.dart';
@@ -26,9 +27,10 @@ MethodInvocation? memberMethodInvocationWhere(
 /// Returns whether [member] contains a matching method invocation.
 bool memberHasMethodInvocationWhere(
   ClassMember member,
-  bool Function(String methodName) test,
-) {
-  final visitor = _HasMethodCallVisitor(test);
+  bool Function(String methodName) test, {
+  HeimdallProject? project,
+}) {
+  final visitor = _HasMethodCallVisitor(test, member, project);
   for (final root in member.executableRoots) {
     root.accept(visitor);
     if (visitor.found) {
@@ -83,7 +85,10 @@ final class _MethodCallVisitor extends RecursiveAstVisitor<void> {
 }
 
 final class _HasMethodCallVisitor extends RecursiveAstVisitor<void> {
-  _HasMethodCallVisitor(this.test);
+  _HasMethodCallVisitor(this.test, this.member, this.project);
+
+  final ClassMember member;
+  final HeimdallProject? project;
 
   final bool Function(String methodName) test;
   bool found = false;
@@ -93,7 +98,9 @@ final class _HasMethodCallVisitor extends RecursiveAstVisitor<void> {
     if (found) {
       return;
     }
-    if (test(node.methodName.name)) {
+    final constructors = project == null ? null : _ConstructorCallVisitor(member, project!, (_) => true);
+    constructors?.visitMethodInvocation(node);
+    if (test(node.methodName.name) && !identical(constructors?.foundNode, node)) {
       found = true;
       return;
     }
@@ -112,9 +119,14 @@ final class _ConstructorCallVisitor extends RecursiveAstVisitor<void> {
   String? _declaredConstructorType(String reference, String? constructorName) {
     final declaration = declarationNamedFrom(member.owner, project, reference);
     if (declaration == null) {
+      return sdkTypeName(member.owner, reference, project);
+    }
+    if (!declaration.isTypeDeclaration) {
       return null;
     }
-    if (constructorName != null && !declaration.constructors.any((constructor) => constructor.name?.lexeme == constructorName)) {
+    if (constructorName != null &&
+        constructorName != 'new' &&
+        !declaration.constructors.any((constructor) => constructor.name?.lexeme == constructorName)) {
       return null;
     }
     return reference.split('.').last;
@@ -147,6 +159,13 @@ final class _ConstructorCallVisitor extends RecursiveAstVisitor<void> {
       return;
     }
     final target = node.target;
+    if (target == null && !node.isCascaded) {
+      final storedType = _storedConstructorType(node);
+      if (storedType != null && test(storedType)) {
+        foundNode = node;
+        return;
+      }
+    }
     if (node.isCascaded || hasValueReceiver(node, target?.toSource() ?? node.methodName.name, project)) {
       super.visitMethodInvocation(node);
       return;
@@ -157,7 +176,7 @@ final class _ConstructorCallVisitor extends RecursiveAstVisitor<void> {
       _ => null,
     };
     final name = target == null
-        ? node.methodName.name
+        ? _declaredConstructorType(node.methodName.name, null)
         : targetName == null
         ? null
         : _declaredConstructorType('$targetName.${node.methodName.name}', null) ?? _declaredConstructorType(targetName, node.methodName.name);
@@ -166,6 +185,70 @@ final class _ConstructorCallVisitor extends RecursiveAstVisitor<void> {
       return;
     }
     super.visitMethodInvocation(node);
+  }
+
+  // Follow an immutable local binding in the same block. Mutable variables and
+  // arbitrary callback flows need data-flow resolution and remain unknown.
+  String? _storedConstructorType(MethodInvocation invocation) {
+    final block = invocation.thisOrAncestorOfType<Block>();
+    if (block == null) {
+      return null;
+    }
+    for (var scope = invocation.parent; scope != null && !identical(scope, block); scope = scope.parent) {
+      // A binding introduced inside these scopes may hide the block local.
+      if (scope is FunctionExpression || scope is ForStatement || scope is ForElement || scope is IfStatement || scope is SwitchExpressionCase) {
+        return null;
+      }
+    }
+    for (final statement in block.statements) {
+      if (statement.offset >= invocation.offset) {
+        break;
+      }
+      if (statement is! VariableDeclarationStatement) {
+        continue;
+      }
+      final variables = statement.variables;
+      final variable = variables.variables.where((variable) => variable.name.lexeme == invocation.methodName.name).firstOrNull;
+      if (variable == null) {
+        continue;
+      }
+      if (!variables.isFinal && !variables.isConst) {
+        return null;
+      }
+      final initializer = variable.initializer;
+      final (reference, constructor) = switch (initializer) {
+        ConstructorReference(:final constructorName) => (constructorName.type.toSource(), constructorName.name?.name),
+        PrefixedIdentifier(:final prefix, :final identifier) => (prefix.name, identifier.name),
+        _ => (null, null),
+      };
+      if (reference == null || initializer == null || hasValueReceiver(initializer, reference, project)) {
+        return null;
+      }
+      return _declaredConstructorType(reference, constructor);
+    }
+    return null;
+  }
+
+  @override
+  void visitSuperConstructorInvocation(SuperConstructorInvocation node) {
+    final owner = member.owner;
+    final type = owner is ClassDeclaration ? owner.extendsClause?.superclass : null;
+    if (type != null && test(type.name.lexeme)) {
+      foundNode = node;
+    }
+    if (foundNode == null) {
+      super.visitSuperConstructorInvocation(node);
+    }
+  }
+
+  @override
+  void visitRedirectingConstructorInvocation(RedirectingConstructorInvocation node) {
+    if (test(member.owner.name)) {
+      foundNode = node;
+    }
+    if (foundNode == null) {
+      super.visitRedirectingConstructorInvocation(node);
+    }
   }
 }
 

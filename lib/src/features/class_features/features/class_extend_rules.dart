@@ -1,6 +1,6 @@
 import 'package:heimdall_test/heimdall_test.dart';
 import 'package:heimdall_test/src/features/queries/declaration_rule_predicates.dart';
-import 'package:heimdall_test/src/features/queries/declaration_type_queries.dart';
+import 'package:heimdall_test/src/features/queries/generic_assignability_queries.dart';
 
 /// Predicate-side DSL for class inheritance rules.
 extension ClassExtendPredicateRules on ClassPredicateBuilder {
@@ -14,7 +14,7 @@ extension ClassExtendPredicateRules on ClassPredicateBuilder {
     return satisfy(
       HeimdallPredicate(
         'not extend $typeName',
-        (item, project) => !extendsType(item, typeName, project),
+        (item, project) => !instantiatedTypeHasRelationship(item, typeName, project, relationship: 'extends'),
       ),
     );
   }
@@ -101,7 +101,7 @@ extension ClassExtendShouldRules on ClassShouldBuilder {
 
 HeimdallCondition<CompilationUnitMember> _classShouldExtend(String typeName) {
   return HeimdallCondition('extend $typeName', (item, project) {
-    final findings = extendsType(item, typeName, project)
+    final findings = instantiatedTypeHasRelationship(item, typeName, project, relationship: 'extends')
         ? const <HeimdallValidationInfo>[]
         : [
             HeimdallValidationInfo(
@@ -120,7 +120,7 @@ HeimdallCondition<CompilationUnitMember> _classShouldExtend(String typeName) {
 
 HeimdallCondition<CompilationUnitMember> _classShouldNotExtend(String typeName) {
   return HeimdallCondition('not extend $typeName', (item, project) {
-    final findings = !extendsType(item, typeName, project)
+    final findings = !instantiatedTypeHasRelationship(item, typeName, project, relationship: 'extends')
         ? const <HeimdallValidationInfo>[]
         : [
             HeimdallValidationInfo(

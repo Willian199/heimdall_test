@@ -1,3 +1,16 @@
+## 0.10.3
+
+- Preserve record type names and generic arguments across assignability checks, aliases, and inherited superclass/interface substitutions.
+- Correct generic function binder comparison, nullable `Never`, extension type bounds, and SDK typed-list assignability.
+- Respect extension primary constructors in inverse rules, representation/member shadowing, enum mixin getters, `this` cascades, and overriding `finally` returns.
+- Recognize invoked constructor tear-offs stored in immutable locals in the same block; exclude uninvoked tear-offs and ordinary callbacks.
+- Apply public-signature exemptions independently to variables sharing a declaration; exclude named-argument labels from identifier references.
+- Classify relative imports by URI scheme and prevent package URI resolution from bypassing the existing traversal policy.
+- Validate regression fixtures with native Dart compilation and correct invalid fixture code and the absent-class inverse-rule expectation.
+- Follow imported values and functions in public signature inference, and preserve generic returns from common SDK collection, Future, and Stream APIs.
+- Distinguish boolean equality/logical expressions from dynamic operator calls when inferring closure returns.
+- Point import/export URI diagnostics at the matching conditional branch.
+
 ## 0.10.2
 
 - **Breaking:** Class collections now include named mixin applications (`ClassTypeAlias`) and expose `CompilationUnitMember` elements. Use `whereType<ClassDeclaration>()` for APIs specific to class bodies.

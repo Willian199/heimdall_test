@@ -1,6 +1,7 @@
 import 'package:analyzer/dart/ast/visitor.dart';
 import 'package:heimdall_test/heimdall_test.dart';
 import 'package:heimdall_test/src/features/queries/declaration_lookup_queries.dart';
+import 'package:heimdall_test/src/features/queries/sdk_type_queries.dart';
 import 'package:heimdall_test/src/features/queries/type_annotation_queries.dart';
 
 /// Returns calls shaped as `Target.method()` inside [node].
@@ -103,6 +104,7 @@ bool _matchesStaticMethodInvocation(
   return node.methodName.name == methodName &&
       _matchesTargetType(node, node.target, targetType, project) &&
       !hasValueReceiver(node, targetType, project) &&
+      _isStaticMethod(node, _qualifiedName(node.target) ?? targetType, methodName, project) &&
       !_isNamedConstructorReference(node, targetType, methodName, project);
 }
 
@@ -128,10 +130,19 @@ bool _matchesTargetType(AstNode invocation, Expression? target, String expected,
   for (var ancestor = invocation.parent; ancestor != null; ancestor = ancestor.parent) {
     if (ancestor is CompilationUnitMember) {
       final typeReference = invocation is MethodInvocation ? actual : actual.substring(0, actual.lastIndexOf('.'));
-      return declarationNamedFrom(ancestor, project, typeReference) != null;
+      return declarationNamedFrom(ancestor, project, typeReference) != null || sdkTypeName(ancestor, typeReference, project) != null;
     }
   }
   return false;
+}
+
+bool _isStaticMethod(AstNode node, String reference, String name, HeimdallProject project) {
+  final owner = node.thisOrAncestorOfType<CompilationUnitMember>();
+  if (owner == null) {
+    return false;
+  }
+  final type = declarationNamedFrom(owner, project, reference);
+  return type == null || type.methods.any((method) => method.name.lexeme == name && method.isStatic && !method.isGetter && !method.isSetter);
 }
 
 /// Whether a lexical value or member hides a type reference at [node].
@@ -254,6 +265,9 @@ bool _valueMembersDeclareInHierarchy(
   if (_valueMembersDeclare(owner, name, inherited: inherited)) {
     return true;
   }
+  if (owner is ExtensionTypeDeclaration && owner.primaryConstructor.formalParameters.parameters.any((parameter) => parameter.name?.lexeme == name)) {
+    return true;
+  }
 
   final inheritedTypes = switch (owner) {
     ClassDeclaration(:final extendsClause, :final withClause) => [
@@ -261,6 +275,7 @@ bool _valueMembersDeclareInHierarchy(
       ...?withClause?.mixinTypes,
     ],
     EnumDeclaration(:final withClause) => [...?withClause?.mixinTypes],
+    MixinDeclaration(:final onClause) => [...?onClause?.superclassConstraints],
     ClassTypeAlias(:final superclass, :final withClause) => [superclass, ...withClause.mixinTypes],
     _ => <NamedType>[],
   };

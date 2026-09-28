@@ -5,8 +5,27 @@ String? typeAnnotationName(TypeAnnotation? type) {
   return switch (type) {
     NamedType() => _namedTypeName(type),
     GenericFunctionType() => 'Function${type.question == null ? '' : '?'}',
+    RecordTypeAnnotation() => _recordTypeName(type),
     _ => null,
   };
+}
+
+String? _recordTypeName(RecordTypeAnnotation type) {
+  final positional = type.positionalFields.map((field) => typeAnnotationName(field.type)).toList();
+  final named = <String>[];
+  for (final field in type.namedFields?.fields ?? <RecordTypeAnnotationNamedField>[]) {
+    final name = typeAnnotationName(field.type);
+    if (name == null) {
+      return null;
+    }
+    named.add('$name ${field.name.lexeme}');
+  }
+  if (positional.contains(null)) {
+    return null;
+  }
+  final fields = <String>[...positional.cast<String>(), if (named.isNotEmpty) '{${named.join(', ')}}'];
+  final comma = positional.length == 1 && named.isEmpty ? ',' : '';
+  return '(${fields.join(', ')}$comma)${type.question == null ? '' : '?'}';
 }
 
 String? _namedTypeName(NamedType type) {

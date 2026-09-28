@@ -70,7 +70,7 @@ extension FileExportUriShouldRules on FileShouldBuilder {
                 item,
                 directive,
                 'exports forbidden URI $uri',
-                offset: directive.uri.offset,
+                offset: matchingDirectiveUris(directive, (value) => value == uri).first.offset,
               ),
             )
             .toList();

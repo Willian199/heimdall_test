@@ -2,9 +2,14 @@
 .dart_tool/
 /build/
 /coverage/
+/*.log
 pubspec.lock
 
 # Tests need their fixtures, so exclude the complete test tree together.
+test/bug_sweep_regression_test.dart
+test/bug_sweep_fixtures/
+test/bug_sweep2_sdk_returns_test.dart
+test/bug_sweep2_fixtures/
 test/
 
 # Repository-only resources.

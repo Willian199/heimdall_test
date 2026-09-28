@@ -101,6 +101,13 @@ analyzer:
     - test/architecture_fixtures/**
     - test/bug_audit_fixtures/**
     - test/bug_audit_regression_test.dart
+    - test/bug_sweep_fixtures/**
+    - test/bug_sweep_regression_test.dart
+    - test/bug_sweep2_fixtures/**
+    - test/bug_sweep2_sdk_returns_test.dart
+    - test/collection_signature_gap_fixtures/**
+    - test/collection_signature_gap_test.dart
+    - test/other_bug_fixtures/**
     - test/bug_hunt_fixtures/**
     - test/class_fixtures/**
     - test/code_fixtures/**
@@ -109,6 +116,8 @@ analyzer:
     - test/flutter_mvvm_architecture/**
     - test/importer_fixtures/**
     - test/problematic_architecture/**
+    - test/confirmed_audit_fixtures/**
+    - test/package_uri_escape_fixtures/**
     - build/**
   language:
     #Strict-casts: Quando definido como true, esse lint irá sinalizar quando houver uma conversão explícita de tipo que pode ser evitada. Por exemplo, converter um int em um double quando o double é esperado. Quando definido como false, o lint não irá sinalizar essas conversões.

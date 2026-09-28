@@ -80,7 +80,8 @@ void main() {
     ('acceptsGenericAlias', 'UnrelatedType', false),
     ('acceptsCallback', 'Function', true),
     ('acceptsModernCallback', 'Function', true),
-    ('acceptsModernCallback', 'void', false),
+    // A function value, like other values, can be assigned to void.
+    ('acceptsModernCallback', 'void', true),
     ('acceptsNullableCallback', 'Function', false),
     ('acceptsNullableCallback', 'Function?', true),
   ]) {

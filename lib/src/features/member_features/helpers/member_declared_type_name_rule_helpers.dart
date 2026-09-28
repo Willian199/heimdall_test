@@ -2,7 +2,7 @@ import 'package:analyzer/dart/ast/ast.dart';
 import 'package:heimdall_test/src/core/heimdall_condition.dart';
 import 'package:heimdall_test/src/core/heimdall_predicate.dart';
 import 'package:heimdall_test/src/core/heimdall_validation_info.dart';
-import 'package:heimdall_test/src/features/member_features/helpers/member_assignability_rule_helpers.dart';
+import 'package:heimdall_test/src/features/queries/generic_assignability_queries.dart';
 import 'package:heimdall_test/src/features/queries/member_queries.dart';
 import 'package:heimdall_test/src/mapper/model/heimdall_member.dart';
 import 'package:heimdall_test/src/mapper/model/heimdall_project.dart';
@@ -83,12 +83,12 @@ bool memberDeclaredTypeIsAssignableTo(
   String typeName,
   HeimdallProject project,
 ) {
-  final declaredTypeName = _memberDeclaredTypeName(member);
+  final declaredTypeName = member is FieldDeclaration ? member.fields.type?.toSource() : null;
   if (declaredTypeName == null) {
     return false;
   }
 
-  return typeNameIsAssignableToFrom(
+  return instantiatedTypeIsAssignableTo(
     member.owner,
     declaredTypeName,
     typeName,

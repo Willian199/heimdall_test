@@ -1,6 +1,6 @@
 import 'package:heimdall_test/heimdall_test.dart';
 import 'package:heimdall_test/src/features/queries/declaration_rule_predicates.dart';
-import 'package:heimdall_test/src/features/queries/declaration_type_queries.dart';
+import 'package:heimdall_test/src/features/queries/generic_assignability_queries.dart';
 
 /// Predicate-side DSL for exact assignability rules.
 extension ClassAssignableToPredicateRules on ClassPredicateBuilder {
@@ -14,7 +14,7 @@ extension ClassAssignableToPredicateRules on ClassPredicateBuilder {
     return satisfy(
       HeimdallPredicate(
         'are not assignable to $typeName',
-        (item, project) => !isAssignableTo(item, typeName, project),
+        (item, project) => !instantiatedTypeIsAssignableTo(item, item.name, typeName, project),
       ),
     );
   }
@@ -109,7 +109,7 @@ HeimdallCondition<CompilationUnitMember> _classShouldBeAssignableTo(
   String typeName,
 ) {
   return HeimdallCondition('be assignable to $typeName', (item, project) {
-    final findings = isAssignableTo(item, typeName, project)
+    final findings = instantiatedTypeIsAssignableTo(item, item.name, typeName, project)
         ? const <HeimdallValidationInfo>[]
         : [
             HeimdallValidationInfo(
@@ -130,7 +130,7 @@ HeimdallCondition<CompilationUnitMember> _classShouldNotBeAssignableTo(
   String typeName,
 ) {
   return HeimdallCondition('not be assignable to $typeName', (item, project) {
-    final findings = !isAssignableTo(item, typeName, project)
+    final findings = !instantiatedTypeIsAssignableTo(item, item.name, typeName, project)
         ? const <HeimdallValidationInfo>[]
         : [
             HeimdallValidationInfo(

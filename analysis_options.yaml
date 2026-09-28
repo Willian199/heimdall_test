@@ -117,6 +117,7 @@ analyzer:
     - test/importer_fixtures/**
     - test/problematic_architecture/**
     - test/confirmed_audit_fixtures/**
+    - test/package_uri_escape_fixtures/**
     - build/**
   language:
     #Strict-casts: Quando definido como true, esse lint irá sinalizar quando houver uma conversão explícita de tipo que pode ser evitada. Por exemplo, converter um int em um double quando o double é esperado. Quando definido como false, o lint não irá sinalizar essas conversões.

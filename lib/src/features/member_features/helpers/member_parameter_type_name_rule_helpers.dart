@@ -1,6 +1,6 @@
 import 'package:analyzer/dart/ast/ast.dart';
-import 'package:heimdall_test/src/features/member_features/helpers/member_assignability_rule_helpers.dart';
 import 'package:heimdall_test/src/features/queries/declaration_lookup_queries.dart';
+import 'package:heimdall_test/src/features/queries/generic_assignability_queries.dart';
 import 'package:heimdall_test/src/features/queries/type_annotation_queries.dart';
 import 'package:heimdall_test/src/mapper/model/heimdall_declaration.dart';
 import 'package:heimdall_test/src/mapper/model/heimdall_member.dart';
@@ -31,20 +31,42 @@ bool memberReceivesParameterAssignableTo(
   String typeName,
 ) {
   return member.parameters.any((parameter) {
-    final parameterTypeName = _resolvedParameterTypeName(
+    var parameterTypeName = _resolvedParameterTypeName(
       parameter,
       member: member,
       project: project,
     );
+
     if (parameterTypeName == null) {
       return false;
     }
 
-    return typeNameIsAssignableToFrom(
+    if (member is MethodDeclaration) {
+      for (final formal in member.typeParameters?.typeParameters ?? <TypeParameter>[]) {
+        if (parameterTypeName == formal.name.lexeme) {
+          parameterTypeName = formal.bound?.toSource() ?? 'Object?';
+        }
+      }
+    }
+
+    CompilationUnitMember? actualSource;
+    final inner = parameter is DefaultFormalParameter ? parameter.parameter : parameter;
+
+    if (inner is SuperFormalParameter && inner.type == null && member.owner is ClassDeclaration) {
+      final owner = member.owner as ClassDeclaration;
+      final parent = owner.extendsClause?.superclass;
+
+      if (parent != null && parameterTypeName!.contains('.')) {
+        actualSource = declarationNamedFrom(owner, project, namedTypeReferenceName(parent));
+      }
+    }
+
+    return instantiatedTypeIsAssignableTo(
       member.owner,
-      parameterTypeName,
+      parameterTypeName!,
       typeName,
       project,
+      actualSource: actualSource,
     );
   });
 }
@@ -128,8 +150,14 @@ String? _superParameterTypeName(
     return null;
   }
 
+  final childParameter = (member as ClassMember).parameters.firstWhere((parameter) => parameter.name?.lexeme == parameterName);
+  final positional = (member as ClassMember).parameters.where((parameter) => parameter.isPositional).toList();
+  final targetPositional = (targetConstructor as ClassMember).parameters.where((parameter) => parameter.isPositional).toList();
+  final position = positional.indexOf(childParameter);
   for (final parameter in (targetConstructor as ClassMember).parameters) {
-    if (parameter.name?.lexeme != parameterName) {
+    if (childParameter.isNamed
+        ? parameter.name?.lexeme != parameterName
+        : position < 0 || position >= targetPositional.length || !identical(parameter, targetPositional[position])) {
       continue;
     }
     final inheritedType = _resolvedParameterTypeName(
@@ -143,11 +171,14 @@ String? _superParameterTypeName(
     }
     final typeParameters = superclass.namePart.typeParameters?.typeParameters;
     final typeArguments = owner.extendsClause?.superclass.typeArguments?.arguments;
-    if (typeParameters == null || typeArguments == null) {
+    if (typeParameters == null) {
       return inheritedType;
     }
     final substitutions = <String, String>{
-      for (var i = 0; i < typeParameters.length && i < typeArguments.length; i++) typeParameters[i].name.lexeme: typeArguments[i].toSource(),
+      for (var i = 0; i < typeParameters.length; i++)
+        typeParameters[i].name.lexeme: typeArguments != null && i < typeArguments.length
+            ? typeArguments[i].toSource()
+            : typeParameters[i].bound?.toSource() ?? 'dynamic',
     };
     return inheritedType.replaceAllMapped(
       _typeParameterReferencePattern,

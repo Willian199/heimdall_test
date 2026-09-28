@@ -1,3 +1,5 @@
+import 'dart:collection';
+
 import 'package:heimdall_test/heimdall_test.dart';
 import 'package:path/path.dart' as p;
 
@@ -58,9 +60,11 @@ final class HeimdallProject {
   final Map<HeimdallSourceFile, List<CompilationUnitMember>> _exportedTypeDeclarationsCache = {};
 
   /// Imported files indexed by absolute path.
-  late final Map<String, HeimdallSourceFile> filesByPath = Map.unmodifiable({
-    for (final file in files) file.absolutePath: file,
-  });
+  late final Map<String, HeimdallSourceFile> filesByPath = UnmodifiableMapView(
+    HashMap<String, HeimdallSourceFile>(equals: p.equals, hashCode: p.hash)..addAll({
+      for (final file in files) file.absolutePath: file,
+    }),
+  );
 
   /// Imported files that contain parse errors.
   late final List<HeimdallSourceFile> filesWithParseErrors = List.unmodifiable(files.where((file) => file.hasErrors));
@@ -673,18 +677,22 @@ final class HeimdallProject {
   }
 
   String? _resolveUri(String originPath, String? uri) {
-    if (uri == null || uri.isEmpty) {
+    if (uri == null || uri.isEmpty || uri.contains(r'\')) {
       return null;
     }
     final parsed = Uri.tryParse(uri);
-    if (parsed == null || parsed.hasQuery || parsed.hasFragment) {
+    if (parsed == null || parsed.hasQuery || parsed.hasFragment || parsed.hasAuthority) {
       return null;
     }
     if (parsed.scheme == 'dart') {
       return null;
     }
     if (parsed.scheme == 'package') {
-      if (parsed.pathSegments.isEmpty || parsed.pathSegments.first != packageName) {
+      if (parsed.pathSegments.length < 2 ||
+          parsed.pathSegments.first != packageName ||
+          parsed.pathSegments.any(
+            (segment) => segment.isEmpty || segment == '.' || segment == '..' || segment.contains('/') || segment.contains(r'\'),
+          )) {
         return null;
       }
       final rest = parsed.pathSegments.skip(1).join('/');

@@ -27,8 +27,8 @@ bool pathMatches(String path, String pattern) {
   final normalizedPattern = normalizePath(pattern);
 
   if (_isSegmentWildcardPattern(normalizedPattern)) {
-    final token = normalizedPattern.replaceAll('..', '').replaceAll('/', '');
-    return normalizedPath.split('/').contains(token);
+    final token = normalizedPattern.substring(2, normalizedPattern.length - 2);
+    return '/$normalizedPath/'.contains('/$token/');
   }
 
   if (normalizedPattern.contains('..')) {
@@ -71,7 +71,7 @@ bool _isSegmentWildcardPattern(String pattern) {
     return false;
   }
   final token = pattern.replaceAll('..', '').replaceAll('/', '');
-  return token.isNotEmpty && !pattern.contains('/') && !token.contains('*') && !token.contains('(');
+  return token.isNotEmpty && !token.contains('*') && !token.contains('(');
 }
 
 bool _looksLikeCompletePath(String path, String pattern) {

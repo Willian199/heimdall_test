@@ -75,7 +75,7 @@ extension FileExportUriMatchingShouldRules on FileShouldBuilder {
                 item,
                 directive,
                 'exports forbidden URI matching ${pattern.pattern}',
-                offset: directive.uri.offset,
+                offset: matchingDirectiveUris(directive, pattern.hasMatch).first.offset,
               ),
             )
             .toList();
@@ -156,7 +156,7 @@ HeimdallCondition<HeimdallSourceFile> _fileShouldExportUriMatching(
           item,
           matchingDirective,
           'exports URI matching ${pattern.pattern}',
-          offset: matchingDirective.uri.offset,
+          offset: matchingDirectiveUris(matchingDirective, pattern.hasMatch).first.offset,
         ),
       );
     } else {

@@ -445,6 +445,7 @@ final class HeimdallSourceUri {
   HeimdallSourceUri._(this.directive, this.target, String originPath) : uri = Uri.tryParse(target) {
     final parsed = uri;
     isValid =
+        !target.contains(r'\') &&
         parsed != null &&
         (!parsed.hasScheme || parsed.scheme == 'dart' || parsed.scheme == 'package') &&
         !parsed.hasQuery &&
@@ -494,7 +495,7 @@ bool _hasUpwardRelativeUri(UriBasedDirective directive) {
 
 bool _hasSameDirectoryRelativeUri(UriBasedDirective directive) {
   return directive.targetUris.any((uri) {
-    if (uri.contains(':') || uri == '..' || uri.startsWith('../') || uri.contains('/../')) {
+    if (Uri.tryParse(uri)?.hasScheme != false || uri == '..' || uri.startsWith('../') || uri.contains('/../')) {
       return false;
     }
     if (!uri.contains('/')) {
@@ -522,7 +523,7 @@ extension _StringUriKind on String {
     if (startsWith('package:')) {
       return _DirectiveUriKind.package;
     }
-    if (!contains(':')) {
+    if (Uri.tryParse(this)?.hasScheme == false) {
       return _DirectiveUriKind.relative;
     }
     return _DirectiveUriKind.other;

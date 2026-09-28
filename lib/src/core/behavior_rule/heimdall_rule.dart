@@ -107,7 +107,7 @@ final class HeimdallRule<T> {
   HeimdallRule<T> because(String reason) {
     return HeimdallRule(
       customDescription: '$description, because $reason',
-      descriptionPrefix: descriptionPrefix,
+      descriptionPrefix: '${descriptionPrefix ?? description}, because $reason',
       continuationContext: continuationContext,
       selector: selector,
       predicate: predicate,

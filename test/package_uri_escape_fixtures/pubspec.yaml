@@ -1,0 +1,3 @@
+name: package_uri_escape_fixture
+environment:
+  sdk: ^3.11.0

@@ -54,10 +54,11 @@ FeatureSet _readFeatureSet(YamlMap? pubspec) {
   }
 
   try {
-    final constraint = VersionConstraint.parse(sdkConstraint);
-    if (constraint is VersionRange && constraint.min != null) {
+    final constraint = VersionConstraint.unionOf(sdkConstraint.split('||').map(VersionConstraint.parse));
+    final range = constraint is VersionUnion ? constraint.ranges.firstOrNull : constraint;
+    if (range is VersionRange && range.min != null) {
       return FeatureSet.fromEnableFlags2(
-        sdkLanguageVersion: constraint.min!,
+        sdkLanguageVersion: range.min!,
         flags: const [],
       );
     }

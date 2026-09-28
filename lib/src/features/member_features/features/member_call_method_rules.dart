@@ -13,7 +13,7 @@ extension MemberCallMethodPredicateRules on MemberPredicateBuilder {
     return satisfy(
       HeimdallPredicate(
         'not call method $methodName',
-        (item, project) => !_memberCallsMethod(item, methodName),
+        (item, project) => !_memberCallsMethod(item, methodName, project),
       ),
     );
   }
@@ -62,7 +62,7 @@ extension MemberCallMethodShouldRules on MemberShouldBuilder {
     return satisfy(
       prohibitedMemberCondition(
         'call method $methodName',
-        (item, project) => _memberCallsMethod(item, methodName),
+        (item, project) => _memberCallsMethod(item, methodName, project),
       ),
     );
   }
@@ -102,8 +102,8 @@ extension MemberCallMethodShouldRules on MemberShouldBuilder {
 }
 
 HeimdallCondition<ClassMember> _memberShouldCallMethod(String methodName) {
-  return HeimdallCondition('call method $methodName', (item, _) {
-    final findings = _memberCallsMethod(item, methodName)
+  return HeimdallCondition('call method $methodName', (item, project) {
+    final findings = _memberCallsMethod(item, methodName, project)
         ? const <HeimdallValidationInfo>[]
         : [
             HeimdallValidationInfo(
@@ -123,11 +123,11 @@ HeimdallCondition<ClassMember> _memberShouldCallMethod(String methodName) {
 HeimdallPredicate<ClassMember> _memberMatchesCallMethod(String methodName) {
   return HeimdallPredicate(
     'call method $methodName',
-    (item, project) => _memberCallsMethod(item, methodName),
+    (item, project) => _memberCallsMethod(item, methodName, project),
   );
 }
 
 /// Returns `true` when [member] calls [methodName].
-bool _memberCallsMethod(ClassMember member, String methodName) {
-  return memberHasMethodInvocationWhere(member, (name) => name == methodName);
+bool _memberCallsMethod(ClassMember member, String methodName, HeimdallProject project) {
+  return memberHasMethodInvocationWhere(member, (name) => name == methodName, project: project);
 }

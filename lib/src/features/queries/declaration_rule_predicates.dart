@@ -1,11 +1,12 @@
 import 'package:heimdall_test/heimdall_test.dart';
 import 'package:heimdall_test/src/features/queries/declaration_type_queries.dart';
+import 'package:heimdall_test/src/features/queries/generic_assignability_queries.dart';
 
 /// Matches declarations assignable to [typeName], including inherited types.
 HeimdallPredicate<CompilationUnitMember> classAssignableTo(String typeName) {
   return HeimdallPredicate(
     'are assignable to $typeName',
-    (item, project) => isAssignableTo(item, typeName, project),
+    (item, project) => instantiatedTypeIsAssignableTo(item, item.name, typeName, project),
   );
 }
 
@@ -27,7 +28,7 @@ HeimdallPredicate<CompilationUnitMember> classAssignableToTypeNameEndingWith(
 HeimdallPredicate<CompilationUnitMember> classExtends(String typeName) {
   return HeimdallPredicate(
     'extend $typeName',
-    (item, project) => extendsType(item, typeName, project),
+    (item, project) => instantiatedTypeHasRelationship(item, typeName, project, relationship: 'extends'),
   );
 }
 
@@ -63,7 +64,7 @@ HeimdallPredicate<CompilationUnitMember> classExtendsTypeNameStartingWith(
 HeimdallPredicate<CompilationUnitMember> classImplements(String typeName) {
   return HeimdallPredicate(
     'implement $typeName',
-    (item, project) => implementsType(item, typeName, project),
+    (item, project) => instantiatedTypeHasRelationship(item, typeName, project, relationship: 'implements'),
   );
 }
 
@@ -85,7 +86,7 @@ HeimdallPredicate<CompilationUnitMember> classImplementsTypeNameEndingWith(
 HeimdallPredicate<CompilationUnitMember> classMixesIn(String typeName) {
   return HeimdallPredicate(
     'mixin $typeName',
-    (item, project) => mixesInType(item, typeName, project),
+    (item, project) => instantiatedTypeHasRelationship(item, typeName, project, relationship: 'mixins'),
   );
 }
 

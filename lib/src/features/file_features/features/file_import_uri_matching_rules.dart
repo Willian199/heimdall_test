@@ -72,7 +72,7 @@ extension FileImportUriMatchingShouldRules on FileShouldBuilder {
                 item,
                 directive,
                 'imports forbidden URI matching ${pattern.pattern}',
-                offset: directive.uri.offset,
+                offset: matchingDirectiveUris(directive, pattern.hasMatch).first.offset,
               ),
             )
             .toList();
@@ -150,7 +150,7 @@ HeimdallCondition<HeimdallSourceFile> _fileShouldImportUriMatching(
           item,
           matchingDirective,
           'imports URI matching ${pattern.pattern}',
-          offset: matchingDirective.uri.offset,
+          offset: matchingDirectiveUris(matchingDirective, pattern.hasMatch).first.offset,
         ),
       );
     } else {

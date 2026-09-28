@@ -58,40 +58,36 @@ CompilationUnitMember? declarationNamedFrom(
   HeimdallProject project,
   String typeName,
 ) {
-  return _declarationNamedFrom(item, project, typeName, <String>{});
-}
+  final visited = <String>{};
+  CompilationUnitMember? visit(CompilationUnitMember item, String typeName) {
+    final key = '${item.sourcePath}:$typeName';
+    if (!visited.add(key)) {
+      return null;
+    }
 
-CompilationUnitMember? _declarationNamedFrom(
-  CompilationUnitMember item,
-  HeimdallProject project,
-  String typeName,
-  Set<String> visited,
-) {
-  final key = '${item.sourcePath}:$typeName';
-  if (!visited.add(key)) {
+    final alias = _typeAliasNamedFrom(item, project, typeName);
+    final aliasTarget = _typeAliasTargetName(alias);
+    if (alias != null && aliasTarget != null) {
+      return visit(alias, aliasTarget);
+    }
+
+    final reference = _TypeReference.parse(typeName);
+    for (final declaration in visibleTypeReferenceDeclarationsFrom(
+      item,
+      project,
+      importPrefix: reference.prefix,
+    )) {
+      if (declaration is TypeAlias) {
+        continue;
+      }
+      if (declaration.name == reference.name) {
+        return declaration;
+      }
+    }
     return null;
   }
 
-  final alias = _typeAliasNamedFrom(item, project, typeName);
-  final aliasTarget = _typeAliasTargetName(alias);
-  if (alias != null && aliasTarget != null) {
-    return _declarationNamedFrom(alias, project, aliasTarget, visited);
-  }
-
-  final reference = _TypeReference.parse(typeName);
-  for (final declaration in visibleTypeReferenceDeclarationsFrom(
-    item,
-    project,
-    importPrefix: reference.prefix,
-  )) {
-    if (declaration is TypeAlias) {
-      continue;
-    }
-    if (declaration.name == reference.name) {
-      return declaration;
-    }
-  }
-  return null;
+  return visit(item, typeName);
 }
 
 /// Returns the declarations that can be referenced by [item] with [importPrefix].
@@ -164,13 +160,14 @@ bool _typeReferenceNamesMatch(String actual, String expected) {
   }
   final actualReference = _TypeReference.parse(actual);
   final expectedReference = _TypeReference.parse(expected);
-  return expectedReference.prefix == null && actualReference.name == expectedReference.name;
+  return !expected.contains('<') && expectedReference.prefix == null && actualReference.name == expectedReference.name;
 }
 
 final class _TypeReference {
   const _TypeReference({required this.prefix, required this.name});
 
-  factory _TypeReference.parse(String value) {
+  factory _TypeReference.parse(String text) {
+    final value = text.split('<').first;
     final separator = value.indexOf('.');
     if (separator < 0) {
       return _TypeReference(prefix: null, name: value);

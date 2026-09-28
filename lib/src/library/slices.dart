@@ -72,6 +72,10 @@ final class HeimdallSlices {
       }
       graph.putIfAbsent(sourceSlice, LinkedHashSet.new);
       for (final dependency in file.resolvedDependencies) {
+        // A part-of directive describes ownership, not a reverse dependency.
+        if (dependency is PartOfDirective) {
+          continue;
+        }
         for (final targetFile in dependency.targetFiles) {
           final targetPaths = {
             targetFile.relativePath,
@@ -107,6 +111,9 @@ List<List<String>> _findCycles(Map<String, Set<String>> graph) {
   final visited = <String>{};
 
   void visit(String node) {
+    if (cycles.length >= 100) {
+      return;
+    }
     if (stack.contains(node)) {
       cycles.add(stack.skip(stack.indexOf(node)).toList()..add(node));
       return;
@@ -118,7 +125,7 @@ List<List<String>> _findCycles(Map<String, Set<String>> graph) {
     for (final next in graph[node] ?? const <String>{}) {
       visit(next);
       if (cycles.length >= 100) {
-        return;
+        break;
       }
     }
     stack.removeLast();

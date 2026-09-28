@@ -24,7 +24,7 @@ extension FileImportStylePredicateRules on FilePredicateBuilder {
 
   /// Selects files without relative import targets, including conditional ones.
   ///
-  /// A relative target contains no colon. Other URI schemes are accepted;
+  /// A relative target has no URI scheme. Other URI schemes are accepted;
   /// use [useOnlyPackageOrSdkImports] to allow only `package:` and `dart:`.
   /// Files without imports match. No project package-name filter is applied.
   FilePredicateBuilder notUseRelativeImports() {
@@ -60,7 +60,7 @@ extension FileImportStyleShouldRules on FileShouldBuilder {
 
   /// Rejects every relative import target, including conditional alternatives.
   ///
-  /// A relative target contains no colon. Other URI schemes and files without
+  /// A relative target has no URI scheme. Other URI schemes and files without
   /// imports are accepted. No project package-name filter is applied.
   /// [HeimdallCodeSight.preferPackageImports] uses this same check.
   HeimdallRule<HeimdallSourceFile> notUseRelativeImports() {

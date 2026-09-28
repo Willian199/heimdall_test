@@ -127,7 +127,7 @@ HeimdallCondition<CompilationUnitMember> _classShouldNotReceiveParameter(
   return HeimdallCondition('not receive parameter $parameterName', (item, _) {
     final findings = _matchingParameters(item, parameterName).map(
       (match) {
-        final location = match.constructor.sourceLocationAt(
+        final location = item.sourceLocationAt(
           match.parameter.offset,
         );
         return HeimdallValidationInfo(
@@ -166,6 +166,11 @@ HeimdallPredicate<CompilationUnitMember> _classDoesNotReceiveParameter(
 }
 
 bool _receivesParameter(CompilationUnitMember item, String parameterName) {
+  if (item is ExtensionTypeDeclaration &&
+      item.primaryConstructor.formalParameters.parameters.any((parameter) => isPositionalOrRequiredNamedParameter(parameter, parameterName))) {
+    return true;
+  }
+
   return item.constructors.any(
     (constructor) => constructor.parameters.parameters.any(
       (parameter) => isPositionalOrRequiredNamedParameter(
@@ -176,10 +181,17 @@ bool _receivesParameter(CompilationUnitMember item, String parameterName) {
   );
 }
 
-Iterable<({ConstructorDeclaration constructor, FormalParameter parameter})> _matchingParameters(
+Iterable<({AstNode constructor, FormalParameter parameter})> _matchingParameters(
   CompilationUnitMember item,
   String parameterName,
 ) sync* {
+  if (item is ExtensionTypeDeclaration) {
+    for (final parameter in item.primaryConstructor.formalParameters.parameters) {
+      if (isPositionalOrRequiredNamedParameter(parameter, parameterName)) {
+        yield (constructor: item.primaryConstructor, parameter: parameter);
+      }
+    }
+  }
   for (final constructor in item.constructors) {
     for (final parameter in constructor.parameters.parameters) {
       if (isPositionalOrRequiredNamedParameter(parameter, parameterName)) {

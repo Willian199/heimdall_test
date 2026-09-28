@@ -30,7 +30,8 @@ List<DeclarationDependency> declarationDependenciesFrom(
   CompilationUnitMember item,
   HeimdallProject project,
 ) {
-  final references = _ResolvedReferenceVisitor()..collect(item);
+  final references = _ResolvedReferenceVisitor();
+  item.accept(references);
   final libraryFiles = libraryFilesFrom(item, project);
 
   final localTypeNames = {
@@ -166,8 +167,6 @@ bool _declarationReferencesTarget(
 final class _ResolvedReferenceVisitor extends RecursiveAstVisitor<void> {
   final Set<Element> elements = {};
   bool hasUnresolvedIdentifiers = false;
-
-  void collect(AstNode node) => node.accept(this);
 
   @override
   void visitSimpleIdentifier(SimpleIdentifier node) {

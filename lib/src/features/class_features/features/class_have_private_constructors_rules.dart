@@ -107,7 +107,8 @@ extension ClassHaveOnlyPrivateConstructorsShouldRules on ClassShouldBuilder {
 HeimdallCondition<CompilationUnitMember> _classShouldHaveOnlyPrivateConstructors() {
   return HeimdallCondition('have only private constructors', (item, _) {
     final constructors = item.constructors;
-    final findings = constructors.isEmpty
+
+    final findings = constructors.isEmpty && item is! ExtensionTypeDeclaration
         ? [
             HeimdallValidationInfo(
               filePath: item.sourcePath,
@@ -125,6 +126,11 @@ HeimdallCondition<CompilationUnitMember> _classShouldHaveOnlyPrivateConstructors
                 ),
               )
               .toList();
+
+    if (item is ExtensionTypeDeclaration && !(item.primaryConstructor.constructorName?.name.lexeme.startsWith('_') ?? false)) {
+      findings.add(HeimdallValidationInfo.forSubject(item, '${item.name} declares a public primary constructor'));
+    }
+
     return HeimdallFindings(
       subject: item,
       passed: findings.isEmpty,
@@ -135,8 +141,7 @@ HeimdallCondition<CompilationUnitMember> _classShouldHaveOnlyPrivateConstructors
 
 HeimdallCondition<CompilationUnitMember> _classShouldNotHaveOnlyPrivateConstructors() {
   return HeimdallCondition('not have only private constructors', (item, _) {
-    final constructors = item.constructors;
-    final findings = constructors.isEmpty || constructors.any((member) => !member.isPrivate)
+    final findings = !_hasOnlyPrivateConstructors(item)
         ? const <HeimdallValidationInfo>[]
         : [
             HeimdallValidationInfo(
@@ -177,20 +182,14 @@ HeimdallCondition<CompilationUnitMember> _classShouldHavePrivateConstructor(
 HeimdallPredicate<CompilationUnitMember> _classHasOnlyPrivateConstructors() {
   return HeimdallPredicate(
     'have only private constructors',
-    (item, _) {
-      final constructors = item.constructors;
-      return constructors.isNotEmpty && constructors.every((member) => member.isPrivate);
-    },
+    (item, _) => _hasOnlyPrivateConstructors(item),
   );
 }
 
 HeimdallPredicate<CompilationUnitMember> _classDoesNotHaveOnlyPrivateConstructors() {
   return HeimdallPredicate(
     'not have only private constructors',
-    (item, _) {
-      final constructors = item.constructors;
-      return constructors.isEmpty || constructors.any((member) => !member.isPrivate);
-    },
+    (item, _) => !_hasOnlyPrivateConstructors(item),
   );
 }
 
@@ -204,7 +203,18 @@ HeimdallPredicate<CompilationUnitMember> _classHasPrivateConstructor(
 }
 
 bool _hasPrivateConstructor(CompilationUnitMember item, String name) {
+  if (item is ExtensionTypeDeclaration && item.primaryConstructor.constructorName?.name.lexeme == name && name.startsWith('_')) {
+    return true;
+  }
   return item.constructors.cast<ClassMember>().any(
     (constructor) => constructor.name == name && constructor.isPrivate,
   );
+}
+
+bool _hasOnlyPrivateConstructors(CompilationUnitMember item) {
+  final constructors = item.constructors;
+  if (item is ExtensionTypeDeclaration) {
+    return (item.primaryConstructor.constructorName?.name.lexeme.startsWith('_') ?? false) && constructors.every((member) => member.isPrivate);
+  }
+  return constructors.isNotEmpty && constructors.every((member) => member.isPrivate);
 }

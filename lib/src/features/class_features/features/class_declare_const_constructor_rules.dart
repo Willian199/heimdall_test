@@ -168,6 +168,12 @@ HeimdallPredicate<CompilationUnitMember> _classDeclaresConstConstructor({
 }
 
 bool _declaresConstConstructor(CompilationUnitMember item, String name) {
+  if (item is ExtensionTypeDeclaration &&
+      item.primaryConstructor.constKeyword != null &&
+      (item.primaryConstructor.constructorName?.name.lexeme ?? 'new') == name) {
+    return true;
+  }
+
   return item.constructors.any(
     (constructor) => constructor.isConst && (constructor as ClassMember).name == name,
   );

@@ -49,5 +49,14 @@ void main() {
     final import = consumer.importDirectives.single;
 
     expect(import.targetFiles.map((file) => file.relativePath), contains('lib/Target.dart'));
-  });
+  }, testOn: 'windows');
+
+  test('relative import resolution follows case-sensitive paths outside Windows', () {
+    final project = const HeimdallFileImporter(useCache: false).importPath('test/other_bug_fixtures/path_case');
+    final consumer = project.fileByRelativePath('lib/consumer.dart')!;
+    final import = consumer.importDirectives.single;
+
+    expect(project.fileByRelativePath('lib/Target.dart'), isNotNull);
+    expect(import.targetFiles, isEmpty);
+  }, testOn: '!windows');
 }

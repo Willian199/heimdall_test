@@ -1,3 +1,7 @@
+## 0.11.0
+
+- Update the analyzer dependency to 12.0.0 and migrate library directive name handling to the current AST API.
+
 ## 0.10.3
 
 - Preserve record type names and generic arguments across assignability checks, aliases, and inherited superclass/interface substitutions.

@@ -1,5 +1,4 @@
 import 'package:heimdall_test/src/core.dart';
-import 'package:heimdall_test/src/features/queries/declaration_dependency_queries.dart';
 import 'package:heimdall_test/src/features/queries/declaration_lookup_queries.dart';
 
 /// Identifies supported SDK types without mistaking a local type for an SDK type.
@@ -55,7 +54,7 @@ String? sdkTypeName(CompilationUnitMember source, String reference, HeimdallProj
   if (library == null) {
     return null;
   }
-  final imports = dependenciesFrom(source, project).whereType<ImportDirective>();
+  final imports = project.libraryScopes.scopeOf(source).dependencies.whereType<ImportDirective>();
   if (prefix == null && library == 'dart:core' && !imports.any((item) => item.uri.stringValue == library)) {
     return name;
   }

@@ -146,6 +146,8 @@ void main() {
             'src/core/(**)',
             'src/mapper/(**)',
           ])
+          .layer('Features')
+          .definedBy(['src/features/(**)'])
           .layer('Dsl')
           .definedBy([
             'src/dsl.dart',
@@ -157,13 +159,15 @@ void main() {
           .layer('Plugins')
           .definedBy(['src/plugins.dart'])
           .whereLayer('Public')
-          .mayOnlyAccessLayers(['Core', 'Dsl', 'Library', 'Plugins'])
+          .mayOnlyAccessLayers(['Core', 'Dsl', 'Library', 'Plugins', 'Features'])
           .whereLayer('Core')
-          .mayOnlyAccessLayers(['Core', 'Dsl'])
+          .mayOnlyAccessLayers(['Core', 'Dsl', 'Features'])
+          .whereLayer('Features')
+          .mayOnlyAccessLayers(['Core', 'Dsl', 'Features'])
           .whereLayer('Dsl')
-          .mayOnlyAccessLayers(['Core', 'Dsl', 'Library'])
+          .mayOnlyAccessLayers(['Core', 'Dsl', 'Library', 'Features'])
           .whereLayer('Library')
-          .mayOnlyAccessLayers(['Core', 'Dsl', 'Library'])
+          .mayOnlyAccessLayers(['Core', 'Dsl', 'Library', 'Features'])
           .whereLayer('Plugins')
           .mayOnlyAccessLayers(['Core'])
           .asRule()

@@ -1,4 +1,6 @@
-import 'package:analyzer/dart/ast/ast.dart';
+import 'package:heimdall_test/src/core.dart';
+import 'package:heimdall_test/src/features/queries/declaration_lookup_queries.dart';
+import 'package:heimdall_test/src/features/queries/type_annotation_queries.dart';
 
 /// Whether [node] is a value read or write, rather than a declaration or label.
 bool isValueReference(SimpleIdentifier node) {
@@ -26,16 +28,20 @@ bool isValueReference(SimpleIdentifier node) {
 }
 
 /// Whether a lexical binding hides a value with the same name at [reference].
-bool isShadowedValue(SimpleIdentifier reference) {
-  final name = reference.name;
+bool isShadowedValue(SimpleIdentifier reference) => _isShadowedValueName(reference, reference.name);
+
+bool _isShadowedValueName(AstNode reference, String name) {
   for (var ancestor = reference.parent; ancestor != null; ancestor = ancestor.parent) {
-    if (ancestor is MethodDeclaration && _parametersDeclare(ancestor.parameters, name) ||
-        ancestor is ConstructorDeclaration && _parametersDeclare(ancestor.parameters, name) ||
+    if (ancestor is MethodDeclaration && ancestor.parameterNames.contains(name) ||
+        ancestor is ConstructorDeclaration && ancestor.parameterNames.contains(name) ||
         ancestor is FunctionExpression && _parametersDeclare(ancestor.parameters, name)) {
       return true;
     }
     if (ancestor is Block) {
       for (final statement in ancestor.statements) {
+        if (statement is FunctionDeclarationStatement && statement.functionDeclaration.name.lexeme == name) {
+          return true;
+        }
         if (statement.offset >= reference.offset) {
           break;
         }
@@ -43,9 +49,6 @@ bool isShadowedValue(SimpleIdentifier reference) {
           return true;
         }
         if (statement is PatternVariableDeclarationStatement && _declaresName(statement.declaration.pattern, name)) {
-          return true;
-        }
-        if (statement is FunctionDeclarationStatement && statement.functionDeclaration.name.lexeme == name) {
           return true;
         }
       }
@@ -95,4 +98,66 @@ bool _declaresName(AstNode node, String name) {
     return true;
   }
   return node.childEntities.whereType<AstNode>().any((child) => _declaresName(child, name));
+}
+
+/// Whether a local binding, member, or library value hides [targetType].
+///
+/// Shared by constructor, static-call and imported-value queries so these
+/// analyses agree on lexical scope and inherited members.
+bool hasValueReceiver(AstNode node, String targetType, HeimdallProject project) {
+  final name = targetType.split('.').first;
+  if (_isShadowedValueName(node, name)) {
+    return true;
+  }
+  for (var ancestor = node.parent; ancestor != null; ancestor = ancestor.parent) {
+    // Local function nodes have no imported declaration metadata. Their lexical
+    // bindings are handled above; only top-level types have member hierarchies.
+    if (ancestor is CompilationUnitMember && ancestor.parent is CompilationUnit) {
+      if (_valueMembersDeclareInHierarchy(ancestor, name, project, <String>{}) ||
+          (project.filesByPath[ancestor.sourcePath]?.topLevelValueNames.contains(name) ?? false)) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+bool _valueMembersDeclare(CompilationUnitMember owner, String name, {bool inherited = false}) =>
+    owner.fields.any((field) => (!inherited || !field.isStatic) && field.fields.variables.any((variable) => variable.name.lexeme == name)) ||
+    owner.methods.any((method) => (!inherited || !method.isStatic) && method.name.lexeme == name);
+
+bool _valueMembersDeclareInHierarchy(
+  CompilationUnitMember owner,
+  String name,
+  HeimdallProject project,
+  Set<String> visited, {
+  bool inherited = false,
+}) {
+  if (!visited.add('${owner.sourcePath}:${owner.name}')) {
+    return false;
+  }
+  if (_valueMembersDeclare(owner, name, inherited: inherited)) {
+    return true;
+  }
+  if (owner is ExtensionTypeDeclaration && owner.primaryConstructor.formalParameters.parameters.any((parameter) => parameter.name?.lexeme == name)) {
+    return true;
+  }
+
+  final inheritedTypes = switch (owner) {
+    ClassDeclaration(:final extendsClause, :final withClause) => [
+      if (extendsClause != null) extendsClause.superclass,
+      ...?withClause?.mixinTypes,
+    ],
+    EnumDeclaration(:final withClause) => [...?withClause?.mixinTypes],
+    MixinDeclaration(:final onClause) => [...?onClause?.superclassConstraints],
+    ClassTypeAlias(:final superclass, :final withClause) => [superclass, ...withClause.mixinTypes],
+    _ => <NamedType>[],
+  };
+  for (final type in inheritedTypes) {
+    final inherited = declarationNamedFrom(owner, project, namedTypeReferenceName(type));
+    if (inherited != null && _valueMembersDeclareInHierarchy(inherited, name, project, visited, inherited: true)) {
+      return true;
+    }
+  }
+  return false;
 }

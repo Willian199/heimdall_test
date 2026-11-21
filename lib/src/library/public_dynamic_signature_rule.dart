@@ -1,5 +1,4 @@
 import 'package:heimdall_test/heimdall_test.dart';
-import 'package:heimdall_test/src/features/queries/declaration_dependency_queries.dart';
 import 'package:heimdall_test/src/features/queries/declaration_lookup_queries.dart';
 
 /// Public signature hygiene checks for [HeimdallCodeSight].
@@ -632,10 +631,15 @@ final class _RawGenericTypeResolver {
   }
 
   bool _isSdkImportPrefix(CompilationUnitMember origin, String prefix) {
-    return dependenciesFrom(origin, _project).whereType<ImportDirective>().any(
-      (directive) =>
-          directive.prefix?.name == prefix && directive.targetUris.any((uri) => const {'dart:core', 'dart:async', 'dart:collection'}.contains(uri)),
-    );
+    return _project.libraryScopes
+        .scopeOf(origin)
+        .dependencies
+        .whereType<ImportDirective>()
+        .any(
+          (directive) =>
+              directive.prefix?.name == prefix &&
+              directive.targetUris.any((uri) => const {'dart:core', 'dart:async', 'dart:collection'}.contains(uri)),
+        );
   }
 
   _DynamicStatus _withBindings(
@@ -935,7 +939,7 @@ final class _RawGenericTypeResolver {
         return method;
       }
     }
-    for (final declaration in libraryFilesFrom(origin, _project).expand((file) => file.declarations)) {
+    for (final declaration in _project.libraryScopes.scopeOf(origin).files.expand((file) => file.declarations)) {
       if (declaration is FunctionDeclaration && declaration.name.lexeme == name) {
         return declaration;
       }
@@ -991,7 +995,7 @@ final class _RawGenericTypeResolver {
       }
     }
 
-    for (final import in dependenciesFrom(origin, _project).whereType<ImportDirective>()) {
+    for (final import in _project.libraryScopes.scopeOf(origin).dependencies.whereType<ImportDirective>()) {
       if (import.prefix?.name == prefix && exposes(import.combinators)) {
         for (final target in import.targetFiles) {
           collect(target, <String>{});

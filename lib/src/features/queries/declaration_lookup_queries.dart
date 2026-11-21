@@ -2,7 +2,6 @@
 // ignore_for_file: public_member_api_docs
 
 import 'package:heimdall_test/src/core.dart';
-import 'package:heimdall_test/src/features/queries/declaration_dependency_queries.dart';
 import 'package:heimdall_test/src/features/queries/type_annotation_queries.dart';
 
 String canonicalTypeNameFrom(
@@ -103,13 +102,14 @@ List<CompilationUnitMember> visibleTypeReferenceDeclarationsFrom(
   if (file == null) {
     return [...project.typeDeclarations, ...project.typeAliases];
   }
+  final scope = project.libraryScopes.scopeOf(item);
   return _dedupeDeclarations([
     if (importPrefix == null)
-      for (final libraryFile in libraryFilesFrom(item, project)) ...[
+      for (final libraryFile in scope.files) ...[
         ...libraryFile.typeDeclarations,
         ...libraryFile.typeAliases,
       ],
-    for (final dependency in dependenciesFrom(item, project))
+    for (final dependency in scope.dependencies)
       if (_dependencyMatchesImportPrefix(dependency, importPrefix)) ...project.visibleTypeDeclarationsThrough(dependency),
   ]);
 }

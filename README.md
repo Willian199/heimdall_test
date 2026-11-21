@@ -87,9 +87,7 @@ final project = HeimdallFileImporter(
 
 Suffixes are literal, case-sensitive, and must be non-empty. The constructor asserts this when assertions are enabled and stores an immutable copy of the list. Use `const ExcludeGeneratedDartImportOption.defaults()` when only the built-in suffixes are needed in a constant configuration.
 
-The importer caches results by root path and import option key. When files may
-change inside the same test process, call `HeimdallFileImporter.clearCache()` or
-create the importer with `useCache: false`.
+The importer caches results by root path and import option key. When files may change inside the same test process, call `HeimdallFileImporter.clearCache()` or create the importer with `useCache: false`.
 
 The imported project exposes:
 
@@ -98,13 +96,9 @@ The imported project exposes:
 - `HeimdallProject.typeDeclarations`
 - `HeimdallProject.dependencies`
 - `HeimdallSourceFile.parseErrors`
-- analyzer nodes enriched by Heimdall extensions such as `name`, `line`,
-  `relativePath`, `targetUri`, and `targetFile`
+- analyzer nodes enriched by Heimdall extensions such as `name`, `line`, `relativePath`, `targetUri`, and `targetFile`
 
-Conditional imports and exports expose every possible branch through
-`targetUris`, `targetPaths`, and `targetFiles`. `resolvedTargets` preserves the
-URI, path, and file association for each resolved branch. The singular
-properties keep representing the directive's primary URI for compatibility.
+Conditional imports and exports expose every possible branch through `targetUris`, `targetPaths`, and `targetFiles`. `resolvedTargets` preserves the URI, path, and file association for each resolved branch. The singular properties keep representing the directive's primary URI for compatibility.
 
 ## Rule Semantics
 
@@ -274,8 +268,12 @@ rule.check(project).assertNoFindings();
 ```
 
 By default, layer checks consider all dependencies. Call
-`consideringOnlyDependenciesInLayers()` to ignore dependencies whose target is
-not assigned to a declared layer.
+`consideringOnlyDependenciesInLayers()` to ignore dependencies whose target is not assigned to a declared layer.
+
+Layer rules check references from type declarations, top-level functions, getters, setters, and variables. Targets include types and top-level values exposed by imports and reexports; unused imports do not produce violations.
+`checkedCount` counts the selected top-level declarations, including functions and variable declarations.
+
+Each source declaration produces one finding per forbidden destination layer, import directive, and conditional URI branch. Findings point to the import's file and line, including when the reference occurs inside a `part` file.
 
 ## Slices
 

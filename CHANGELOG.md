@@ -1,5 +1,8 @@
 ## Unreleased
 
+- Fix [#8](https://github.com/Willian199/heimdall_test/issues/8): deduplicate layer findings per source declaration, directive, URI branch, and destination layer.
+- Fix [#9](https://github.com/Willian199/heimdall_test/issues/9): report layer violations in `part` files at the owning library's import location.
+- Fix [#10](https://github.com/Willian199/heimdall_test/issues/10): check top-level functions, accessors, and variables as layer dependency sources and targets, preserving import visibility and local shadowing.
 - Fix [#15](https://github.com/Willian199/heimdall_test/issues/15): exclude `.gen.dart` and `.mocks.dart` files by default and allow custom exclusions with `ExcludeGeneratedDartImportOption(additionalSuffixes: [...])`.
 
 ## 0.11.0

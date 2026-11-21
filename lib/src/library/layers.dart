@@ -35,11 +35,11 @@ final class HeimdallLayers {
   HeimdallRule<CompilationUnitMember> asRule() {
     return HeimdallRule(
       descriptionPrefix: 'Heimdall layer sight',
-      selector: (project) => project.typeDeclarations.where(
+      selector: (project) => project.declarations.where(
         (declaration) => _layerOf(declaration) != null,
       ),
       predicate: const HeimdallPredicate(
-        'classes in declared layers',
+        'declarations in declared layers',
         _alwaysLayerCandidate,
       ),
       condition: HeimdallCondition('satisfy layer constraints', _checkDeclaration),
@@ -51,29 +51,27 @@ final class HeimdallLayers {
     HeimdallProject project,
   ) {
     final findings = <HeimdallValidationInfo>[];
+    final seen = <(Directive, String, String?)>{};
     final ownLayer = _layerOf(item);
     if (ownLayer != null) {
-      for (final dependency in declarationDependenciesFrom(item, project)) {
+      for (final dependency in allDeclarationDependenciesFrom(item, project)) {
         final targetLayer = _layerOf(dependency.target);
-        if (targetLayer == null) {
-          if (!_onlyDependenciesInLayers) {
-            findings.add(
-              HeimdallValidationInfo(
-                filePath: item.sourcePath,
-                line: dependency.directive.line,
-                message: '${item.name} in layer $ownLayer accesses undeclared layer via ${dependency.targetUri}',
-              ),
-            );
-          }
+        if (!seen.add((dependency.directive, dependency.targetUri, targetLayer))) {
           continue;
         }
-        findings.addAll(
-          _accessfindings(
-            item,
-            dependency.directive,
-            dependency.targetUri,
-            ownLayer,
-            targetLayer,
+        if (targetLayer == null) {
+          if (_onlyDependenciesInLayers) {
+            continue;
+          }
+        } else if (!_constraints.any((rule) => rule.forbidsAccess(ownLayer, targetLayer))) {
+          continue;
+        }
+        final access = targetLayer == null ? 'accesses undeclared layer' : 'may not access $targetLayer';
+        findings.add(
+          HeimdallValidationInfo(
+            filePath: dependency.directive.originPath,
+            line: dependency.directive.line,
+            message: '${item.name} in layer $ownLayer $access via ${dependency.targetUri}',
           ),
         );
       }
@@ -83,43 +81,6 @@ final class HeimdallLayers {
       passed: findings.isEmpty,
       findings: findings,
     );
-  }
-
-  List<HeimdallValidationInfo> _accessfindings(
-    CompilationUnitMember item,
-    Directive dependency,
-    String dependencyUri,
-    String ownLayer,
-    String targetLayer,
-  ) {
-    final findings = <HeimdallValidationInfo>[];
-    for (final constraint in _constraints.where(
-      (rule) => rule.layer == ownLayer,
-    )) {
-      if (!constraint.allowsAccessTo(targetLayer)) {
-        findings.add(
-          HeimdallValidationInfo(
-            filePath: item.sourcePath,
-            line: dependency.line,
-            message: '${item.name} in layer $ownLayer may not access $targetLayer via $dependencyUri',
-          ),
-        );
-      }
-    }
-    for (final constraint in _constraints.where(
-      (rule) => rule.layer == targetLayer,
-    )) {
-      if (!constraint.allowsAccessFrom(ownLayer)) {
-        findings.add(
-          HeimdallValidationInfo(
-            filePath: item.sourcePath,
-            line: dependency.line,
-            message: '${item.name} in layer $ownLayer may not access $targetLayer via $dependencyUri',
-          ),
-        );
-      }
-    }
-    return findings;
   }
 
   String? _layerOf(CompilationUnitMember declaration) {
@@ -193,19 +154,10 @@ final class _LayerConstraint {
   final List<String> layers;
   final _LayerConstraintDirection direction;
 
-  bool allowsAccessTo(String targetLayer) {
-    if (direction != _LayerConstraintDirection.access) {
-      return true;
-    }
-    return layers.contains(targetLayer);
-  }
-
-  bool allowsAccessFrom(String sourceLayer) {
-    if (direction != _LayerConstraintDirection.beAccessedBy) {
-      return true;
-    }
-    return layers.contains(sourceLayer);
-  }
+  bool forbidsAccess(String sourceLayer, String targetLayer) => switch (direction) {
+    _LayerConstraintDirection.access => layer == sourceLayer && !layers.contains(targetLayer),
+    _LayerConstraintDirection.beAccessedBy => layer == targetLayer && !layers.contains(sourceLayer),
+  };
 }
 
 enum _LayerConstraintDirection { access, beAccessedBy }

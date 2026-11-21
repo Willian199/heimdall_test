@@ -80,12 +80,31 @@ final class DeclarationNamespaceIndex {
       return const [];
     }
     final nextVisiting = {...visiting, file};
-    return List.unmodifiable({
+    final local = {
       ...declaredSymbols(file).where((symbol) => symbol._isPublic),
       for (final part in file.partDirectives)
-        for (final target in part.targetFiles) ..._collect(target, nextVisiting),
+        for (final target in part.targetFiles) ...declaredSymbols(target).where((symbol) => symbol._isPublic),
+    };
+    // Getters and setters have separate namespace entries. A variable declares
+    // a getter and, when mutable, a setter as well.
+    final localNames = {
+      for (final symbol in local) ...[
+        (symbol.name, symbol.kind == DeclarationSymbolKind.setter),
+        if (symbol.kind == DeclarationSymbolKind.variable &&
+            symbol.declaration is TopLevelVariableDeclaration &&
+            !(symbol.declaration as TopLevelVariableDeclaration).variables.isFinal &&
+            !(symbol.declaration as TopLevelVariableDeclaration).variables.isConst)
+          (symbol.name, true),
+      ],
+    };
+    return List.unmodifiable({
+      ...local,
       for (final export in file.exportDirectives)
-        for (final target in export.targetFiles) ..._applyCombinators(_collect(target, nextVisiting), export.combinators),
+        for (final target in export.targetFiles)
+          ..._applyCombinators(
+            _collect(target, nextVisiting),
+            export.combinators,
+          ).where((symbol) => !localNames.contains((symbol.name, symbol.kind == DeclarationSymbolKind.setter))),
     });
   }
 

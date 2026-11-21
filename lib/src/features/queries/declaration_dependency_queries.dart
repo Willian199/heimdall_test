@@ -2,6 +2,7 @@ import 'package:analyzer/dart/ast/visitor.dart';
 import 'package:analyzer/dart/element/element.dart';
 
 import 'package:heimdall_test/src/core.dart';
+import 'package:heimdall_test/src/features/queries/extension_reference_index.dart';
 import 'package:heimdall_test/src/features/queries/value_reference_index.dart';
 import 'package:heimdall_test/src/mapper/model/declaration_dependency_index.dart';
 import 'package:heimdall_test/src/mapper/model/declaration_namespace_index.dart';
@@ -16,6 +17,7 @@ List<DeclarationDependency> declarationDependenciesFrom(
     final references = _ResolvedReferenceVisitor();
     item.accept(references);
     final scope = project.libraryScopes.scopeOf(item);
+    late final extensions = ExtensionReferenceIndex(item, project);
 
     return [
       for (final dependency in scope.dependencies)
@@ -25,13 +27,14 @@ List<DeclarationDependency> declarationDependenciesFrom(
             resolvedTarget.file,
           ))
             if (_declarationReferencesTarget(
-              item,
-              target,
-              dependency,
-              references,
-              scope.typeNames,
-              scope.valueNames,
-            ))
+                  item,
+                  target,
+                  dependency,
+                  references,
+                  scope.typeNames,
+                  scope.valueNames,
+                ) ||
+                target is ExtensionDeclaration && extensions.references(target))
               DeclarationDependency(
                 directive: dependency,
                 target: target,
@@ -423,6 +426,7 @@ final class _IdentifierReferenceVisitor extends RecursiveAstVisitor<void> {
   void visitFunctionExpression(FunctionExpression node) {
     _withScope(
       () {
+        node.typeParameters?.accept(this);
         node.parameters?.accept(this);
         final parameterNames = node.parameters?.parameters.map((parameter) => parameter.name?.lexeme).whereType<String>() ?? const <String>[];
         _withScope(() => node.body.accept(this), names: parameterNames);
@@ -451,6 +455,10 @@ final class _IdentifierReferenceVisitor extends RecursiveAstVisitor<void> {
   void visitMethodDeclaration(MethodDeclaration node) {
     _withScope(
       () {
+        for (final annotation in node.annotationNodes) {
+          annotation.accept(this);
+        }
+        node.typeParameters?.accept(this);
         node.returnType?.accept(this);
         node.parameters?.accept(this);
         final parameterNames = node.parameters?.parameters.map((parameter) => parameter.name?.lexeme).whereType<String>() ?? const <String>[];
@@ -462,6 +470,9 @@ final class _IdentifierReferenceVisitor extends RecursiveAstVisitor<void> {
 
   @override
   void visitConstructorDeclaration(ConstructorDeclaration node) {
+    for (final annotation in node.annotationNodes) {
+      annotation.accept(this);
+    }
     node.parameters.accept(this);
     final parameterNames = node.parameters.parameters.map((parameter) => parameter.name?.lexeme).whereType<String>();
     _withScope(() {

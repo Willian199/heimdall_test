@@ -16,14 +16,6 @@ bool isValueReference(SimpleIdentifier node) {
       parent is FunctionDeclaration) {
     return false;
   }
-  for (var ancestor = parent; ancestor != null; ancestor = ancestor.parent) {
-    if (ancestor is DartPattern) {
-      return false;
-    }
-    if (ancestor is RecordLiteral || ancestor is NamedExpression) {
-      break;
-    }
-  }
   return true;
 }
 
@@ -53,10 +45,10 @@ bool _isShadowedValueName(AstNode reference, String name) {
         }
       }
     }
-    if (ancestor is ForStatement && !_insideForEachIterable(ancestor.forLoopParts, reference) && _declaresName(ancestor.forLoopParts, name)) {
+    if (ancestor is ForStatement && !_insideForEachIterable(ancestor.forLoopParts, reference) && _loopDeclaresName(ancestor.forLoopParts, name)) {
       return true;
     }
-    if (ancestor is ForElement && !_insideForEachIterable(ancestor.forLoopParts, reference) && _declaresName(ancestor.forLoopParts, name)) {
+    if (ancestor is ForElement && !_insideForEachIterable(ancestor.forLoopParts, reference) && _loopDeclaresName(ancestor.forLoopParts, name)) {
       return true;
     }
     if (ancestor is IfStatement &&
@@ -88,6 +80,14 @@ bool _parametersDeclare(FormalParameterList? parameters, String name) =>
     parameters?.parameters.any((parameter) => parameter.name?.lexeme == name) ?? false;
 
 bool _insideForEachIterable(ForLoopParts parts, AstNode node) => parts is ForEachParts && _contains(parts.iterable, node);
+
+bool _loopDeclaresName(ForLoopParts parts, String name) => switch (parts) {
+  ForEachPartsWithDeclaration(:final loopVariable) => loopVariable.name.lexeme == name,
+  ForEachPartsWithPattern(:final pattern) => _declaresName(pattern, name),
+  ForPartsWithDeclarations(:final variables) => variables.variables.any((variable) => variable.name.lexeme == name),
+  ForPartsWithPattern(:final variables) => _declaresName(variables.pattern, name),
+  _ => false,
+};
 
 bool _contains(AstNode scope, AstNode node) => scope.offset <= node.offset && node.end <= scope.end;
 

@@ -79,7 +79,7 @@ final class HeimdallSlices {
         for (final targetFile in dependency.targetFiles) {
           final targetPaths = {
             targetFile.relativePath,
-            for (final target in project.exportedTypeDeclarationsOf(targetFile)) target.relativePath,
+            for (final symbol in project.declarationNamespace.visibleSymbols(dependency, targetFile)) symbol.declaration.relativePath,
           };
           for (final targetPath in targetPaths) {
             final targetSlice = _sliceId(targetPath);

@@ -289,6 +289,8 @@ Heimdall.slices('lib/src/features/(*)')
 `(*)` captures one path segment as the slice name. Heimdall can report dependency
 cycles between slices or forbid any cross-slice dependency.
 
+Slice graphs follow reexported types and top-level values through facades, including facades outside the matching pattern, and respect the originating import or export directive's `show`/`hide` combinators.
+
 ## Path Patterns
 
 Path-based APIs use `pathMatches` semantics:

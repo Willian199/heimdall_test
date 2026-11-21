@@ -1,6 +1,7 @@
 import 'dart:collection';
 
 import 'package:heimdall_test/src/core.dart';
+import 'package:heimdall_test/src/features/queries/declaration_dependency_queries.dart';
 
 /// Builder for slice-based dependency rules.
 ///
@@ -71,22 +72,33 @@ final class HeimdallSlices {
         continue;
       }
       graph.putIfAbsent(sourceSlice, LinkedHashSet.new);
+      final targetPaths = <String>{};
       for (final dependency in file.resolvedDependencies) {
         // A part-of directive describes ownership, not a reverse dependency.
         if (dependency is PartOfDirective) {
           continue;
         }
         for (final targetFile in dependency.targetFiles) {
-          final targetPaths = {
-            targetFile.relativePath,
-            for (final symbol in project.declarationNamespace.visibleSymbols(dependency, targetFile)) symbol.declaration.relativePath,
-          };
-          for (final targetPath in targetPaths) {
-            final targetSlice = _sliceId(targetPath);
-            if (targetSlice != null && targetSlice != sourceSlice && !sharedSliceSet.contains(normalizePath(targetSlice))) {
-              graph[sourceSlice]!.add(targetSlice);
-            }
+          targetPaths.add(targetFile.relativePath);
+          // Imports expose a namespace; only references create dependencies on
+          // declarations behind that namespace. Exports still expose their API
+          // even when this file contains no declarations that use it.
+          if (dependency is! ImportDirective) {
+            targetPaths.addAll(
+              project.declarationNamespace.visibleSymbols(dependency, targetFile).map((symbol) => symbol.declaration.relativePath),
+            );
           }
+        }
+      }
+      for (final declaration in file.declarations) {
+        targetPaths.addAll(
+          allDeclarationDependenciesFrom(declaration, project).map((dependency) => dependency.target.relativePath),
+        );
+      }
+      for (final targetPath in targetPaths) {
+        final targetSlice = _sliceId(targetPath);
+        if (targetSlice != null && targetSlice != sourceSlice && !sharedSliceSet.contains(normalizePath(targetSlice))) {
+          graph[sourceSlice]!.add(targetSlice);
         }
       }
     }

@@ -1,6 +1,6 @@
 name: heimdall_test
 description: Architecture rules for Dart source trees inspired by ArchUnit.
-version: 0.10.3
+version: 0.11.0
 repository: https://github.com/Willian199/heimdall_test
 topics:
   - architecture
@@ -12,7 +12,7 @@ environment:
   sdk: ^3.11.0
 
 dependencies:
-  analyzer: '>=10.0.1 <12.0.0'
+  analyzer: '>=12.0.0 <13.0.0'
   collection: ^1.19.1
   meta: ^1.12.2
   path: ^1.9.1

@@ -1,9 +1,11 @@
 import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/source/line_info.dart';
 import 'package:heimdall_test/src/mapper/model/executable_ast_index.dart';
+import 'package:heimdall_test/src/mapper/model/flow_promotion_index.dart';
 import 'package:heimdall_test/src/mapper/model/heimdall_declaration.dart';
 import 'package:heimdall_test/src/mapper/model/heimdall_dependency.dart';
 import 'package:heimdall_test/src/mapper/model/heimdall_member.dart';
+import 'package:meta/meta.dart';
 
 /// Dart source file imported by Heimdall.
 ///
@@ -52,6 +54,10 @@ final class HeimdallSourceFile {
   late final List<Expression> expressions = _executableAstIndex.expressions;
 
   late final ExecutableAstIndex _executableAstIndex = ExecutableAstIndex(declarations);
+
+  /// Local guards and writes derived once from the cached expression snapshot.
+  @internal
+  late final FlowPromotionIndex flowPromotions = FlowPromotionIndex(expressions);
 
   /// Cached expressions belonging to one top-level declaration of this file.
   ///

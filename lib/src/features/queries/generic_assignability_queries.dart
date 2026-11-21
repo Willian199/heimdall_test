@@ -4,6 +4,140 @@ import 'package:heimdall_test/src/features/queries/declaration_lookup_queries.da
 import 'package:heimdall_test/src/features/queries/sdk_type_queries.dart';
 import 'package:heimdall_test/src/features/queries/type_annotation_queries.dart';
 
+/// An applicable extension with its on-type instantiated for a receiver.
+final class ExtensionApplicability {
+  ExtensionApplicability._(this.extension, this._onType, this._project);
+
+  /// Extension whose type arguments satisfy the receiver and declared bounds.
+  final ExtensionDeclaration extension;
+  final _TypeUse _onType;
+  final HeimdallProject _project;
+
+  /// Compares instantiated on-types without dropping source qualification.
+  bool isMoreSpecificThan(ExtensionApplicability other) {
+    final subtype = _assignable(_onType, other._onType, _project, {}, allowDynamicDowncast: false);
+    final reverse = _assignable(other._onType, _onType, _project, {}, allowDynamicDowncast: false);
+    return subtype && (!reverse || extension.typeParameters == null && other.extension.typeParameters != null);
+  }
+}
+
+/// Infers extension arguments using the same nominal types, substitutions and
+/// assignability rules as class relationship queries. Unknown inference fails
+/// conservatively instead of treating unbound parameters as arbitrary types.
+ExtensionApplicability? extensionApplicabilityFor(
+  ExtensionDeclaration extension,
+  CompilationUnitMember actualSource,
+  String actual,
+  HeimdallProject project,
+) {
+  final annotation = extension.onClause?.extendedType;
+  if (annotation == null) {
+    return null;
+  }
+  final receiver = _TypeUse.parse(actual, actualSource);
+  final pattern = _TypeUse.parse(annotation.toSource(), extension);
+  final formals = extension.typeParameters?.typeParameters ?? <TypeParameter>[];
+  final names = formals.map((formal) => formal.name.lexeme).toSet();
+  final bindings = <String, _TypeUse>{};
+
+  bool infer(_TypeUse value, _TypeUse expected, Set<String> visited) {
+    if (expected.source == extension && names.contains(expected.name) && expected.arguments.isEmpty) {
+      final previous = bindings[expected.name];
+      if (previous != null && !_assignable(value, previous, project, {}, allowDynamicDowncast: false)) {
+        if (!_assignable(previous, value, project, {}, allowDynamicDowncast: false)) {
+          return false;
+        }
+      } else if (previous != null) {
+        return true;
+      }
+      bindings[expected.name] = value;
+      return true;
+    }
+    final key = '${value.source.sourcePath}:${value.text}->${expected.source.sourcePath}:${expected.text}';
+    if (!visited.add(key)) {
+      return false;
+    }
+    final declaration = _declaration(value, project);
+    final expectedDeclaration = _declaration(expected, project);
+    if (declaration is GenericTypeAlias) {
+      return infer(_TypeUse.parse(declaration.type.toSource(), declaration).substitute(_bindings(value, declaration)), expected, visited);
+    }
+    if (expectedDeclaration is GenericTypeAlias) {
+      return infer(
+        value,
+        _TypeUse.parse(expectedDeclaration.type.toSource(), expectedDeclaration).substitute(_bindings(expected, expectedDeclaration)),
+        visited,
+      );
+    }
+    final valueSdk = sdkTypeName(value.source, value.name, project);
+    final expectedSdk = sdkTypeName(expected.source, expected.name, project);
+    final same = declaration != null && expectedDeclaration != null
+        ? declaration == expectedDeclaration
+        : declaration == null && expectedDeclaration == null && (valueSdk ?? value.name) == (expectedSdk ?? expected.name);
+    if (same) {
+      if (expected.arguments.isEmpty) {
+        return true;
+      }
+      final arguments = value.arguments.isNotEmpty
+          ? value.arguments
+          : declaration == null
+          ? <_TypeUse>[]
+          : _bindings(value, declaration).values.toList();
+      return arguments.length == expected.arguments.length &&
+          List.generate(arguments.length, (index) => infer(arguments[index], expected.arguments[index], {...visited})).every((matches) => matches);
+    }
+    if (declaration != null) {
+      final arguments = _bindings(value, declaration);
+      final parents = [
+        if (declaration is ClassTypeAlias) declaration.superclass,
+        for (final child in declaration.childEntities.whereType<AstNode>())
+          if (child is ExtendsClause || child is ImplementsClause || child is WithClause || child is MixinOnClause)
+            ...child.childEntities.whereType<NamedType>(),
+      ];
+      for (final parent in parents) {
+        final saved = {...bindings};
+        if (infer(_TypeUse.parse(parent.toSource(), declaration).substitute(arguments), expected, {...visited})) {
+          return true;
+        }
+        bindings
+          ..clear()
+          ..addAll(saved);
+      }
+    } else if (valueSdk != null) {
+      final arguments = value.arguments;
+      final sdkBindings = <String, _TypeUse>{
+        if (arguments.isNotEmpty) 'T': arguments.first,
+        if (arguments.isNotEmpty) 'K': arguments.first,
+        if (arguments.length > 1) 'V': arguments[1],
+      };
+      for (final parent in _sdkParents[valueSdk] ?? <String>[]) {
+        final saved = {...bindings};
+        if (infer(_TypeUse.parse(parent, value.source).substitute(sdkBindings), expected, {...visited})) {
+          return true;
+        }
+        bindings
+          ..clear()
+          ..addAll(saved);
+      }
+    }
+    return !expected.text.split(RegExp(r'[^\w$]+')).any(names.contains) && _assignable(value, expected, project, {}, allowDynamicDowncast: false);
+  }
+
+  if (formals.isNotEmpty && !infer(receiver, pattern, {})) {
+    return null;
+  }
+  for (final formal in formals) {
+    final bound = _TypeUse.parse(formal.bound?.toSource() ?? 'Object?', extension).substitute(bindings);
+    final value = bindings[formal.name.lexeme] ?? bound;
+    if (!_assignable(value, bound, project, {}, allowDynamicDowncast: false)) {
+      return null;
+    }
+    bindings[formal.name.lexeme] = value;
+  }
+  final onType = pattern.substitute(bindings);
+  return _assignable(receiver, onType, project, {}, allowDynamicDowncast: false) ? ExtensionApplicability._(extension, onType, project) : null;
+}
+
 /// Checks instantiated types while carrying substitutions over hierarchy edges.
 bool instantiatedTypeIsAssignableTo(
   CompilationUnitMember source,

@@ -17,3 +17,5 @@ export 'mapper/export.dart';
 export 'mapper/importer/heimdall_file_importer.dart';
 export 'mapper/importer/import_options.dart';
 export 'mapper/importer/path_matcher.dart';
+export 'mapper/importer/reference_import_options.dart';
+export 'mapper/importer/reference_library_importer.dart';

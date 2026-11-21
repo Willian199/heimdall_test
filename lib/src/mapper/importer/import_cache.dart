@@ -1,10 +1,11 @@
 import 'package:heimdall_test/src/mapper/importer/import_options.dart';
+import 'package:heimdall_test/src/mapper/importer/reference_import_options.dart';
 import 'package:heimdall_test/src/mapper/model/heimdall_project.dart';
 import 'package:meta/meta.dart';
 
 /// Process-local cache for imported Heimdall projects.
 ///
-/// The cache key is based on the normalized import root and import option keys.
+/// The key includes the normalized root, file options and consultation options.
 final class HeimdallImportCache {
   HeimdallImportCache._();
 
@@ -14,10 +15,12 @@ final class HeimdallImportCache {
   static HeimdallProject? read({
     required String rootPath,
     required List<ImportOption> importOptions,
+    required ReferenceImportOptions referenceOptions,
   }) {
     return _projects[_ImportCacheKey(
       rootPath: rootPath,
       importOptionsKey: _importOptionsKey(importOptions),
+      referenceOptionsKey: referenceOptions.cacheKey,
     )];
   }
 
@@ -25,11 +28,13 @@ final class HeimdallImportCache {
   static void write({
     required String rootPath,
     required List<ImportOption> importOptions,
+    required ReferenceImportOptions referenceOptions,
     required HeimdallProject project,
   }) {
     _projects[_ImportCacheKey(
           rootPath: rootPath,
           importOptionsKey: _importOptionsKey(importOptions),
+          referenceOptionsKey: referenceOptions.cacheKey,
         )] =
         project;
   }
@@ -47,16 +52,21 @@ final class _ImportCacheKey {
   const _ImportCacheKey({
     required this.rootPath,
     required this.importOptionsKey,
+    required this.referenceOptionsKey,
   });
 
   final String rootPath;
   final String importOptionsKey;
+  final String referenceOptionsKey;
 
   @override
   bool operator ==(Object other) {
-    return other is _ImportCacheKey && other.rootPath == rootPath && other.importOptionsKey == importOptionsKey;
+    return other is _ImportCacheKey &&
+        other.rootPath == rootPath &&
+        other.importOptionsKey == importOptionsKey &&
+        other.referenceOptionsKey == referenceOptionsKey;
   }
 
   @override
-  int get hashCode => Object.hash(rootPath, importOptionsKey);
+  int get hashCode => Object.hash(rootPath, importOptionsKey, referenceOptionsKey);
 }

@@ -87,7 +87,35 @@ final project = HeimdallFileImporter(
 
 Suffixes are literal, case-sensitive, and must be non-empty. The constructor asserts this when assertions are enabled and stores an immutable copy of the list. Use `const ExcludeGeneratedDartImportOption.defaults()` when only the built-in suffixes are needed in a constant configuration.
 
-The importer caches results by root path and import option key. When files may change inside the same test process, call `HeimdallFileImporter.clearCache()` or create the importer with `useCache: false`.
+The importer caches results by root path, import option keys, and consultation configuration. When files may change inside the same test process, call `HeimdallFileImporter.clearCache()` or create the importer with `useCache: false`.
+
+SDK and package libraries can be permitted separately for consultation:
+
+```dart
+final project = HeimdallFileImporter(
+  referenceOptions: ReferenceImportOptions(
+    sdkLibraries: ['dart:core', 'dart:collection'],
+    packages: ['collection'],
+    packageLibraries: ['package:meta/meta.dart'],
+    // sdkPath: '/path/to/dart-sdk', // Optional explicit SDK location.
+  ),
+).importPath();
+
+final collection = project.referenceLibraries.library('dart:collection');
+final listBase = collection?.types['ListBase']; // First content read.
+```
+
+The catalog, library contents, and derived indexes use `late final`: neither
+configuration nor requesting a library handle reads its source. Reads and indexes
+are reused within the project snapshot. A package name permits on-demand queries
+for its libraries; an exact URI permits only that library. Imports and exports are
+not followed automatically; parts belong to their library. Denied URIs return
+`null`, and allowed but unavailable libraries expose empty units and types.
+
+The default allowlist contains `dart:core`, `dart:async`, `dart:collection`, and
+`dart:typed_data`, used by native member checks. Use
+`const ReferenceImportOptions.none()` to disable consultation reads. Consultation
+sources never enter validation files, declarations, members, or dependency graphs.
 
 The imported project exposes:
 

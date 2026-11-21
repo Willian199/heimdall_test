@@ -28,12 +28,14 @@ final class HeimdallProject {
     required String? packageName,
     required List<HeimdallSourceFile> files,
     String? packageRootPath,
+    ReferenceImportOptions referenceOptions = const ReferenceImportOptions.defaults(),
   }) {
     final project = HeimdallProject._(
       rootPath: rootPath,
       packageRootPath: packageRootPath,
       packageName: packageName,
       files: files,
+      referenceOptions: referenceOptions,
     ).._resolveDependencies();
     return project;
   }
@@ -42,6 +44,7 @@ final class HeimdallProject {
     required this.rootPath,
     required this.packageName,
     required List<HeimdallSourceFile> files,
+    required this.referenceOptions,
     String? packageRootPath,
   }) : packageRootPath = packageRootPath ?? rootPath,
        files = List.unmodifiable(files);
@@ -72,6 +75,12 @@ final class HeimdallProject {
   /// Internal dependency results reused across rules over this snapshot.
   @internal
   late final DeclarationDependencyIndex declarationDependencies = DeclarationDependencyIndex();
+
+  /// External sources permitted for consultation, never validation subjects.
+  final ReferenceImportOptions referenceOptions;
+
+  /// SDK and package library queries cached separately from validation sources.
+  late final ReferenceLibraryImporter referenceLibraries = ReferenceLibraryImporter(packageRootPath, referenceOptions);
 
   final _exportedTypeDeclarationsCache = <HeimdallSourceFile, List<CompilationUnitMember>>{};
   final _visibleTypeDeclarationsCache = <(Directive, HeimdallSourceFile), List<CompilationUnitMember>>{};

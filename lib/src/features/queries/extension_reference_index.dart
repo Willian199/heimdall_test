@@ -1,11 +1,13 @@
+import 'package:analyzer/dart/element/element.dart';
 import 'package:heimdall_test/src/core.dart';
 import 'package:heimdall_test/src/features/queries/declaration_lookup_queries.dart';
 import 'package:heimdall_test/src/features/queries/generic_assignability_queries.dart';
+import 'package:heimdall_test/src/features/queries/sdk_type_queries.dart';
 import 'package:heimdall_test/src/features/queries/type_annotation_queries.dart';
 import 'package:heimdall_test/src/features/queries/value_reference_queries.dart';
 
 typedef _ReceiverType = ({String name, CompilationUnitMember source});
-typedef _Access = ({Expression receiver, SimpleIdentifier member});
+typedef _Access = ({Expression receiver, String name, Element? element, bool read, bool write, bool nullAware});
 
 /// Finds implicit extension accesses using the importer's cached expressions.
 ///
@@ -23,6 +25,7 @@ final class ExtensionReferenceIndex {
           final declaration = symbol.declaration;
           if (declaration is ExtensionDeclaration && declaration.onClause != null && !scope.typeNames.contains(symbol.name)) {
             _extensions.add(declaration);
+            (_origins[declaration] ??= {}).add((directive, branch.file));
           }
         }
       }
@@ -30,12 +33,35 @@ final class ExtensionReferenceIndex {
     final file = _project.filesByPath[_item.sourcePath];
     for (final expression in file?.expressionsInDeclaration(_item) ?? const <Expression>[]) {
       switch (expression) {
-        case MethodInvocation(:final realTarget, :final methodName) when realTarget != null:
-          _accesses.add((receiver: realTarget, member: methodName));
+        case MethodInvocation(:final realTarget, :final methodName, :final isNullAware) when realTarget != null:
+          _accesses.add((receiver: realTarget, name: methodName.name, element: methodName.element, read: true, write: false, nullAware: isNullAware));
         case PropertyAccess(:final realTarget, :final propertyName):
-          _accesses.add((receiver: realTarget, member: propertyName));
+          _accesses.add((
+            receiver: realTarget,
+            name: propertyName.name,
+            element: propertyName.element,
+            read: propertyName.inGetterContext(),
+            write: propertyName.inSetterContext(),
+            nullAware: expression.isNullAware,
+          ));
         case PrefixedIdentifier(:final prefix, :final identifier):
-          _accesses.add((receiver: prefix, member: identifier));
+          _accesses.add((
+            receiver: prefix,
+            name: identifier.name,
+            element: identifier.element,
+            read: identifier.inGetterContext(),
+            write: identifier.inSetterContext(),
+            nullAware: false,
+          ));
+        case BinaryExpression(:final leftOperand, :final operator, :final element):
+          _accesses.add((receiver: leftOperand, name: operator.lexeme, element: element, read: true, write: false, nullAware: false));
+        case IndexExpression(:final realTarget, :final element, :final isNullAware):
+          if (expression.inGetterContext()) {
+            _accesses.add((receiver: realTarget, name: '[]', element: element, read: true, write: false, nullAware: isNullAware));
+          }
+          if (expression.inSetterContext()) {
+            _accesses.add((receiver: realTarget, name: '[]=', element: element, read: false, write: true, nullAware: isNullAware));
+          }
       }
     }
   }
@@ -43,6 +69,7 @@ final class ExtensionReferenceIndex {
   final CompilationUnitMember _item;
   final HeimdallProject _project;
   final _extensions = <ExtensionDeclaration>{};
+  final _origins = <ExtensionDeclaration, Set<(ImportDirective, HeimdallSourceFile)>>{};
   final _accesses = <_Access>[];
   final _types = <Expression, _ReceiverType?>{};
   final _resolving = <Expression>{};
@@ -54,58 +81,59 @@ final class ExtensionReferenceIndex {
   );
 
   Set<ExtensionDeclaration> _resolve(_Access access) {
-    final element = access.member.element;
+    final element = access.element;
     if (element != null) {
       return {
         for (final extension in _extensions)
           if (extension.declaredFragment?.element == element.enclosingElement) extension,
       };
     }
+    final providing = _extensions.where((extension) => _provides(extension, access)).toList();
+    if (providing.isEmpty) {
+      return {};
+    }
     var receiver = _type(access.receiver);
     if (receiver == null || receiver.name == 'dynamic' || receiver.name == 'void') {
       return {};
     }
-    final parent = access.member.parent;
-    final nullAware = parent is PropertyAccess && parent.isNullAware || parent is MethodInvocation && parent.isNullAware;
-    if (nullAware && receiver.name.endsWith('?')) {
+    if (access.nullAware && receiver.name.endsWith('?')) {
       receiver = (name: receiver.name.substring(0, receiver.name.length - 1), source: receiver.source);
     }
     final declaration = declarationNamedFrom(receiver.source, _project, receiver.name.split('<').first.replaceAll('?', ''));
-    if (declaration != null && _instanceMember(declaration, access.member.name, {}) != null) {
+    if (declaration != null && _instanceMember(declaration, access.name, {}) != null) {
       return {};
     }
-    final applicable = {
-      for (final extension in _extensions)
-        if (_provides(extension, access.member) &&
-            instantiatedTypeIsAssignableTo(
-              extension,
-              receiver.name,
-              extension.onClause!.extendedType.toSource(),
-              _project,
-              actualSource: receiver.source,
-            ))
-          extension,
-    };
+    final sdkType = sdkTypeName(receiver.source, receiver.name.split('<').first.replaceAll('?', ''), _project);
+    if (sdkType != null && _project.referenceLibraries.hasSdkInstanceMember(sdkType, access.name)) {
+      return {};
+    }
+    final applicable = <ExtensionApplicability>[];
+    for (final extension in providing) {
+      final match = extensionApplicabilityFor(extension, receiver.source, receiver.name, _project);
+      if (match != null) {
+        applicable.add(match);
+      }
+    }
     return {
       for (final candidate in applicable)
-        if (!applicable.any((other) => other != candidate && _moreSpecific(other, candidate))) candidate,
+        if (!applicable.any(
+          (other) => other != candidate && _canCoexist(other.extension, candidate.extension) && other.isMoreSpecificThan(candidate),
+        ))
+          candidate.extension,
     };
   }
 
-  bool _provides(ExtensionDeclaration extension, SimpleIdentifier reference) => extension.methods.any(
-    (method) =>
-        !method.isStatic &&
-        method.name.lexeme == reference.name &&
-        (!method.isGetter || reference.inGetterContext()) &&
-        (!method.isSetter || reference.inSetterContext()),
+  bool _provides(ExtensionDeclaration extension, _Access access) => extension.methods.any(
+    (method) => !method.isStatic && method.name.lexeme == access.name && (!method.isGetter || access.read) && (!method.isSetter || access.write),
   );
 
-  bool _moreSpecific(ExtensionDeclaration left, ExtensionDeclaration right) {
-    final leftType = left.onClause!.extendedType.toSource();
-    final rightType = right.onClause!.extendedType.toSource();
-    final subtype = instantiatedTypeIsAssignableTo(right, leftType, rightType, _project, actualSource: left);
-    final reverse = instantiatedTypeIsAssignableTo(left, rightType, leftType, _project, actualSource: right);
-    return subtype && !reverse;
+  bool _canCoexist(ExtensionDeclaration left, ExtensionDeclaration right) {
+    final leftOrigins = _origins[left];
+    final rightOrigins = _origins[right];
+    if (leftOrigins == null || rightOrigins == null) {
+      return true;
+    }
+    return leftOrigins.any((a) => rightOrigins.any((b) => a.$1 != b.$1 || a.$2 == b.$2));
   }
 
   ClassMember? _instanceMember(CompilationUnitMember owner, String name, Set<CompilationUnitMember> visited) {
@@ -124,13 +152,13 @@ final class ExtensionReferenceIndex {
     }
     final parents = switch (owner) {
       ClassDeclaration(:final extendsClause, :final withClause, :final implementsClause) => [
+        ...?withClause?.mixinTypes.reversed,
         if (extendsClause != null) extendsClause.superclass,
-        ...?withClause?.mixinTypes,
         ...?implementsClause?.interfaces,
       ],
-      ClassTypeAlias(:final superclass, :final withClause) => [superclass, ...withClause.mixinTypes],
+      ClassTypeAlias(:final superclass, :final withClause) => [...withClause.mixinTypes.reversed, superclass],
       MixinDeclaration(:final onClause) => [...?onClause?.superclassConstraints],
-      EnumDeclaration(:final withClause) => [...?withClause?.mixinTypes],
+      EnumDeclaration(:final withClause) => [...?withClause?.mixinTypes.reversed],
       _ => <NamedType>[],
     };
     for (final parent in parents) {
@@ -203,6 +231,16 @@ final class ExtensionReferenceIndex {
       case PropertyAccess(:final realTarget, :final propertyName):
         return _memberType(realTarget, propertyName.name);
       case PrefixedIdentifier(:final prefix, :final identifier):
+        final type = declarationNamedFrom(source, _project, prefix.name);
+        if (type is EnumDeclaration && type.body.constants.any((constant) => constant.name.lexeme == identifier.name)) {
+          return (name: type.namePart.typeName.lexeme, source: type);
+        }
+        if (!hasValueReceiver(prefix, prefix.name, _project)) {
+          final imported = _importedValueType(source, identifier.name, prefix.name);
+          if (imported != null) {
+            return imported;
+          }
+        }
         return _memberType(prefix, identifier.name);
       case MethodInvocation(:final target, :final methodName):
         final reference = target == null ? methodName.name : '${target.toSource()}.${methodName.name}';
@@ -216,6 +254,9 @@ final class ExtensionReferenceIndex {
             return result;
           }
         } else {
+          if (isShadowedValue(methodName)) {
+            return null;
+          }
           for (final file in _project.libraryScopes.scopeOf(source).files) {
             for (final function in file.topLevelFunctions) {
               if (function.name.lexeme == methodName.name && function.returnType != null) {
@@ -225,6 +266,9 @@ final class ExtensionReferenceIndex {
           }
         }
         final prefix = target is SimpleIdentifier ? target.name : null;
+        if (target is SimpleIdentifier && hasValueReceiver(target, target.name, _project)) {
+          return null;
+        }
         if (target == null || prefix != null) {
           for (final directive in _project.libraryScopes.scopeOf(source).dependencies.whereType<ImportDirective>()) {
             if (directive.prefix?.name != prefix) {
@@ -242,6 +286,36 @@ final class ExtensionReferenceIndex {
         }
       default:
         return null;
+    }
+    return null;
+  }
+
+  _ReceiverType? _importedValueType(CompilationUnitMember source, String name, String? prefix) {
+    final scope = _project.libraryScopes.scopeOf(source);
+    if (prefix == null && scope.names.contains(name)) {
+      return null;
+    }
+    for (final directive in scope.dependencies.whereType<ImportDirective>()) {
+      if (directive.prefix?.name != prefix) {
+        continue;
+      }
+      for (final branch in directive.resolvedTargets) {
+        for (final symbol in _project.declarationNamespace.visibleSymbols(directive, branch.file)) {
+          if (symbol.name != name) {
+            continue;
+          }
+          final declaration = symbol.declaration;
+          if (declaration is TopLevelVariableDeclaration) {
+            for (final variable in declaration.variables.variables) {
+              if (variable.name.lexeme == name) {
+                return _variableType(variable);
+              }
+            }
+          } else if (declaration is FunctionDeclaration && declaration.isGetter && declaration.returnType != null) {
+            return (name: declaration.returnType!.toSource(), source: declaration);
+          }
+        }
+      }
     }
     return null;
   }
@@ -274,6 +348,32 @@ final class ExtensionReferenceIndex {
     return variable.initializer == null ? null : _type(variable.initializer!);
   }
 
+  _ReceiverType _lexicalType(SimpleIdentifier reference, _ReceiverType type, AstNode binding) {
+    var name = type.name;
+    var source = type.source;
+    final bareName = name.endsWith('?') ? name.substring(0, name.length - 1) : name;
+    if (RegExp(r'^[A-Za-z_$][\w$]*$').hasMatch(bareName)) {
+      for (var ancestor = reference.parent; ancestor != null; ancestor = ancestor.parent) {
+        final parameters = switch (ancestor) {
+          MethodDeclaration(:final typeParameters) || FunctionExpression(:final typeParameters) => typeParameters,
+          ClassDeclaration(:final namePart) => namePart.typeParameters,
+          ExtensionDeclaration(:final typeParameters) || MixinDeclaration(:final typeParameters) => typeParameters,
+          _ => null,
+        };
+        final parameter = parameters?.typeParameters.where((parameter) => parameter.name.lexeme == bareName).firstOrNull;
+        if (parameter != null) {
+          final bound = parameter.bound?.toSource() ?? 'Object?';
+          name = name.endsWith('?') && !bound.endsWith('?') ? '$bound?' : bound;
+          source = _source(reference);
+          break;
+        }
+      }
+    }
+    final file = _project.filesByPath[_source(reference).sourcePath];
+    final promoted = file?.flowPromotions.promotedType(reference, name, binding);
+    return (name: promoted?.name ?? name, source: promoted?.annotation == null ? source : _source(promoted!.annotation!));
+  }
+
   _ReceiverType? _identifierType(SimpleIdentifier reference, CompilationUnitMember source) {
     for (var ancestor = reference.parent; ancestor != null; ancestor = ancestor.parent) {
       final parameters = switch (ancestor) {
@@ -293,14 +393,15 @@ final class ExtensionReferenceIndex {
           _ => null,
         };
         if (annotation != null) {
-          return (name: annotation.toSource(), source: source);
+          return _lexicalType(reference, (name: annotation.toSource(), source: source), parameter);
         }
         if (parameter is! FieldFormalParameter) {
           return null;
         }
         for (final variable in source.fieldVariables) {
           if (variable.name.lexeme == reference.name) {
-            return _variableType(variable);
+            final type = _variableType(variable);
+            return type == null ? null : _lexicalType(reference, type, parameter);
           }
         }
         return null;
@@ -313,7 +414,8 @@ final class ExtensionReferenceIndex {
           if (statement is VariableDeclarationStatement) {
             for (final variable in statement.variables.variables) {
               if (variable.name.lexeme == reference.name) {
-                return _variableType(variable);
+                final type = _variableType(variable);
+                return type == null ? null : _lexicalType(reference, type, variable);
               }
             }
           }
@@ -343,6 +445,6 @@ final class ExtensionReferenceIndex {
         }
       }
     }
-    return null;
+    return _importedValueType(source, reference.name, null);
   }
 }

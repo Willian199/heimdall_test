@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:heimdall_test/src/mapper/importer/path_matcher.dart';
 
 /// Filter applied before a Dart file is parsed by Heimdall.
@@ -81,18 +83,38 @@ final class IncludeLibraryImportOption implements PackageRelativeImportOption {
 
 /// Excludes common generated Dart files.
 ///
-/// Files ending in `.g.dart`, `.freezed.dart`, or `.gr.dart` are skipped.
+/// Files ending in `.g.dart`, `.freezed.dart`, `.gr.dart`, `.gen.dart`, or
+/// `.mocks.dart` are skipped. Use [additionalSuffixes] to extend this list.
 final class ExcludeGeneratedDartImportOption implements ImportOption {
   /// Creates an option that excludes generated Dart files.
-  const ExcludeGeneratedDartImportOption();
+  ///
+  /// [additionalSuffixes] adds literal, case-sensitive suffixes to the defaults.
+  /// Suffixes must be non-empty; checked on construction with assertions enabled.
+  ExcludeGeneratedDartImportOption({List<String> additionalSuffixes = const []})
+    : assert(!additionalSuffixes.contains(''), 'additionalSuffixes must not contain empty suffixes.'),
+      additionalSuffixes = List.unmodifiable(additionalSuffixes);
+
+  /// Creates a constant option using only the built-in generated suffixes.
+  const ExcludeGeneratedDartImportOption.defaults() : additionalSuffixes = const [];
+
+  static const _defaultSuffixes = [
+    '.g.dart',
+    '.freezed.dart',
+    '.gr.dart',
+    '.gen.dart',
+    '.mocks.dart',
+  ];
+
+  /// Extra file suffixes to exclude alongside the built-in generated suffixes.
+  final List<String> additionalSuffixes;
 
   @override
-  String get cacheKey => 'exclude-generated-dart';
+  String get cacheKey => 'exclude-generated-dart:${jsonEncode(additionalSuffixes)}';
 
   @override
   bool includes(String absolutePath) {
     final normalized = normalizePath(absolutePath);
-    return !normalized.endsWith('.g.dart') && !normalized.endsWith('.freezed.dart') && !normalized.endsWith('.gr.dart');
+    return !_defaultSuffixes.any(normalized.endsWith) && !additionalSuffixes.any(normalized.endsWith);
   }
 }
 

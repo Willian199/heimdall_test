@@ -207,7 +207,7 @@ void main() {
       final project = const HeimdallFileImporter(
         importOptions: [
           IncludeLibraryImportOption(),
-          ExcludeGeneratedDartImportOption(),
+          ExcludeGeneratedDartImportOption.defaults(),
         ],
         useCache: false,
       ).importPath(optionsProject);

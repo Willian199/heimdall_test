@@ -1,3 +1,7 @@
+## Unreleased
+
+- Fix [#15](https://github.com/Willian199/heimdall_test/issues/15): exclude `.gen.dart` and `.mocks.dart` files by default and allow custom exclusions with `ExcludeGeneratedDartImportOption(additionalSuffixes: [...])`.
+
 ## 0.11.0
 
 - Update the analyzer dependency to 12.0.0 and migrate library directive name handling to the current AST API.

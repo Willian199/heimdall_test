@@ -31,7 +31,7 @@ final class HeimdallFileImporter {
   /// [importPath] reuses the first imported project for the same root path and
   /// import option keys.
   const HeimdallFileImporter({
-    this.importOptions = const [ExcludeGeneratedDartImportOption()],
+    this.importOptions = const [ExcludeGeneratedDartImportOption.defaults()],
     this.useCache = true,
   });
 

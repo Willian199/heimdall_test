@@ -137,10 +137,7 @@ HeimdallPredicate<HeimdallSourceFile> _fileHasLibraryDirectiveNamed(
 
 String? _libraryDirectiveName(HeimdallSourceFile item) {
   final name = item.libraryDirective?.name;
-  return name?.tokens
-      .where((token) => token.lexeme != '.')
-      .map((token) => token.lexeme)
-      .join('.');
+  return name?.tokens.where((token) => token.lexeme != '.').map((token) => token.lexeme).join('.');
 }
 
 HeimdallCondition<HeimdallSourceFile> _fileShouldHaveLibraryDirectiveNamed(

@@ -60,20 +60,32 @@ void main() {
 
 ## Importing Source
 
-`HeimdallFileImporter` recursively reads `.dart` files under a root path, parses
-them with the analyzer, and returns a `HeimdallProject`.
+`HeimdallFileImporter` recursively reads `.dart` files under a root path, parses them with the analyzer, and returns a `HeimdallProject`.
 
 ```dart
 final project = const HeimdallFileImporter(
   importOptions: [
     IncludeLibraryImportOption(),
-    ExcludeGeneratedDartImportOption(),
+    ExcludeGeneratedDartImportOption.defaults(),
   ],
 ).importPath();
 ```
 
-By default, `importPath()` reads `lib/` and skips common generated files such as
-`.g.dart`, `.freezed.dart`, and `.gr.dart`.
+By default, `importPath()` reads `lib/` and skips common generated files such as `.g.dart`, `.freezed.dart`, `.gr.dart`, `.gen.dart`, and `.mocks.dart`.
+
+Pass `additionalSuffixes` to skip custom generated files while keeping all default exclusions:
+
+```dart
+final project = HeimdallFileImporter(
+  importOptions: [
+    ExcludeGeneratedDartImportOption(
+      additionalSuffixes: ['.generated.dart', '.custom.dart'],
+    ),
+  ],
+).importPath();
+```
+
+Suffixes are literal, case-sensitive, and must be non-empty. The constructor asserts this when assertions are enabled and stores an immutable copy of the list. Use `const ExcludeGeneratedDartImportOption.defaults()` when only the built-in suffixes are needed in a constant configuration.
 
 The importer caches results by root path and import option key. When files may
 change inside the same test process, call `HeimdallFileImporter.clearCache()` or

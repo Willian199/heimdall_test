@@ -23,7 +23,8 @@ void main() {
           .asRule()
           .check(project);
 
-      expect(result.checkedCount, 3);
+      // Includes the top-level createRepository function in the Data layer.
+      expect(result.checkedCount, 4);
       expect(result.findings, isEmpty);
     });
 
@@ -41,7 +42,7 @@ void main() {
           .asRule()
           .check(project);
 
-      expect(result.checkedCount, 3);
+      expect(result.checkedCount, 4);
       expect(result.findings, hasLength(1));
       expect(
         result.findings.single.message,

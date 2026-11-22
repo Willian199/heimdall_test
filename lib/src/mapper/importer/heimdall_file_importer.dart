@@ -5,6 +5,7 @@ import 'package:heimdall_test/src/mapper/importer/import_cache.dart';
 import 'package:heimdall_test/src/mapper/importer/import_options.dart';
 import 'package:heimdall_test/src/mapper/importer/package_context.dart';
 import 'package:heimdall_test/src/mapper/importer/path_matcher.dart';
+import 'package:heimdall_test/src/mapper/importer/reference_import_options.dart';
 import 'package:heimdall_test/src/mapper/importer/source_file_parser.dart';
 import 'package:heimdall_test/src/mapper/model/heimdall_project.dart';
 import 'package:path/path.dart' as p;
@@ -29,14 +30,19 @@ final class HeimdallFileImporter {
   ///
   /// [importOptions] filter files before parsing. When [useCache] is `true`,
   /// [importPath] reuses the first imported project for the same root path and
-  /// import option keys.
+  /// import option keys and consultation configuration. External libraries are
+  /// read only when a query first accesses their contents.
   const HeimdallFileImporter({
     this.importOptions = const [ExcludeGeneratedDartImportOption.defaults()],
     this.useCache = true,
+    this.referenceOptions = const ReferenceImportOptions.defaults(),
   });
 
   /// Filters applied before files are parsed.
   final List<ImportOption> importOptions;
+
+  /// Lazy SDK/package sources used only to answer queries about external types.
+  final ReferenceImportOptions referenceOptions;
 
   /// When `true`, reuses previous imports without checking whether files changed.
   ///
@@ -56,6 +62,7 @@ final class HeimdallFileImporter {
     final cached = HeimdallImportCache.read(
       rootPath: root,
       importOptions: importOptions,
+      referenceOptions: referenceOptions,
     );
     if (useCache && cached != null) {
       return cached;
@@ -81,12 +88,14 @@ final class HeimdallFileImporter {
       packageRootPath: context.packageRootPath,
       packageName: context.packageName,
       files: sourceFiles,
+      referenceOptions: referenceOptions,
     );
 
     if (useCache) {
       HeimdallImportCache.write(
         rootPath: root,
         importOptions: importOptions,
+        referenceOptions: referenceOptions,
         project: project,
       );
     }

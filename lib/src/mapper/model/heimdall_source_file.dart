@@ -1,9 +1,11 @@
 import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/source/line_info.dart';
 import 'package:heimdall_test/src/mapper/model/executable_ast_index.dart';
+import 'package:heimdall_test/src/mapper/model/flow_promotion_index.dart';
 import 'package:heimdall_test/src/mapper/model/heimdall_declaration.dart';
 import 'package:heimdall_test/src/mapper/model/heimdall_dependency.dart';
 import 'package:heimdall_test/src/mapper/model/heimdall_member.dart';
+import 'package:meta/meta.dart';
 
 /// Dart source file imported by Heimdall.
 ///
@@ -49,7 +51,19 @@ final class HeimdallSourceFile {
   final String content;
 
   /// Cached expressions in all declarations, including defaults and annotations.
-  late final List<Expression> expressions = ExecutableAstIndex(declarations).expressions;
+  late final List<Expression> expressions = _executableAstIndex.expressions;
+
+  late final ExecutableAstIndex _executableAstIndex = ExecutableAstIndex(declarations);
+
+  /// Local guards and writes derived once from the cached expression snapshot.
+  @internal
+  late final FlowPromotionIndex flowPromotions = FlowPromotionIndex(expressions);
+
+  /// Cached expressions belonging to one top-level declaration of this file.
+  ///
+  /// Reuses the same AST traversal as [expressions], including nested closures,
+  /// defaults, and metadata. A declaration outside this file returns no items.
+  List<Expression> expressionsInDeclaration(CompilationUnitMember declaration) => _executableAstIndex.expressionsFor(declaration);
 
   /// Parsed compilation unit. Callers that supply a resolved unit must also
   /// set [isResolved] to `true`.
@@ -293,6 +307,13 @@ final class HeimdallSourceFile {
 
   /// Top-level variables declared in this file.
   late final List<TopLevelVariableDeclaration> topLevelVariables = List.unmodifiable(declarations.whereType<TopLevelVariableDeclaration>());
+
+  /// Cached names of top-level functions, accessors, and individual variables.
+  late final Set<String> topLevelValueNames = Set.unmodifiable({
+    for (final function in topLevelFunctions) function.name.lexeme,
+    for (final declaration in topLevelVariables)
+      for (final variable in declaration.variables.variables) variable.name.lexeme,
+  });
 
   /// Individual public top-level variables declared in this file.
   late final List<VariableDeclaration> publicTopLevelVariableDeclarations = List.unmodifiable([

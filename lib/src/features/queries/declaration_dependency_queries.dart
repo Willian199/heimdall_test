@@ -2,99 +2,72 @@ import 'package:analyzer/dart/ast/visitor.dart';
 import 'package:analyzer/dart/element/element.dart';
 
 import 'package:heimdall_test/src/core.dart';
-
-/// Returns directives visible to [item], including its owning library imports.
-List<Directive> dependenciesFrom(
-  CompilationUnitMember item,
-  HeimdallProject project,
-) {
-  final file = project.filesByPath[item.sourcePath];
-  if (file == null) {
-    return const [];
-  }
-
-  return [
-    ...file.importDirectives,
-    ...file.partDirectives,
-    if (file.partOfDirectives.isNotEmpty)
-      for (final owner in project.files)
-        if (owner.partDirectives.any((part) => part.targetFiles.contains(file))) ...[
-          ...owner.importDirectives,
-          ...owner.partDirectives,
-        ],
-  ];
-}
+import 'package:heimdall_test/src/features/queries/extension_reference_index.dart';
+import 'package:heimdall_test/src/features/queries/value_reference_index.dart';
+import 'package:heimdall_test/src/mapper/model/declaration_dependency_index.dart';
+import 'package:heimdall_test/src/mapper/model/declaration_namespace_index.dart';
 
 /// Returns local type dependencies that [item] references.
+/// Results are immutable and reused within the imported project snapshot.
 List<DeclarationDependency> declarationDependenciesFrom(
   CompilationUnitMember item,
   HeimdallProject project,
 ) {
-  final references = _ResolvedReferenceVisitor();
-  item.accept(references);
-  final libraryFiles = libraryFilesFrom(item, project);
+  return project.declarationDependencies.typesFor(item, () {
+    final references = _ResolvedReferenceVisitor();
+    item.accept(references);
+    final scope = project.libraryScopes.scopeOf(item);
+    late final extensions = ExtensionReferenceIndex(item, project);
 
-  final localTypeNames = {
-    for (final file in libraryFiles)
-      for (final declaration in [...file.typeDeclarations, ...file.typeAliases]) declaration.name,
-  };
-
-  final localValueNames = {
-    for (final file in libraryFiles)
-      for (final function in file.declarations.whereType<FunctionDeclaration>()) function.name.lexeme,
-    for (final file in libraryFiles)
-      for (final declaration in file.topLevelVariables)
-        for (final variable in declaration.variables.variables) variable.name.lexeme,
-  };
-
-  return [
-    for (final dependency in dependenciesFrom(item, project))
-      for (final resolvedTarget in dependency.resolvedTargets)
-        for (final target in project.visibleTypeDeclarationsThroughTarget(
-          dependency,
-          resolvedTarget.file,
-        ))
-          if (_declarationReferencesTarget(
-            item,
-            target,
+    return [
+      for (final dependency in scope.dependencies)
+        for (final resolvedTarget in dependency.resolvedTargets)
+          for (final target in project.visibleTypeDeclarationsThroughTarget(
             dependency,
-            references,
-            localTypeNames,
-            localValueNames,
+            resolvedTarget.file,
           ))
-            DeclarationDependency(
-              directive: dependency,
-              target: target,
-              targetUri: resolvedTarget.uri,
-            ),
-  ];
+            if (_declarationReferencesTarget(
+                  item,
+                  target,
+                  dependency,
+                  references,
+                  scope.typeNames,
+                  scope.valueNames,
+                ) ||
+                target is ExtensionDeclaration && extensions.references(target))
+              DeclarationDependency(
+                directive: dependency,
+                target: target,
+                targetUri: resolvedTarget.uri,
+              ),
+    ];
+  });
 }
 
-/// Returns the files that share [item]'s library, including its owner and parts.
-List<HeimdallSourceFile> libraryFilesFrom(
+/// Returns referenced types and top-level values for architecture rules.
+///
+/// Class predicates deliberately retain the type-only query above. Both queries
+/// use the same project namespace for privacy, parts, and import combinators.
+List<DeclarationDependency> allDeclarationDependenciesFrom(
   CompilationUnitMember item,
   HeimdallProject project,
 ) {
-  final file = project.filesByPath[item.sourcePath];
-  if (file == null) {
-    return const [];
-  }
-  final owners = file.partOfDirectives.isEmpty
-      ? [file]
-      : [
-          for (final candidate in project.files)
-            if (candidate.partDirectives.any((part) => part.targetFiles.contains(file))) candidate,
-        ];
-  final seen = <String>{};
-  return [
-    if (seen.add(file.absolutePath)) file,
-    for (final owner in owners) ...[
-      if (seen.add(owner.absolutePath)) owner,
-      for (final part in owner.partDirectives)
-        for (final target in part.targetFiles)
-          if (seen.add(target.absolutePath)) target,
-    ],
-  ];
+  return project.declarationDependencies.allFor(item, () {
+    final namespace = project.declarationNamespace;
+    final scope = project.libraryScopes.scopeOf(item);
+    final references = ValueReferenceIndex(item, project);
+    return [
+      ...declarationDependenciesFrom(item, project),
+      for (final directive in scope.dependencies)
+        for (final branch in directive.resolvedTargets)
+          for (final symbol in namespace.visibleSymbols(directive, branch.file))
+            if (symbol.kind != DeclarationSymbolKind.type &&
+                symbol.declaration.sourcePath != item.sourcePath &&
+                !(directive is ImportDirective && directive.prefix == null && scope.names.contains(symbol.name)) &&
+                references.references(symbol, directive))
+              DeclarationDependency(directive: directive, target: symbol.declaration, targetUri: branch.uri),
+    ];
+  });
 }
 
 /// Returns only target declarations from [declarationDependenciesFrom].
@@ -106,25 +79,6 @@ List<CompilationUnitMember> targetDeclarations(
     item,
     project,
   ).map((dependency) => dependency.target).toList();
-}
-
-/// Dependency edge from a declaration to another declaration.
-final class DeclarationDependency {
-  /// Creates a declaration dependency edge.
-  const DeclarationDependency({
-    required this.directive,
-    required this.target,
-    required this.targetUri,
-  });
-
-  /// Directive that introduced the dependency.
-  final Directive directive;
-
-  /// Referenced target declaration.
-  final CompilationUnitMember target;
-
-  /// URI branch that exposed [target].
-  final String targetUri;
 }
 
 bool _declarationReferencesTarget(
@@ -229,9 +183,9 @@ final class _IdentifierReferenceVisitor extends RecursiveAstVisitor<void> {
 
   void _withValueMembers(CompilationUnitMember owner, void Function() visit) {
     _valueMemberScopes.add({
-      for (final field in owner.members.whereType<FieldDeclaration>())
+      for (final field in owner.fields)
         for (final variable in field.fields.variables) variable.name.lexeme,
-      for (final method in owner.members.whereType<MethodDeclaration>()) method.name.lexeme,
+      for (final method in owner.methods) method.name.lexeme,
       if (owner is ExtensionTypeDeclaration)
         for (final parameter in owner.primaryConstructor.formalParameters.parameters)
           if (parameter.name != null) parameter.name!.lexeme,
@@ -264,9 +218,12 @@ final class _IdentifierReferenceVisitor extends RecursiveAstVisitor<void> {
 
   @override
   void visitExtensionDeclaration(ExtensionDeclaration node) {
-    _withScope(
-      () => super.visitExtensionDeclaration(node),
-      names: _typeParameterNames(node.typeParameters),
+    _withValueMembers(
+      node,
+      () => _withScope(
+        () => super.visitExtensionDeclaration(node),
+        names: _typeParameterNames(node.typeParameters),
+      ),
     );
   }
 
@@ -448,6 +405,10 @@ final class _IdentifierReferenceVisitor extends RecursiveAstVisitor<void> {
     _declare(node.name.lexeme);
     _withScope(
       () {
+        for (final annotation in node.metadata) {
+          annotation.accept(this);
+        }
+        node.functionExpression.typeParameters?.accept(this);
         node.returnType?.accept(this);
         node.functionExpression.parameters?.accept(this);
         final parameterNames =
@@ -465,6 +426,7 @@ final class _IdentifierReferenceVisitor extends RecursiveAstVisitor<void> {
   void visitFunctionExpression(FunctionExpression node) {
     _withScope(
       () {
+        node.typeParameters?.accept(this);
         node.parameters?.accept(this);
         final parameterNames = node.parameters?.parameters.map((parameter) => parameter.name?.lexeme).whereType<String>() ?? const <String>[];
         _withScope(() => node.body.accept(this), names: parameterNames);
@@ -493,6 +455,10 @@ final class _IdentifierReferenceVisitor extends RecursiveAstVisitor<void> {
   void visitMethodDeclaration(MethodDeclaration node) {
     _withScope(
       () {
+        for (final annotation in node.annotationNodes) {
+          annotation.accept(this);
+        }
+        node.typeParameters?.accept(this);
         node.returnType?.accept(this);
         node.parameters?.accept(this);
         final parameterNames = node.parameters?.parameters.map((parameter) => parameter.name?.lexeme).whereType<String>() ?? const <String>[];
@@ -504,6 +470,9 @@ final class _IdentifierReferenceVisitor extends RecursiveAstVisitor<void> {
 
   @override
   void visitConstructorDeclaration(ConstructorDeclaration node) {
+    for (final annotation in node.annotationNodes) {
+      annotation.accept(this);
+    }
     node.parameters.accept(this);
     final parameterNames = node.parameters.parameters.map((parameter) => parameter.name?.lexeme).whereType<String>();
     _withScope(() {

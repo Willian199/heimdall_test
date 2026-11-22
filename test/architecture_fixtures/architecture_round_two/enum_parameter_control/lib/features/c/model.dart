@@ -1,0 +1,1 @@
+enum Failure { expired, denied }

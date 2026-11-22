@@ -1,0 +1,1 @@
+typedef Callback = int Function();

@@ -354,4 +354,70 @@ void main() {
       'alias has public dynamic return type',
     ]);
   });
+
+  test('resolves actual SDK declarations through combinators, reexports, cycles and parts', () {
+    final project = importer.importPath('$fixture/sdk_visibility');
+    expect(project.parseErrors, isEmpty);
+    final originalFiles = project.files.toList();
+    final originalDeclarations = project.declarations.toList();
+    final report = Heimdall.code().publicSignaturesShouldNotUseDynamic().check(project);
+    expect(
+      report.findings.map((finding) => finding.message),
+      unorderedEquals([
+        for (final name in [
+          'direct',
+          'coreList',
+          'coreReexport',
+          'callback',
+          'throughFacade',
+          'throughCycle',
+          'throughConditional',
+          'fromPart',
+        ])
+          '$name has public dynamic return type',
+        'inferredThroughFacade has public dynamic type',
+      ]),
+    );
+    expect(project.files, orderedEquals(originalFiles));
+    expect(project.declarations, orderedEquals(originalDeclarations));
+  });
+
+  test('SDK type consultation respects the reference allowlist without name-based fallback', () {
+    final project = const HeimdallFileImporter(
+      useCache: false,
+      referenceOptions: ReferenceImportOptions.none(),
+    ).importPath('$fixture/sdk_visibility');
+    expect(Heimdall.code().publicSignaturesShouldNotUseDynamic().check(project).findings, isEmpty);
+  });
+
+  test('external generics follow exports only when each library is allowlisted', () {
+    const facade = 'package:collection/collection.dart';
+    const declaration = 'package:collection/src/priority_queue.dart';
+    final deniedTarget = HeimdallFileImporter(
+      useCache: false,
+      referenceOptions: ReferenceImportOptions(packageLibraries: [facade]),
+    ).importPath('$fixture/sdk_visibility');
+
+    final allowedTarget = HeimdallFileImporter(
+      useCache: false,
+      referenceOptions: ReferenceImportOptions(packageLibraries: [facade, declaration]),
+    ).importPath('$fixture/sdk_visibility');
+
+    Iterable<String> externalFindings(HeimdallProject project) => Heimdall.code()
+        .publicSignaturesShouldNotUseDynamic()
+        .check(project)
+        .findings
+        .map((finding) => finding.message)
+        .where((message) => message.startsWith('external'));
+
+    expect(externalFindings(deniedTarget), isEmpty);
+
+    expect(
+      externalFindings(allowedTarget),
+      unorderedEquals([
+        'externalQueue has public dynamic return type',
+        'externalReexport has public dynamic return type',
+      ]),
+    );
+  });
 }

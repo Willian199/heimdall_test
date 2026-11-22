@@ -4,7 +4,7 @@ import 'package:heimdall_test/src/core/heimdall_condition.dart';
 import 'package:heimdall_test/src/core/heimdall_validation_info.dart';
 import 'package:heimdall_test/src/features/queries/declaration_lookup_queries.dart';
 import 'package:heimdall_test/src/features/queries/sdk_type_queries.dart';
-import 'package:heimdall_test/src/features/queries/static_method_queries.dart';
+import 'package:heimdall_test/src/features/queries/value_reference_queries.dart';
 import 'package:heimdall_test/src/mapper/model/heimdall_declaration.dart';
 import 'package:heimdall_test/src/mapper/model/heimdall_member.dart';
 import 'package:heimdall_test/src/mapper/model/heimdall_project.dart';

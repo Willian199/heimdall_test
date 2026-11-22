@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'package:analyzer/dart/analysis/utilities.dart';
 import 'package:heimdall_test/heimdall_test.dart';
 import 'package:heimdall_test/src/features/queries/declaration_lookup_queries.dart';
-import 'package:heimdall_test/src/features/queries/static_method_queries.dart';
+import 'package:heimdall_test/src/features/queries/value_reference_queries.dart';
 
 /// Internal syntax matcher shared by file and member DSL features.
 typedef SyntaxMatch = bool Function(Expression expression, HeimdallProject project);

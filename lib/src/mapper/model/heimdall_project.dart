@@ -1,6 +1,10 @@
 import 'dart:collection';
 
 import 'package:heimdall_test/heimdall_test.dart';
+import 'package:heimdall_test/src/mapper/model/declaration_dependency_index.dart';
+import 'package:heimdall_test/src/mapper/model/declaration_namespace_index.dart';
+import 'package:heimdall_test/src/mapper/model/library_scope_index.dart';
+import 'package:meta/meta.dart';
 import 'package:path/path.dart' as p;
 
 /// Imported view of a Dart project or source subtree.
@@ -24,12 +28,14 @@ final class HeimdallProject {
     required String? packageName,
     required List<HeimdallSourceFile> files,
     String? packageRootPath,
+    ReferenceImportOptions referenceOptions = const ReferenceImportOptions.defaults(),
   }) {
     final project = HeimdallProject._(
       rootPath: rootPath,
       packageRootPath: packageRootPath,
       packageName: packageName,
       files: files,
+      referenceOptions: referenceOptions,
     ).._resolveDependencies();
     return project;
   }
@@ -38,6 +44,7 @@ final class HeimdallProject {
     required this.rootPath,
     required this.packageName,
     required List<HeimdallSourceFile> files,
+    required this.referenceOptions,
     String? packageRootPath,
   }) : packageRootPath = packageRootPath ?? rootPath,
        files = List.unmodifiable(files);
@@ -57,7 +64,27 @@ final class HeimdallProject {
   /// Imported Dart source files.
   final List<HeimdallSourceFile> files;
 
-  final Map<HeimdallSourceFile, List<CompilationUnitMember>> _exportedTypeDeclarationsCache = {};
+  /// Internal namespaces shared by all rules over this imported snapshot.
+  @internal
+  late final DeclarationNamespaceIndex declarationNamespace = DeclarationNamespaceIndex();
+
+  /// Internal library scopes derived from the importer's resolved part targets.
+  @internal
+  late final LibraryScopeIndex libraryScopes = LibraryScopeIndex(this);
+
+  /// Internal dependency results reused across rules over this snapshot.
+  @internal
+  late final DeclarationDependencyIndex declarationDependencies = DeclarationDependencyIndex();
+
+  /// External sources permitted for consultation, never validation subjects.
+  final ReferenceImportOptions referenceOptions;
+
+  /// SDK and package library queries cached separately from validation sources.
+  late final ReferenceLibraryImporter referenceLibraries = ReferenceLibraryImporter(packageRootPath, referenceOptions);
+
+  final _exportedTypeDeclarationsCache = <HeimdallSourceFile, List<CompilationUnitMember>>{};
+  final _visibleTypeDeclarationsCache = <(Directive, HeimdallSourceFile), List<CompilationUnitMember>>{};
+  final _directiveTypeDeclarationsCache = <Directive, List<CompilationUnitMember>>{};
 
   /// Imported files indexed by absolute path.
   late final Map<String, HeimdallSourceFile> filesByPath = UnmodifiableMapView(
@@ -569,41 +596,13 @@ final class HeimdallProject {
   List<CompilationUnitMember> exportedTypeDeclarationsOf(
     HeimdallSourceFile file,
   ) {
-    final cached = _exportedTypeDeclarationsCache[file];
-    if (cached != null) {
-      return cached;
-    }
-
-    List<CompilationUnitMember> collect(
-      HeimdallSourceFile current,
-      Set<String> visiting,
-    ) {
-      if (visiting.contains(current.absolutePath)) {
-        return const [];
-      }
-      final nextVisiting = {...visiting, current.absolutePath};
-      final declarations = [
-        ...current.publicTypeDeclarations,
-        ...current.publicTypeAliases,
-        for (final part in current.partDirectives)
-          for (final targetFile in part.targetFiles) ...collect(targetFile, nextVisiting).where(_isVisibleTypeReferenceDeclaration),
-        for (final export in current.exportDirectives)
-          for (final targetFile in export.targetFiles)
-            ..._applyCombinators(
-              collect(targetFile, nextVisiting),
-              export.combinators,
-            ),
-      ];
-      return _dedupeDeclarations(declarations);
-    }
-
-    // Recursive results can be incomplete when an ancestor closes a cycle.
-    // Only cache the complete traversal from the requested root.
-    return _exportedTypeDeclarationsCache[file] = collect(file, const {});
-  }
-
-  bool _isVisibleTypeReferenceDeclaration(CompilationUnitMember declaration) {
-    return declaration.isPublic && (declaration.isTypeDeclaration || declaration is TypeAlias);
+    return _exportedTypeDeclarationsCache.putIfAbsent(
+      file,
+      () => List.unmodifiable([
+        for (final symbol in declarationNamespace.exportedSymbols(file))
+          if (symbol.kind == DeclarationSymbolKind.type) symbol.declaration,
+      ]),
+    );
   }
 
   /// Returns type declarations visible through a local directive.
@@ -613,13 +612,12 @@ final class HeimdallProject {
   List<CompilationUnitMember> visibleTypeDeclarationsThrough(
     Directive directive,
   ) {
-    final exported = _dedupeDeclarations([
-      for (final targetFile in directive.targetFiles) ...visibleTypeDeclarationsThroughTarget(directive, targetFile),
-    ]);
-    if (exported.isEmpty) {
-      return const [];
-    }
-    return exported;
+    return _directiveTypeDeclarationsCache.putIfAbsent(
+      directive,
+      () => _dedupeDeclarations([
+        for (final targetFile in directive.targetFiles) ...visibleTypeDeclarationsThroughTarget(directive, targetFile),
+      ]),
+    );
   }
 
   /// Returns type declarations visible through one resolved target branch.
@@ -627,22 +625,13 @@ final class HeimdallProject {
     Directive directive,
     HeimdallSourceFile targetFile,
   ) {
-    // A part belongs to the same library, so its private declarations are
-    // visible to the owning file even though they are not exported to imports.
-    if (directive is PartDirective) {
-      return List.unmodifiable([
-        ...targetFile.typeDeclarations,
-        ...targetFile.typeAliases,
-      ]);
-    }
-    final exported = exportedTypeDeclarationsOf(targetFile);
-    if (directive is ImportDirective) {
-      return _applyCombinators(exported, directive.combinators);
-    }
-    if (directive is ExportDirective) {
-      return _applyCombinators(exported, directive.combinators);
-    }
-    return exported;
+    return _visibleTypeDeclarationsCache.putIfAbsent(
+      (directive, targetFile),
+      () => List.unmodifiable([
+        for (final symbol in declarationNamespace.visibleSymbols(directive, targetFile))
+          if (symbol.kind == DeclarationSymbolKind.type) symbol.declaration,
+      ]),
+    );
   }
 
   void _resolveDependencies() {
@@ -737,23 +726,6 @@ List<HeimdallSourceFile> _dedupeFiles(Iterable<HeimdallSourceFile> files) {
     for (final file in files)
       if (seen.add(file.absolutePath)) file,
   ]);
-}
-
-List<CompilationUnitMember> _applyCombinators(
-  Iterable<CompilationUnitMember> declarations,
-  NodeList<Combinator> combinators,
-) {
-  var visible = declarations.toList();
-  for (final combinator in combinators) {
-    if (combinator is ShowCombinator) {
-      final shown = combinator.shownNames.map((name) => name.name).toSet();
-      visible = visible.where((declaration) => shown.contains(declaration.name)).toList();
-    } else if (combinator is HideCombinator) {
-      final hidden = combinator.hiddenNames.map((name) => name.name).toSet();
-      visible = visible.where((declaration) => !hidden.contains(declaration.name)).toList();
-    }
-  }
-  return List.unmodifiable(visible);
 }
 
 List<CompilationUnitMember> _dedupeDeclarations(

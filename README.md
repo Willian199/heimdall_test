@@ -366,7 +366,7 @@ Heimdall.code()
     .assertNoFindings();
 ```
 
-Both arguments are optional. `ignoredTypes` exempts matching signatures, including nullable and nested uses; a bare name such as `Map` exempts all its parametrizations. Import prefixes must match. `externalGenericTypeNames` identifies external generic types whose omitted arguments should count as `dynamic`; SDK generics such as `Future` and `Stream` are already recognized.
+Both arguments are optional. `ignoredTypes` exempts matching signatures, including nullable and nested uses; a bare name such as `Map` exempts all its parametrizations. Import prefixes must match. Raw generic types are resolved from visible declarations and their bounds, respecting import/export prefixes, `show`/`hide`, and reexports. SDK sources are consulted lazily using the importer's `referenceOptions`; package sources require explicit permission there. Consulted sources never become validation subjects. `externalGenericTypeNames` provides a fallback for unresolved external generic types whose omitted arguments should count as `dynamic`.
 
 ### Dependency policies
 

@@ -1,19 +1,19 @@
 import 'package:heimdall_test/heimdall_test.dart';
 import 'package:heimdall_test/src/features/queries/declaration_lookup_queries.dart';
+import 'package:heimdall_test/src/features/queries/reference_type_lookup.dart';
 
 /// Public signature hygiene checks for [HeimdallCodeSight].
 extension HeimdallPublicDynamicSignatureRule on HeimdallCodeSight {
   /// Ensures public declarations in [pathPattern] do not expose `dynamic`.
   ///
-  /// Raw generics are resolved from visible declarations first. Otherwise,
-  /// standard unbounded generics from dart:core, dart:async and dart:collection
-  /// (such as List, Map, Future and Stream) are recognized by name. Prefixed
-  /// SDK names require an import of one of those libraries under that prefix.
+  /// Raw generics are resolved from visible declarations, including allowlisted
+  /// SDK/package consultation sources, respecting prefixes, import/export
+  /// combinators and reexports. Omitted arguments use the declaration's bounds.
   /// [externalGenericTypeNames] adds names such as `Bloc` or `Response` whose
   /// omitted arguments should count as dynamic. Unqualified names also match
   /// prefixed uses; use `http.Response` to restrict a name to that prefix.
-  /// SDK and external package sources are not read. Visible local declarations
-  /// and lexical type parameters take precedence over these name lists.
+  /// Reference sources are read lazily and never become validation subjects.
+  /// Local declarations and lexical type parameters take precedence.
   /// Wildcard parameters are always ignored, including explicit annotations.
   /// Unannotated top-level functions and non-overriding methods/getters expose
   /// dynamic returns; Dart does not infer their signatures from their bodies.
@@ -474,25 +474,6 @@ bool _patternDeclaresName(AstNode pattern, String name) {
 
 // SDK types whose omitted, unbounded arguments default to dynamic.
 // Bounded types such as Expando<T extends Object> are deliberately excluded.
-const _sdkDynamicGenericTypeNames = {
-  // dart:core
-  'Comparable', 'Comparator', 'Finalizer', 'Iterable', 'Iterator',
-  'List', 'Map', 'MapEntry', 'Set', 'Sink',
-  // dart:async
-  'Completer', 'EventSink', 'Future', 'FutureOr', 'MultiStreamController',
-  'ParallelWaitError', 'Stream', 'StreamConsumer', 'StreamController',
-  'StreamIterator', 'StreamSink', 'StreamSubscription', 'StreamTransformer',
-  'StreamTransformerBase', 'StreamView', 'SynchronousStreamController',
-  'ZoneCallback', 'ZoneUnaryCallback', 'ZoneBinaryCallback',
-  // dart:collection
-  'DoubleLinkedQueue', 'HashMap', 'HashSet', 'HasNextIterator',
-  'IterableBase', 'IterableMixin', 'LinkedHashMap', 'LinkedHashSet',
-  'ListBase', 'ListMixin', 'ListQueue', 'MapBase', 'MapMixin', 'MapView',
-  'Queue', 'SetBase', 'SetMixin', 'SplayTreeMap', 'SplayTreeSet',
-  'UnmodifiableListView', 'UnmodifiableMapBase', 'UnmodifiableMapView',
-  'UnmodifiableSetView',
-};
-
 final _typeWhitespace = RegExp(r'\s+');
 
 String _typeKey(String type) {
@@ -520,6 +501,8 @@ final class _RawGenericTypeResolver {
   final HeimdallProject _project;
   final Set<String> _ignoredTypeKeys;
   final Set<String> _externalGenericTypeNames;
+  late final _referenceTypes = ReferenceTypeLookup(_project);
+  final _referenceActive = <ReferenceTypeDeclaration>{};
   final Expando<String> _typeKeys = Expando<String>();
 
   bool isIgnoredType(TypeAnnotation type) {
@@ -598,17 +581,23 @@ final class _RawGenericTypeResolver {
         }
       }
     }
-    final index = _indexFor(origin, type.importPrefix?.name.lexeme);
-    final declaration = index.aliases[type.name.lexeme] ?? index.declarations[type.name.lexeme];
-    if (declaration == null) {
+    final declarations = _referenceTypes.visible(origin, type.name.lexeme, prefix: type.importPrefix?.name.lexeme);
+    if (declarations.isEmpty) {
       final name = type.name.lexeme;
       final prefix = type.importPrefix?.name.lexeme;
-      final recognized =
-          _sdkDynamicGenericTypeNames.contains(name) && (prefix == null || _isSdkImportPrefix(origin, prefix)) ||
-          _externalGenericTypeNames.contains(name) ||
-          (prefix != null && _externalGenericTypeNames.contains('$prefix.$name'));
+      final recognized = _externalGenericTypeNames.contains(name) || (prefix != null && _externalGenericTypeNames.contains('$prefix.$name'));
       return arguments == null && recognized ? _DynamicStatus.dynamicType : _DynamicStatus.unknown;
     }
+    return _combine([
+      for (final reference in declarations)
+        if (reference.library != null)
+          _referenceDeclarationStatus(reference, arguments?.map((argument) => typeStatus(argument, origin)).toList())
+        else
+          _localDeclarationStatus(reference.declaration, arguments, origin),
+    ]);
+  }
+
+  _DynamicStatus _localDeclarationStatus(CompilationUnitMember declaration, List<TypeAnnotation>? arguments, CompilationUnitMember origin) {
     if (!_active.add(declaration)) {
       return _DynamicStatus.unknown;
     }
@@ -630,16 +619,112 @@ final class _RawGenericTypeResolver {
     }
   }
 
-  bool _isSdkImportPrefix(CompilationUnitMember origin, String prefix) {
-    return _project.libraryScopes
-        .scopeOf(origin)
-        .dependencies
-        .whereType<ImportDirective>()
-        .any(
-          (directive) =>
-              directive.prefix?.name == prefix &&
-              directive.targetUris.any((uri) => const {'dart:core', 'dart:async', 'dart:collection'}.contains(uri)),
-        );
+  bool _isSdkType(CompilationUnitMember origin, String name, String? prefix) {
+    final declarations = _referenceTypes.visible(origin, name, prefix: prefix);
+    return declarations.isNotEmpty && declarations.every((reference) => reference.library?.uri.startsWith('dart:') ?? false);
+  }
+
+  _DynamicStatus _referenceDeclarationStatus(ReferenceTypeDeclaration reference, List<_DynamicStatus>? arguments) {
+    if (!_referenceActive.add(reference)) {
+      return _DynamicStatus.unknown;
+    }
+    try {
+      final parameters = _parametersOf(reference.declaration).toList();
+      final bindings = <String, _DynamicStatus>{};
+      final evaluating = <String>{};
+      _DynamicStatus defaultFor(String name) {
+        if (bindings[name] case final status?) {
+          return status;
+        }
+        final parameter = parameters.where((parameter) => parameter.name.lexeme == name).firstOrNull;
+        if (parameter == null || !evaluating.add(name)) {
+          return _DynamicStatus.unknown;
+        }
+        final bound = parameter.bound;
+        final status = bound == null ? _DynamicStatus.dynamicType : _referenceAnnotationStatus(bound, reference, defaultFor);
+        evaluating.remove(name);
+        return bindings[name] = status;
+      }
+
+      if (arguments != null) {
+        for (var i = 0; i < parameters.length; i++) {
+          bindings[parameters[i].name.lexeme] = i < arguments.length ? arguments[i] : _DynamicStatus.unknown;
+        }
+      }
+      for (final parameter in parameters) {
+        defaultFor(parameter.name.lexeme);
+      }
+      final declaration = reference.declaration;
+      if (declaration is GenericTypeAlias) {
+        return _referenceAnnotationStatus(declaration.type, reference, defaultFor);
+      }
+      if (declaration is FunctionTypeAlias) {
+        return _combine([
+          _referenceAnnotationStatus(declaration.returnType, reference, defaultFor),
+          for (final parameter in declaration.parameters.parameters)
+            _referenceAnnotationStatus(_formalParameterType(_normalParameter(parameter)), reference, defaultFor),
+        ]);
+      }
+      return _combine(bindings.values);
+    } finally {
+      _referenceActive.remove(reference);
+    }
+  }
+
+  _DynamicStatus _referenceAnnotationStatus(
+    TypeAnnotation? type,
+    ReferenceTypeDeclaration reference,
+    _DynamicStatus Function(String) binding,
+  ) {
+    if (type == null) {
+      return _DynamicStatus.dynamicType;
+    }
+    if (isIgnoredType(type)) {
+      return _DynamicStatus.known;
+    }
+    if (type is GenericFunctionType) {
+      final parameters = {for (final parameter in type.typeParameters?.typeParameters ?? <TypeParameter>[]) parameter.name.lexeme};
+      _DynamicStatus nested(String name) => parameters.contains(name) ? _DynamicStatus.known : binding(name);
+      return _combine([
+        _referenceAnnotationStatus(type.returnType, reference, nested),
+        for (final parameter in type.parameters.parameters)
+          _referenceAnnotationStatus(_formalParameterType(_normalParameter(parameter)), reference, nested),
+        for (final parameter in type.typeParameters?.typeParameters ?? <TypeParameter>[])
+          if (parameter.bound != null) _referenceAnnotationStatus(parameter.bound, reference, nested),
+      ]);
+    }
+    if (type is RecordTypeAnnotation) {
+      return _combine([
+        for (final field in type.positionalFields) _referenceAnnotationStatus(field.type, reference, binding),
+        for (final field in type.namedFields?.fields ?? <RecordTypeAnnotationNamedField>[])
+          _referenceAnnotationStatus(field.type, reference, binding),
+      ]);
+    }
+    if (type is! NamedType) {
+      return _DynamicStatus.unknown;
+    }
+    final name = type.name.lexeme;
+    final prefix = type.importPrefix?.name.lexeme;
+    if (prefix == null) {
+      if (name == 'dynamic') {
+        return _DynamicStatus.dynamicType;
+      }
+      if (name == 'void' || name == 'Never') {
+        return _DynamicStatus.known;
+      }
+      final status = binding(name);
+      if (status != _DynamicStatus.unknown) {
+        return status;
+      }
+    }
+    final arguments = type.typeArguments?.arguments.map((argument) => _referenceAnnotationStatus(argument, reference, binding)).toList();
+    if (arguments?.contains(_DynamicStatus.dynamicType) ?? false) {
+      return _DynamicStatus.dynamicType;
+    }
+    final declarations = _referenceTypes.inLibrary(reference.library!, name, prefix: prefix);
+    return declarations.isEmpty
+        ? _DynamicStatus.unknown
+        : _combine([for (final declaration in declarations) _referenceDeclarationStatus(declaration, arguments)]);
   }
 
   _DynamicStatus _withBindings(
@@ -1108,6 +1193,20 @@ final class _RawGenericTypeResolver {
   }
 
   _DynamicStatus _invocationStatus(MethodInvocation invocation, CompilationUnitMember origin) {
+    final sdkCall = _sdkInvocationTarget(invocation, origin);
+    if (sdkCall != null) {
+      final status = _sdkConstructorStatus(
+        sdkCall.name,
+        sdkCall.constructor,
+        invocation.typeArguments,
+        invocation.argumentList,
+        origin,
+        prefix: sdkCall.prefix,
+      );
+      if (status != null) {
+        return status;
+      }
+    }
     final target = invocation.realTarget;
     final name = invocation.methodName.name;
     if (target == null) {
@@ -1139,20 +1238,12 @@ final class _RawGenericTypeResolver {
       if (declaration != null) {
         return _constructorStatus(declaration, null, invocation.argumentList, origin, types: invocation.typeArguments);
       }
-      final sdk = _sdkConstructorStatus(name, null, invocation.typeArguments, invocation.argumentList, origin);
-      if (sdk != null) {
-        return sdk;
-      }
       return _DynamicStatus.unknown;
     }
     if (target is SimpleIdentifier && _lookupValue(target.name, invocation, origin) == null) {
       final importedType = _indexFor(origin, target.name).declarations[name];
       if (importedType != null) {
         return _constructorStatus(importedType, null, invocation.argumentList, origin, types: invocation.typeArguments);
-      }
-      final sdk = _sdkConstructorStatus(target.name, name, invocation.typeArguments, invocation.argumentList, origin);
-      if (sdk != null) {
-        return sdk;
       }
       final declaration = _indexFor(origin, null).declarations[target.name];
       if (declaration != null) {
@@ -1323,7 +1414,7 @@ final class _RawGenericTypeResolver {
     CompilationUnitMember origin, {
     String? prefix,
   }) {
-    if (prefix != null && !_isSdkImportPrefix(origin, prefix)) {
+    if (!_isSdkType(origin, name, prefix)) {
       return null;
     }
     final index = _indexFor(origin, prefix);
@@ -1488,19 +1579,15 @@ final class _RawGenericTypeResolver {
       }
     }
     if (expression is MethodInvocation) {
-      final target = expression.realTarget;
-      final typeName = target is SimpleIdentifier
-          ? target.name
-          : target == null
-          ? expression.methodName.name
-          : null;
-      if (typeName != null && _lookupValue(typeName, expression, origin) == null) {
+      final call = _sdkInvocationTarget(expression, origin);
+      if (call != null) {
         final value = _sdkConstructorValue(
-          typeName,
-          target == null ? null : expression.methodName.name,
+          call.name,
+          call.constructor,
           expression.typeArguments,
           expression.argumentList,
           origin,
+          prefix: call.prefix,
         );
         if (value != null) {
           return value;
@@ -1549,6 +1636,23 @@ final class _RawGenericTypeResolver {
     return _sdkTypeValue(reference.type, reference.origin);
   }
 
+  ({String name, String? constructor, String? prefix})? _sdkInvocationTarget(MethodInvocation invocation, CompilationUnitMember origin) {
+    final target = invocation.realTarget;
+    if (target is PrefixedIdentifier && _lookupValue(target.prefix.name, invocation, origin) == null) {
+      return (name: target.identifier.name, constructor: invocation.methodName.name, prefix: target.prefix.name);
+    }
+    if (target is SimpleIdentifier && _lookupValue(target.name, invocation, origin) == null) {
+      if (_isSdkType(origin, invocation.methodName.name, target.name)) {
+        return (name: invocation.methodName.name, constructor: null, prefix: target.name);
+      }
+      return (name: target.name, constructor: invocation.methodName.name, prefix: null);
+    }
+    if (target == null && _lookupValue(invocation.methodName.name, invocation, origin) == null) {
+      return (name: invocation.methodName.name, constructor: null, prefix: null);
+    }
+    return null;
+  }
+
   _SdkValue? _sdkTypeValue(TypeAnnotation annotation, CompilationUnitMember origin) {
     if (annotation is! NamedType) {
       return null;
@@ -1557,7 +1661,7 @@ final class _RawGenericTypeResolver {
     final prefix = type.importPrefix?.name.lexeme;
     if (_indexFor(origin, prefix).declarations.containsKey(type.name.lexeme) ||
         _indexFor(origin, prefix).aliases.containsKey(type.name.lexeme) ||
-        prefix != null && !_isSdkImportPrefix(origin, prefix)) {
+        !_isSdkType(origin, type.name.lexeme, prefix)) {
       return null;
     }
     final nameOfType = type.name.lexeme;

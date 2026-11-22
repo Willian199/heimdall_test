@@ -16,6 +16,8 @@ final _contexts = Expando<_DeclarationContext>('heimdall.declarationContext');
 /// );
 /// ```
 extension HeimdallDeclaration on CompilationUnitMember {
+  static final _whitespace = RegExp(r'\s+');
+
   /// Human-readable declaration name.
   ///
   /// For classes, mixins, enums, aliases, and functions this returns the
@@ -169,7 +171,7 @@ String _nameOf(CompilationUnitMember member) {
   if (member is TopLevelVariableDeclaration) {
     return member.variables.variables.map((variable) => variable.name.lexeme).join(', ');
   }
-  return member.toSource().split(RegExp(r'\s+')).take(3).join(' ');
+  return member.toSource().split(HeimdallDeclaration._whitespace).take(3).join(' ');
 }
 
 List<ClassMember> _membersOf(CompilationUnitMember member) {

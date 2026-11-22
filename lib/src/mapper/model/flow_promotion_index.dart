@@ -20,6 +20,8 @@ final class FlowPromotionIndex {
     }
   }
 
+  static final _nullableSuffix = RegExp(r'\?$');
+
   final _writes = <String, List<int>>{};
 
   /// Applies known guards within the lexical scope of [binding].
@@ -101,7 +103,7 @@ final class FlowPromotionIndex {
             rightOperand is SimpleIdentifier && rightOperand.name == name && leftOperand is NullLiteral;
         if ((token == '==' || token == '!=') && comparedToNull) {
           final nonNull = truth == (token == '!=');
-          return (name: nonNull ? current.name.replaceFirst(RegExp(r'\?$'), '') : 'Null', annotation: current.annotation);
+          return (name: nonNull ? current.name.replaceFirst(_nullableSuffix, '') : 'Null', annotation: current.annotation);
         }
       default:
         break;

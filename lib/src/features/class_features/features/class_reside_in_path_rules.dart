@@ -42,10 +42,13 @@ extension ClassResideInPathShouldRules on ClassShouldBuilder {
     Iterable<String> patterns,
   ) {
     final patternList = patterns.toNonEmptyList('patterns');
+    final expectedPaths = patternList.join(' or ');
     return satisfy(
       HeimdallCondition.anyOf(
-        patternList.map(_classShouldResideInPath),
-        description: 'reside in any path ${patternList.join(', ')}',
+        patternList.map((pattern) => _classShouldResideInPath(pattern, expectedPaths: expectedPaths)),
+        description: patternList.length == 1
+            ? 'reside in a path matching ${patternList.single}'
+            : 'reside in a path matching at least one of these patterns (${patternList.join(', ')})',
       ),
     );
   }
@@ -72,8 +75,9 @@ HeimdallPredicate<CompilationUnitMember> _classResideInPath(String pattern) {
 }
 
 HeimdallCondition<CompilationUnitMember> _classShouldResideInPath(
-  String pattern,
-) {
+  String pattern, {
+  String? expectedPaths,
+}) {
   return HeimdallCondition('reside in path $pattern', (item, _) {
     final findings = pathMatches(item.relativePath, pattern)
         ? const <HeimdallValidationInfo>[]
@@ -81,7 +85,7 @@ HeimdallCondition<CompilationUnitMember> _classShouldResideInPath(
             HeimdallValidationInfo(
               filePath: item.sourcePath,
               line: item.line,
-              message: '${item.name} should reside in path $pattern (actual: ${item.relativePath})',
+              message: '${item.name} should reside in path ${expectedPaths ?? pattern}',
             ),
           ];
     return HeimdallFindings(

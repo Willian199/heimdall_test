@@ -3,6 +3,13 @@ import 'dart:io';
 import 'package:heimdall_test/heimdall_test.dart';
 import 'package:test/test.dart';
 
+abstract final class _Patterns {
+  static final dataPath = RegExp('data');
+  static final mapperSuffix = RegExp(r'Mapper$');
+  static final cachePrefix = RegExp('^Cache');
+  static final composite = RegExp('Composite');
+}
+
 void main() {
   group('Class rules', () {
     const fixture = 'test/class_fixtures/class_rules_project';
@@ -77,20 +84,21 @@ void main() {
       );
 
       final result = Heimdall.classes().that().haveTypeName('User').should().resideInPath('lib/src/data/**').check(project);
-      final matchingResult = Heimdall.classes().that().haveTypeName('User').should().resideInPathMatching(RegExp('data')).check(project);
+      final matchingResult = Heimdall.classes().that().haveTypeName('User').should().resideInPathMatching(_Patterns.dataPath).check(project);
       final outsideResult = Heimdall.classes().that().haveTypeName('User').should().resideOutsideOfPath('lib/src/domain/**').check(project);
+      final sourcePath = project.fileByRelativePath('lib/src/domain/user.dart')!.absolutePath;
 
       expect(
         result.findings.single.message,
-        'User should reside in path lib/src/data/** (actual: lib/src/domain/user.dart)',
+        'User should reside in path lib/src/data/**',
       );
       expect(
         matchingResult.findings.single.message,
-        'User should reside in path matching data (actual: lib/src/domain/user.dart)',
+        'User should reside in path matching data',
       );
       expect(
         outsideResult.findings.single.message,
-        'User should reside outside of path lib/src/domain/** (actual: lib/src/domain/user.dart)',
+        'User should reside outside of path lib/src/domain/**',
       );
       expect(
         result.assertNoFindings,
@@ -100,12 +108,32 @@ void main() {
             'message',
             allOf(
               contains('Heimdall saw rule breaches:'),
-              contains('User should reside in path lib/src/data/** (actual: lib/src/domain/user.dart)'),
-              isNot(contains('resides in lib/src/domain/user.dart, expected')),
+              contains('$sourcePath:1: User should reside in path lib/src/data/**'),
+              isNot(contains('(actual:')),
             ),
           ),
         ),
       );
+    });
+
+    test('resideInAnyPath reports one finding with the allowed patterns', () {
+      final project = const HeimdallFileImporter(useCache: false).importPath(basicFixture);
+      ClassShouldBuilder user() => Heimdall.classes().that().haveTypeName('User').should();
+
+      final misplaced = user().resideInAnyPath(['data/**', 'repositories/**']).check(project);
+      expect(misplaced.checkedCount, 1);
+      expect(misplaced.findings, hasLength(1));
+      expect(
+        misplaced.findings.single.message,
+        'User should reside in path data/** or repositories/**',
+      );
+      expect(misplaced.findings.single.filePath?.replaceAll(r'\', '/'), endsWith('lib/src/domain/user.dart'));
+      expect(misplaced.findings.single.line, 1);
+
+      final singlePattern = user().resideInAnyPath(['data/**']).check(project);
+      expect(singlePattern.findings.single.message, 'User should reside in path data/**');
+      final matching = user().resideInAnyPath(['data/**', 'lib/src/domain/**']).check(project);
+      expect(matching.findings, isEmpty);
     });
 
     test('negates the next class predicate', () {
@@ -341,6 +369,46 @@ void main() {
           .check(project);
 
       expect(result.findings, isEmpty);
+    });
+
+    test('dependOnAllClassesWithTypeName identifies each missing dependency', () {
+      final project = const HeimdallFileImporter(useCache: false).importPath(basicFixture);
+      final report = Heimdall.classes()
+          .that()
+          .haveTypeName('UserRepository')
+          .should()
+          .dependOnAllClassesWithTypeName(['User', 'UserMapper', 'UserCache'])
+          .check(project);
+
+      expect(report.checkedCount, 1);
+      final finding = report.findings.single;
+      final filePath = project.fileByRelativePath('lib/src/data/user_repository.dart')!.absolutePath;
+      expect(finding.line, 6);
+      expect(
+        finding.message,
+        'Required conditions were not met.\n'
+        '  - $filePath:6: UserRepository should depend on a class whose name equals UserMapper\n'
+        '  - $filePath:6: UserRepository should depend on a class whose name equals UserCache',
+      );
+    });
+
+    test('missing dependency diagnostics identify patterns and custom predicates', () {
+      final project = const HeimdallFileImporter(useCache: false).importPath(basicFixture);
+      ClassShouldBuilder repository() => Heimdall.classes().that().haveTypeName('UserRepository').should();
+
+      final byPattern = repository().dependOnAnyClassesWithTypeNameMatching([_Patterns.mapperSuffix, _Patterns.cachePrefix]).check(project);
+      expect(
+        byPattern.findings.single.message,
+        allOf(contains(r'whose name matches Mapper$'), contains('whose name matches ^Cache')),
+      );
+
+      final byPredicate = repository()
+          .dependOnClassesMatchingAllOf([
+            HeimdallPredicate('have type name User', (item, _) => item.name == 'User'),
+            HeimdallPredicate('reside in lib/src/ui', (item, _) => item.relativePath.startsWith('lib/src/ui/')),
+          ])
+          .check(project);
+      expect(byPredicate.findings.single.message, 'UserRepository should depend on classes that reside in lib/src/ui');
     });
 
     test('only dependency rules fail when a class has no dependencies', () {
@@ -651,7 +719,7 @@ void main() {
           .and()
           .haveTypeNameStartingWithNoneOf(['_'])
           .and()
-          .haveTypeNameMatchingAnyOf([RegExp('Composite')])
+          .haveTypeNameMatchingAnyOf([_Patterns.composite])
           .and()
           .resideInAnyPath(['missing', '**domain/**'])
           .and()

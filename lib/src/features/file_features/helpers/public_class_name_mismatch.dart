@@ -1,6 +1,11 @@
 import 'package:heimdall_test/heimdall_test.dart';
 import 'package:path/path.dart' as p;
 
+abstract final class _ClassNamePatterns {
+  static final camelCaseBoundary = RegExp('([a-z0-9])([A-Z])');
+  static final acronymBoundary = RegExp('([A-Z]+)([A-Z][a-z])');
+}
+
 /// Creates a predicate that accepts files with zero or one public class.
 HeimdallPredicate<HeimdallSourceFile> fileHasAtMostOnePublicClass() {
   return HeimdallPredicate(
@@ -61,11 +66,11 @@ PublicClassNameMismatch? publicClassNameMismatch(
 String _camelToSnake(String value) {
   return value
       .replaceAllMapped(
-        RegExp('([a-z0-9])([A-Z])'),
+        _ClassNamePatterns.camelCaseBoundary,
         (match) => '${match.group(1)}_${match.group(2)}',
       )
       .replaceAllMapped(
-        RegExp('([A-Z]+)([A-Z][a-z])'),
+        _ClassNamePatterns.acronymBoundary,
         (match) => '${match.group(1)}_${match.group(2)}',
       )
       .toLowerCase();

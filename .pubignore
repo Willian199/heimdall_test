@@ -1,17 +1,21 @@
 # Local and generated files do not belong in the published archive.
-.dart_tool/
+/.dart_tool/
 /build/
 /coverage/
 /*.log
-pubspec.lock
+/pubspec.lock
 
 # Tests need their fixtures, so exclude the complete test tree together.
-test/bug_sweep_regression_test.dart
-test/bug_sweep_fixtures/
-test/bug_sweep2_sdk_returns_test.dart
-test/bug_sweep2_fixtures/
-test/
+/test/
 
 # Repository-only resources.
-skills/
-tool/
+/skills/
+/tool/
+/.agents/
+/.codex/
+/.github/
+/.gitlab/
+/.gitlab-ci.yml
+/.aws/
+/.idea/
+/.vscode/

@@ -48,7 +48,7 @@ HeimdallCondition<ClassMember> _memberShouldResideInPath(String pattern) {
             HeimdallValidationInfo(
               filePath: item.sourcePath,
               line: item.line,
-              message: '${item.ownerName}.${item.name} should reside in path $pattern (actual: ${item.relativePath})',
+              message: '${item.ownerName}.${item.name} should reside in path $pattern',
             ),
           ];
     return HeimdallFindings(

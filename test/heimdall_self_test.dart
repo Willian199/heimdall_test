@@ -2,6 +2,12 @@ import 'package:heimdall_test/heimdall_test.dart';
 
 import 'package:test/test.dart';
 
+abstract final class _Patterns {
+  static final dartFileName = RegExp(r'^[a-z][a-z0-9_]*\.dart$');
+  static final pascalCase = RegExp(r'^[A-Z][A-Za-z0-9]*$');
+  static final uppercase = RegExp('[A-Z]');
+}
+
 void main() {
   group('Heimdall self architecture', () {
     late final HeimdallProject project;
@@ -93,7 +99,7 @@ void main() {
     });
 
     test('keeps source file and type names conventional', () {
-      Heimdall.files().that().resideInPath('src/**').should().haveNameMatching(RegExp(r'^[a-z][a-z0-9_]*\.dart$')).check(project).assertNoFindings();
+      Heimdall.files().that().resideInPath('src/**').should().haveNameMatching(_Patterns.dartFileName).check(project).assertNoFindings();
 
       Heimdall.classes().that().resideInPath('src/**').should().satisfy(_havePascalCasePublicTypeNames()).check(project).assertNoFindings();
     });
@@ -179,12 +185,11 @@ void main() {
 }
 
 HeimdallCondition<CompilationUnitMember> _havePascalCasePublicTypeNames() {
-  final pascalCase = RegExp(r'^[A-Z][A-Za-z0-9]*$');
   return HeimdallCondition('have PascalCase public type names', (
     declaration,
     _,
   ) {
-    final findings = !declaration.isPublic || pascalCase.hasMatch(declaration.name)
+    final findings = !declaration.isPublic || _Patterns.pascalCase.hasMatch(declaration.name)
         ? const <HeimdallValidationInfo>[]
         : [
             HeimdallValidationInfo(
@@ -257,7 +262,7 @@ String? _singleReturnedLocalMethodName(MethodDeclaration method) {
   if (wrappedRuleName == method.name.lexeme) {
     return null;
   }
-  if (wrappedRuleName.startsWith(RegExp('[A-Z]'))) {
+  if (wrappedRuleName.startsWith(_Patterns.uppercase)) {
     return null;
   }
   return wrappedRuleName;

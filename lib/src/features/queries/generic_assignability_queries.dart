@@ -120,7 +120,8 @@ ExtensionApplicability? extensionApplicabilityFor(
           ..addAll(saved);
       }
     }
-    return !expected.text.split(RegExp(r'[^\w$]+')).any(names.contains) && _assignable(value, expected, project, {}, allowDynamicDowncast: false);
+    return !expected.text.split(_TypeUse._identifierSeparator).any(names.contains) &&
+        _assignable(value, expected, project, {}, allowDynamicDowncast: false);
   }
 
   if (formals.isNotEmpty && !infer(receiver, pattern, {})) {
@@ -221,8 +222,7 @@ final class _TypeUse {
     if (nullable) {
       value = value.substring(0, value.length - 1);
     }
-    if (value.startsWith('(') ||
-        RegExp(r'\bFunction\s*[<(]').hasMatch(value) && (!value.contains('<') || value.indexOf('Function') < value.indexOf('<'))) {
+    if (value.startsWith('(') || _functionType.hasMatch(value) && (!value.contains('<') || value.indexOf('Function') < value.indexOf('<'))) {
       return _TypeUse(value, const [], nullable, source);
     }
     final start = value.indexOf('<');
@@ -249,6 +249,10 @@ final class _TypeUse {
     return _TypeUse(value.substring(0, start), arguments, nullable, source);
   }
 
+  static final _identifierSeparator = RegExp(r'[^\w$]+');
+  static final _functionType = RegExp(r'\bFunction\s*[<(]');
+  static final _qualifiedIdentifier = RegExp(r'\b[A-Za-z_$][\w$]*(?:\.[A-Za-z_$][\w$]*)*\b');
+
   final String name;
   final List<_TypeUse> arguments;
   final bool nullable;
@@ -261,7 +265,7 @@ final class _TypeUse {
     if (bound != null && arguments.isEmpty) {
       return _TypeUse(bound.name, bound.arguments, nullable || bound.nullable, bound.source);
     }
-    final replaced = name.replaceAllMapped(RegExp(r'\b[A-Za-z_$][\w$]*(?:\.[A-Za-z_$][\w$]*)*\b'), (match) => bindings[match[0]]?.text ?? match[0]!);
+    final replaced = name.replaceAllMapped(_qualifiedIdentifier, (match) => bindings[match[0]]?.text ?? match[0]!);
     return _TypeUse(replaced, arguments.map((argument) => argument.substitute(bindings)).toList(), nullable, source);
   }
 }

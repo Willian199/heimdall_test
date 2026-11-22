@@ -179,7 +179,7 @@ HeimdallCondition<CompilationUnitMember> _classShouldDependOnClassesThat(
             HeimdallValidationInfo(
               filePath: item.sourcePath,
               line: item.line,
-              message: '${item.name} does not depend on a matching class',
+              message: '${item.name} should depend on classes that ${targetPredicate.description}',
             ),
           ];
     return HeimdallFindings(

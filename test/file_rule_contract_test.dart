@@ -1,6 +1,15 @@
 import 'package:heimdall_test/heimdall_test.dart';
 import 'package:test/test.dart';
 
+abstract final class _Patterns {
+  static final dartExtension = RegExp(r'\.dart$');
+  static final missing = RegExp('missing');
+  static final packageUri = RegExp('^package:');
+  static final dartUri = RegExp('^dart:');
+  static final generatedDartExtension = RegExp(r'\.g\.dart$');
+  static final syntax = RegExp('syntax');
+}
+
 void main() {
   group('File rule DSL contract', () {
     test('keeps predicate and should builder file methods in sync', () {
@@ -66,14 +75,14 @@ void main() {
         ..exportAllUris(['domain/user.dart'])
         ..exportAnyUri(['missing.dart', 'domain/user.dart'])
         ..exportNoUris(['missing.dart'])
-        ..exportUriMatching(RegExp(r'\.dart$'))
-        ..exportAllUrisMatching([RegExp(r'\.dart$')])
-        ..exportAnyUriMatching([RegExp('missing'), RegExp(r'\.dart$')])
-        ..exportNoUrisMatching([RegExp('missing')])
-        ..importUriMatching(RegExp('^package:'))
-        ..importAllUrisMatching([RegExp('^dart:'), RegExp('^package:')])
-        ..importAnyUriMatching([RegExp('^dart:'), RegExp('^package:')])
-        ..importNoUrisMatching([RegExp(r'\.g\.dart$')])
+        ..exportUriMatching(_Patterns.dartExtension)
+        ..exportAllUrisMatching([_Patterns.dartExtension])
+        ..exportAnyUriMatching([_Patterns.missing, _Patterns.dartExtension])
+        ..exportNoUrisMatching([_Patterns.missing])
+        ..importUriMatching(_Patterns.packageUri)
+        ..importAllUrisMatching([_Patterns.dartUri, _Patterns.packageUri])
+        ..importAnyUriMatching([_Patterns.dartUri, _Patterns.packageUri])
+        ..importNoUrisMatching([_Patterns.generatedDartExtension])
         ..useOnlyPackageOrSdkImports()
         ..notUseRelativeImports()
         ..onlyImportFrom(['dart:', 'package:heimdall_test/']);
@@ -82,14 +91,14 @@ void main() {
         ..exportAllUris(['domain/user.dart'])
         ..exportAnyUri(['missing.dart', 'domain/user.dart'])
         ..exportNoUris(['missing.dart'])
-        ..exportUriMatching(RegExp(r'\.dart$'))
-        ..exportAllUrisMatching([RegExp(r'\.dart$')])
-        ..exportAnyUriMatching([RegExp('missing'), RegExp(r'\.dart$')])
-        ..exportNoUrisMatching([RegExp('missing')])
-        ..importUriMatching(RegExp('^package:'))
-        ..importAllUrisMatching([RegExp('^dart:'), RegExp('^package:')])
-        ..importAnyUriMatching([RegExp('^dart:'), RegExp('^package:')])
-        ..importNoUrisMatching([RegExp(r'\.g\.dart$')])
+        ..exportUriMatching(_Patterns.dartExtension)
+        ..exportAllUrisMatching([_Patterns.dartExtension])
+        ..exportAnyUriMatching([_Patterns.missing, _Patterns.dartExtension])
+        ..exportNoUrisMatching([_Patterns.missing])
+        ..importUriMatching(_Patterns.packageUri)
+        ..importAllUrisMatching([_Patterns.dartUri, _Patterns.packageUri])
+        ..importAnyUriMatching([_Patterns.dartUri, _Patterns.packageUri])
+        ..importNoUrisMatching([_Patterns.generatedDartExtension])
         ..useOnlyPackageOrSdkImports()
         ..notUseRelativeImports()
         ..onlyImportFrom(['dart:', 'package:heimdall_test/']);
@@ -118,8 +127,8 @@ void main() {
         ..haveNoTopLevelFunctions()
         ..haveNoParseErrors()
         ..haveParseErrors()
-        ..haveNoParseErrorsMatching(RegExp('syntax'))
-        ..haveParseErrorsMatching(RegExp('syntax'))
+        ..haveNoParseErrorsMatching(_Patterns.syntax)
+        ..haveParseErrorsMatching(_Patterns.syntax)
         ..haveLibraryDirective()
         ..havePartOfDirective()
         ..haveNoPartOfDirective()
@@ -145,8 +154,8 @@ void main() {
         ..haveNoTopLevelFunctions()
         ..haveNoParseErrors()
         ..haveParseErrors()
-        ..haveNoParseErrorsMatching(RegExp('syntax'))
-        ..haveParseErrorsMatching(RegExp('syntax'))
+        ..haveNoParseErrorsMatching(_Patterns.syntax)
+        ..haveParseErrorsMatching(_Patterns.syntax)
         ..haveLibraryDirective()
         ..havePartOfDirective()
         ..haveNoPartOfDirective()
@@ -199,7 +208,7 @@ String? _fileRuleMethodKey(String methodName) {
   if (infrastructureMethods.contains(methodName)) {
     return null;
   }
-  
+
   return methodName.toLowerCase();
 }
 

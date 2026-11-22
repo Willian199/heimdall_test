@@ -1,6 +1,11 @@
 import 'package:heimdall_test/heimdall_test.dart';
 import 'package:test/test.dart';
 
+abstract final class _Patterns {
+  static final stringType = RegExp(r'^String$');
+  static final containsString = RegExp('String');
+}
+
 void main() {
   final project = const HeimdallFileImporter(useCache: false).importPath('test/file_member_fixtures/return_types');
   final cases =
@@ -105,32 +110,32 @@ void main() {
         (
           name: 'haveReturnTypeNameMatching',
           negative: false,
-          select: (b) => b.haveReturnTypeNameMatching(RegExp(r'^String$')),
-          require: (b) => b.haveReturnTypeNameMatching(RegExp(r'^String$')),
+          select: (b) => b.haveReturnTypeNameMatching(_Patterns.stringType),
+          require: (b) => b.haveReturnTypeNameMatching(_Patterns.stringType),
         ),
         (
           name: 'notHaveReturnTypeNameMatching',
           negative: true,
-          select: (b) => b.notHaveReturnTypeNameMatching(RegExp(r'^String$')),
-          require: (b) => b.notHaveReturnTypeNameMatching(RegExp(r'^String$')),
+          select: (b) => b.notHaveReturnTypeNameMatching(_Patterns.stringType),
+          require: (b) => b.notHaveReturnTypeNameMatching(_Patterns.stringType),
         ),
         (
           name: 'haveReturnTypeNameMatchingAnyOf',
           negative: false,
-          select: (b) => b.haveReturnTypeNameMatchingAnyOf([RegExp(r'^String$')]),
-          require: (b) => b.haveReturnTypeNameMatchingAnyOf([RegExp(r'^String$')]),
+          select: (b) => b.haveReturnTypeNameMatchingAnyOf([_Patterns.stringType]),
+          require: (b) => b.haveReturnTypeNameMatchingAnyOf([_Patterns.stringType]),
         ),
         (
           name: 'haveReturnTypeNameMatchingAllOf',
           negative: false,
-          select: (b) => b.haveReturnTypeNameMatchingAllOf([RegExp(r'^String$')]),
-          require: (b) => b.haveReturnTypeNameMatchingAllOf([RegExp(r'^String$')]),
+          select: (b) => b.haveReturnTypeNameMatchingAllOf([_Patterns.stringType]),
+          require: (b) => b.haveReturnTypeNameMatchingAllOf([_Patterns.stringType]),
         ),
         (
           name: 'haveReturnTypeNameMatchingNoneOf',
           negative: true,
-          select: (b) => b.haveReturnTypeNameMatchingNoneOf([RegExp(r'^String$')]),
-          require: (b) => b.haveReturnTypeNameMatchingNoneOf([RegExp(r'^String$')]),
+          select: (b) => b.haveReturnTypeNameMatchingNoneOf([_Patterns.stringType]),
+          require: (b) => b.haveReturnTypeNameMatchingNoneOf([_Patterns.stringType]),
         ),
       ];
   for (final rule in cases) {
@@ -152,7 +157,7 @@ void main() {
     expect(methods.should().haveDeclaredFieldTypeName('String').check(project).hasFindings, isTrue);
     expect(methods.should().haveDeclaredFieldTypeNameStartingWith('Str').check(project).hasFindings, isTrue);
     expect(methods.should().haveDeclaredFieldTypeNameEndingWith('ing').check(project).hasFindings, isTrue);
-    expect(methods.should().haveDeclaredFieldTypeNameMatching(RegExp('String')).check(project).hasFindings, isTrue);
+    expect(methods.should().haveDeclaredFieldTypeNameMatching(_Patterns.containsString).check(project).hasFindings, isTrue);
     expect(methods.should().haveDeclaredFieldTypeNameEqualToAnyOf(['String']).check(project).hasFindings, isTrue);
   });
   test('return types retain generic arguments and nullability', () {

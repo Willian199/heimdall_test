@@ -1,6 +1,12 @@
 import 'package:heimdall_test/heimdall_test.dart';
 import 'package:test/test.dart';
 
+abstract final class _Patterns {
+  static final auditContract = RegExp('AuditContract');
+  static final missing = RegExp('Missing');
+  static final product = RegExp('Product');
+}
+
 void main() {
   const importer = HeimdallFileImporter(useCache: false);
   const fixture = 'test/bug_audit_fixtures';
@@ -40,7 +46,7 @@ void main() {
           .that()
           .haveTypeName('DirectMixinWorker')
           .should()
-          .implementTypeNameMatching(RegExp('AuditContract'))
+          .implementTypeNameMatching(_Patterns.auditContract)
           .check(hierarchy);
 
       expect(report.findings, isEmpty);
@@ -90,7 +96,7 @@ void main() {
           .that()
           .haveTypeName('DirectMixinWorker')
           .should()
-          .implementTypeNameMatchingAnyOf([RegExp('Missing'), RegExp('AuditContract')])
+          .implementTypeNameMatchingAnyOf([_Patterns.missing, _Patterns.auditContract])
           .check(hierarchy);
 
       expect(report.findings, isEmpty);
@@ -137,7 +143,7 @@ void main() {
     test('regex any-of implementation selector misses concrete mixin users', () {
       final report = Heimdall.classes()
           .that()
-          .implementTypeNameMatchingAnyOf([RegExp('AuditContract'), RegExp('Missing')])
+          .implementTypeNameMatchingAnyOf([_Patterns.auditContract, _Patterns.missing])
           .should()
           .bePublic()
           .allowEmpty()
@@ -385,7 +391,7 @@ void main() {
   });
 
   test('negated constructor pattern rule accepts an unqualified matching method call', () {
-    final report = Heimdall.methods().that().haveName('invokeMethod').should().notCallConstructorTypeNameMatching(RegExp('Product')).check(hierarchy);
+    final report = Heimdall.methods().that().haveName('invokeMethod').should().notCallConstructorTypeNameMatching(_Patterns.product).check(hierarchy);
 
     expect(report.findings, isEmpty);
   });

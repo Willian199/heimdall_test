@@ -59,7 +59,7 @@ HeimdallCondition<ClassMember> _memberShouldResideOutsideOfPath(String pattern) 
             HeimdallValidationInfo(
               filePath: item.sourcePath,
               line: item.line,
-              message: '${item.ownerName}.${item.name} should reside outside of path $pattern (actual: ${item.relativePath})',
+              message: '${item.ownerName}.${item.name} should reside outside of path $pattern',
             ),
           ];
     return HeimdallFindings(

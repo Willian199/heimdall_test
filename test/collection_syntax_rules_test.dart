@@ -125,13 +125,38 @@ void main() {
   }
 
   test('relationship any does not merge partial coverage from different methods', () {
-    expect(stateFields().should().haveMatchingParameterInAnyMethod(['copyFirst', 'copySecond']).check(project).findings, hasLength(2));
+    expect(
+      stateFields().should().haveMatchingParameterInAnyMethod(['copyFirst', 'copySecond']).check(project).findings.single.message,
+      allOf(contains('None of the alternatives matched'), contains('copyFirst'), contains('copySecond')),
+    );
     stateFields().should().haveMatchingParameterInNoMethods(['copyFirst', 'copySecond']).check(project).assertNoFindings();
-    expect(stateFields().should().beIncludedInReturnedListOfAnyMethod(['firstProps', 'secondProps']).check(project).findings, hasLength(2));
+    expect(
+      stateFields().should().beIncludedInReturnedListOfAnyMethod(['firstProps', 'secondProps']).check(project).findings.single.message,
+      'None of the alternatives matched (VariantState.second should be included in a returned list of firstProps '
+      '[${file.absolutePath}:178:15] or VariantState.first should be included in a returned list of secondProps [${file.absolutePath}:178:8]).',
+    );
     stateFields().should().beIncludedInReturnedListOfNoMethods(['firstProps', 'secondProps']).check(project).assertNoFindings();
     expect(
       stateFields().should().haveMatchingParameterInAllMethods(['copyBoth', 'copyFirst']).check(project).findings.single.message,
-      contains('second'),
+      allOf(contains('copyFirst'), isNot(contains('copyBoth'))),
+    );
+  });
+
+  test('relationship none identifies each field and method in the prohibited matches', () {
+    final finding = stateFields()
+        .should()
+        .haveMatchingParameterInNoMethods(['copyBoth', 'copyFirst', 'copyBothAgain'])
+        .check(project)
+        .findings
+        .single;
+
+    expect(
+      finding.message,
+      'Prohibited conditions matched.\n'
+      '  - ${file.absolutePath}:178:8: VariantState.first should not have a matching parameter in copyBoth\n'
+      '  - ${file.absolutePath}:178:15: VariantState.second should not have a matching parameter in copyBoth\n'
+      '  - ${file.absolutePath}:178:8: VariantState.first should not have a matching parameter in copyBothAgain\n'
+      '  - ${file.absolutePath}:178:15: VariantState.second should not have a matching parameter in copyBothAgain',
     );
   });
 
@@ -192,7 +217,23 @@ void main() {
       report.assertNoFindings();
     }
     expect(members('widgets').should().callNoConstructorsWithArguments(['Container'], exactArguments: true).check(project).findings, hasLength(1));
-    expect(files().should().callNoConstructorsWithArguments(['Divider'], namedArguments: {'height': '1+2'}).check(project).findings, hasLength(3));
+    final forbiddenDivider = files().should().callNoConstructorsWithArguments(['Divider'], namedArguments: {'height': '1+2'}).check(project);
+    expect(forbiddenDivider.findings.single.message, contains('should not call constructor Divider'));
+    expect(forbiddenDivider.findings.single.line, isNotNull);
+    final missingNamedArguments = files()
+        .should()
+        .callAnyConstructorWithArguments(['Divider', 'Container'], namedArguments: {'height': '42'})
+        .check(project);
+    expect(
+      missingNamedArguments.findings.single.message,
+      allOf(contains('with arguments {height: 42}'), isNot(contains('with arguments null'))),
+    );
+
+    final explicitPositionalArguments = members(
+      'widgets',
+    ).should().callAnyConstructorWithArguments(['Divider', 'Container'], namedArguments: {'height': '42'}, positionalArguments: []).check(project);
+    expect(explicitPositionalArguments.findings.single.message, contains('with arguments [] {height: 42}'));
+
     expect(
       members('widgets').callAnyConstructorWithArguments(['Widget'], constructorName: 'other').should().predicate.test(widgets, project),
       isFalse,

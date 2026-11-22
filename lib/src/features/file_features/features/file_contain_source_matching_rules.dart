@@ -98,7 +98,7 @@ extension FileContainSourceMatchingShouldRules on FileShouldBuilder {
     return satisfy(
       HeimdallCondition.noneOf(
         patternList.map(_fileShouldContainSourceMatching),
-        description: 'contain source matching none of ${patternList.join(', ')}',
+        description: patternList.length == 1 ? null : 'contain source matching none of ${patternList.join(', ')}',
       ),
     );
   }

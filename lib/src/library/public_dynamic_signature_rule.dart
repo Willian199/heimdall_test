@@ -4,6 +4,8 @@ import 'package:heimdall_test/src/features/queries/reference_type_lookup.dart';
 
 /// Public signature hygiene checks for [HeimdallCodeSight].
 extension HeimdallPublicDynamicSignatureRule on HeimdallCodeSight {
+  static final _typeWhitespace = RegExp(r'\s+');
+
   /// Ensures public declarations in [pathPattern] do not expose `dynamic`.
   ///
   /// Raw generics are resolved from visible declarations, including allowlisted
@@ -474,10 +476,8 @@ bool _patternDeclaresName(AstNode pattern, String name) {
 
 // SDK types whose omitted, unbounded arguments default to dynamic.
 // Bounded types such as Expando<T extends Object> are deliberately excluded.
-final _typeWhitespace = RegExp(r'\s+');
-
 String _typeKey(String type) {
-  final key = type.replaceAll(_typeWhitespace, '');
+  final key = type.replaceAll(HeimdallPublicDynamicSignatureRule._typeWhitespace, '');
   return key.endsWith('?') ? key.substring(0, key.length - 1) : key;
 }
 
@@ -2192,7 +2192,7 @@ final class _RawGenericTypeResolver {
       return 'bool';
     }
     final reference = _expressionType(expression, origin);
-    return reference?.type.toSource().replaceAll(_typeWhitespace, '');
+    return reference?.type.toSource().replaceAll(HeimdallPublicDynamicSignatureRule._typeWhitespace, '');
   }
 
   _DynamicStatus _elementStatus(CollectionElement element, CompilationUnitMember origin) {

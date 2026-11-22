@@ -1,6 +1,10 @@
 import 'package:heimdall_test/heimdall_test.dart';
 import 'package:test/test.dart';
 
+abstract final class _Patterns {
+  static final pascalCase = RegExp(r'^[A-Z][A-Za-z0-9]*$');
+}
+
 void main() {
   group('Package architecture', () {
     late HeimdallProject project;
@@ -58,9 +62,8 @@ void main() {
 }
 
 HeimdallCondition<CompilationUnitMember> _havePascalCaseName() {
-  final pascalCase = RegExp(r'^[A-Z][A-Za-z0-9]*$');
   return HeimdallCondition('have PascalCase names', (item, _) {
-    if (pascalCase.hasMatch(item.name)) {
+    if (_Patterns.pascalCase.hasMatch(item.name)) {
       return HeimdallFindings(
         subject: item,
         passed: true,

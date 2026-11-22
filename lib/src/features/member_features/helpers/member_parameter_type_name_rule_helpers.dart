@@ -6,7 +6,9 @@ import 'package:heimdall_test/src/mapper/model/heimdall_declaration.dart';
 import 'package:heimdall_test/src/mapper/model/heimdall_member.dart';
 import 'package:heimdall_test/src/mapper/model/heimdall_project.dart';
 
-final _typeParameterReferencePattern = RegExp(r'[A-Za-z_$][A-Za-z0-9_$]*(?:\.[A-Za-z_$][A-Za-z0-9_$]*)*\??');
+abstract final class _TypeParameterPatterns {
+  static final reference = RegExp(r'[A-Za-z_$][A-Za-z0-9_$]*(?:\.[A-Za-z_$][A-Za-z0-9_$]*)*\??');
+}
 
 /// Returns whether [member] receives a parameter whose resolved type name satisfies [test].
 bool memberReceivesResolvedParameterTypeNameWhere(
@@ -181,7 +183,7 @@ String? _superParameterTypeName(
             : typeParameters[i].bound?.toSource() ?? 'dynamic',
     };
     return inheritedType.replaceAllMapped(
-      _typeParameterReferencePattern,
+      _TypeParameterPatterns.reference,
       (match) {
         final name = match[0]!;
         final nullable = name.endsWith('?');

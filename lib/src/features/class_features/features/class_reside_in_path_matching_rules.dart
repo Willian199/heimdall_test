@@ -126,13 +126,13 @@ HeimdallCondition<CompilationUnitMember> _classShouldResideInPathMatching(
         HeimdallValidationInfo(
           filePath: item.sourcePath,
           line: item.line,
-          message: '${item.name} resides in path matching ${pattern.pattern} (actual: ${item.relativePath})',
+          message: '${item.name} resides in path matching ${pattern.pattern}',
         )
       else
         HeimdallValidationInfo(
           filePath: item.sourcePath,
           line: item.line,
-          message: '${item.name} should reside in path matching ${pattern.pattern} (actual: ${item.relativePath})',
+          message: '${item.name} should reside in path matching ${pattern.pattern}',
         ),
     ];
 
@@ -154,7 +154,7 @@ HeimdallCondition<CompilationUnitMember> _classShouldNotResideInPathMatching(
         HeimdallValidationInfo(
           filePath: item.sourcePath,
           line: item.line,
-          message: '${item.name} must not reside in path matching ${pattern.pattern} (actual: ${item.relativePath})',
+          message: '${item.name} must not reside in path matching ${pattern.pattern}',
         ),
     ];
 

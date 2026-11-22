@@ -90,7 +90,7 @@ extension FileContainSourceShouldRules on FileShouldBuilder {
     return satisfy(
       HeimdallCondition.noneOf(
         sourceList.map(_fileShouldContainSource),
-        description: 'contain no source snippets',
+        description: sourceList.length == 1 ? null : 'contain no source snippets',
       ),
     );
   }

@@ -94,7 +94,7 @@ final class ReferenceImportOptions {
       return false;
     }
     return scheme == 'dart'
-        ? segments.length == 1 && RegExp(r'^[a-z_][a-z0-9_]*$').hasMatch(segments.single)
+        ? segments.length == 1 && _packageName.hasMatch(segments.single)
         : segments.length > 1 && _packageName.hasMatch(segments.first) && segments.last.endsWith('.dart');
   }
 }

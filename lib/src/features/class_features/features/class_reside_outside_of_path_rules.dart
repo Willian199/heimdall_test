@@ -81,7 +81,7 @@ HeimdallCondition<CompilationUnitMember> _classShouldResideOutsideOfPath(
             HeimdallValidationInfo(
               filePath: item.sourcePath,
               line: item.line,
-              message: '${item.name} should reside outside of path $pattern (actual: ${item.relativePath})',
+              message: '${item.name} should reside outside of path $pattern',
             ),
           ];
     return HeimdallFindings(

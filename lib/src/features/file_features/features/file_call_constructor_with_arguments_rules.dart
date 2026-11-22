@@ -238,7 +238,8 @@ HeimdallPredicate<HeimdallSourceFile> _matches(
     exactArguments: exactArguments,
   );
   return HeimdallPredicate(
-    '${prohibited ? 'not ' : ''}call constructor $typeName.$constructorName with arguments $positionalArguments $namedArguments (exact: $exactArguments)',
+    '${prohibited ? 'not ' : ''}call constructor $typeName.$constructorName with arguments '
+    '${positionalArguments == null ? '' : '$positionalArguments '}$namedArguments (exact: $exactArguments)',
     (item, project) => prohibited ? !hasSyntaxMatch(item, project, match) : hasSyntaxMatch(item, project, match),
   );
 }
@@ -260,7 +261,8 @@ HeimdallCondition<HeimdallSourceFile> _requires(
     exactArguments: exactArguments,
   );
   return syntaxCondition(
-    '${prohibited ? 'not ' : ''}call constructor $typeName.$constructorName with arguments $positionalArguments $namedArguments (exact: $exactArguments)',
+    '${prohibited ? 'not ' : ''}call constructor $typeName.$constructorName with arguments '
+    '${positionalArguments == null ? '' : '$positionalArguments '}$namedArguments (exact: $exactArguments)',
     match,
     prohibited: prohibited,
   );

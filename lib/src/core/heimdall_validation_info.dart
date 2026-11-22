@@ -79,6 +79,17 @@ final class HeimdallValidationInfo {
   /// Related source column, when available.
   final int? column;
 
+  /// The file path followed by its source line and column, when available.
+  String? get formattedLocation {
+    final path = filePath;
+    final sourceLine = line;
+    if (path == null || sourceLine == null) {
+      return path;
+    }
+    final sourceColumn = column;
+    return sourceColumn == null ? '$path:$sourceLine' : '$path:$sourceLine:$sourceColumn';
+  }
+
   /// Returns this finding with a different [message], preserving location.
   HeimdallValidationInfo withMessage(String message) {
     return HeimdallValidationInfo(
@@ -91,13 +102,7 @@ final class HeimdallValidationInfo {
 
   @override
   String toString() {
-    final location = filePath == null
-        ? ''
-        : line == null
-        ? '$filePath: '
-        : column == null
-        ? '$filePath:$line: '
-        : '$filePath:$line:$column: ';
-    return '$location$message';
+    final location = formattedLocation;
+    return location == null ? message : '$location: $message';
   }
 }

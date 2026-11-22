@@ -20,6 +20,8 @@ final _contexts = Expando<_MemberContext>('heimdall.memberContext');
 /// );
 /// ```
 extension HeimdallMember on ClassMember {
+  static final _whitespace = RegExp(r'\s+');
+
   /// Human-readable member name.
   ///
   /// Multi-variable fields are returned as a comma-separated textual list.
@@ -205,7 +207,7 @@ String _nameOf(ClassMember member) {
   if (member is ConstructorDeclaration) {
     return member.name?.lexeme ?? 'new';
   }
-  return member.toSource().split(RegExp(r'\s+')).take(3).join(' ');
+  return member.toSource().split(HeimdallMember._whitespace).take(3).join(' ');
 }
 
 String? _typeOf(ClassMember member) {

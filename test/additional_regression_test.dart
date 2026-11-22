@@ -1,6 +1,10 @@
 import 'package:heimdall_test/heimdall_test.dart';
 import 'package:test/test.dart';
 
+abstract final class _Patterns {
+  static final product = RegExp(r'^Product$');
+}
+
 void main() {
   const importer = HeimdallFileImporter(useCache: false);
   const fixture = 'test/importer_fixtures/review_project/lib';
@@ -48,7 +52,7 @@ void main() {
       expect(selected.checkedCount, 1);
       expect(selected.findings, isEmpty);
       expect(
-        Heimdall.methods().that().haveName(name).should().callConstructorTypeNameMatching(RegExp(r'^Product$')).check(project).findings,
+        Heimdall.methods().that().haveName(name).should().callConstructorTypeNameMatching(_Patterns.product).check(project).findings,
         isEmpty,
       );
       expect(Heimdall.methods().that().haveName(name).should().callConstructorTypeNameStartingWith('Prod').check(project).findings, isEmpty);

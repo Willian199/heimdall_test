@@ -1,5 +1,12 @@
 import 'package:heimdall_test/heimdall_test.dart';
 
+abstract final class _Patterns {
+  static final allQuantifier = RegExp(r'All([A-Z]|$)');
+  static final anyQuantifier = RegExp(r'Any([A-Z]|$)');
+  static final noneQuantifier = RegExp(r'None([A-Z]|$)');
+  static final satisfiesBuilderMethod = RegExp("'satisfy [a-z][A-Za-z0-9_]*'");
+}
+
 HeimdallCondition<HeimdallSourceFile> extensionsDeclareMethods({
   required Iterable<String> builderNames,
   required int target,
@@ -202,12 +209,12 @@ void assertFeatureExtensionVariantCallsStaticMethods({
           'resideOutsideOfAllPathsMatching' => 'noneOf',
           'haveAllImportsShareAnyPrefix' => 'anyOf',
           'haveNoPrefixSharedByAllImports' => 'noneOf',
-          _ when RegExp(r'All([A-Z]|$)').hasMatch(name) => 'allOf',
-          _ when RegExp(r'Any([A-Z]|$)').hasMatch(name) => 'anyOf',
-          _ when RegExp(r'None([A-Z]|$)').hasMatch(name) => 'noneOf',
+          _ when _Patterns.allQuantifier.hasMatch(name) => 'allOf',
+          _ when _Patterns.anyQuantifier.hasMatch(name) => 'anyOf',
+          _ when _Patterns.noneQuantifier.hasMatch(name) => 'noneOf',
           _ => null,
         };
-        
+
         if (operation == null) {
           continue;
         }
@@ -352,8 +359,7 @@ bool _hasGeneratedDescription(Expression? description, String ruleGroupName) {
   final generatedDescriptionPattern = RegExp(
     "'${RegExp.escape(ruleGroupName)}(?:Matches|Does|Should|Must|Have|Be|Call|Access|Receive|Reside|Declare)[A-Z]",
   );
-  final satisfiesBuilderMethodPattern = RegExp("'satisfy [a-z][A-Za-z0-9_]*'");
-  return generatedDescriptionPattern.hasMatch(descriptionSource) || satisfiesBuilderMethodPattern.hasMatch(descriptionSource);
+  return generatedDescriptionPattern.hasMatch(descriptionSource) || _Patterns.satisfiesBuilderMethod.hasMatch(descriptionSource);
 }
 
 Iterable<MethodInvocation> _functionInvocationsOf(AstNode root) sync* {

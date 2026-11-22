@@ -1,6 +1,15 @@
 import 'package:heimdall_test/heimdall_test.dart';
 import 'package:test/test.dart';
 
+abstract final class _Patterns {
+  static final externalPackage = RegExp('package:external/');
+  static final objectCatch = RegExp(r'\}\s*on\s+Object\b');
+  static final privateWidget = RegExp(r'\bWidget\s+_\w+\s*\(');
+  static final flagComparison = RegExp(r'''==\s*['"][SN]['"]|['"][SN]['"]\s*==\s*''');
+  static final platformCheck = RegExp(r'\bPlatform\.is(?:Android|IOS|Fuchsia|Linux|MacOS|Windows)\b');
+  static final legacy = RegExp('^Legacy');
+}
+
 void main() {
   group('DSL filter and condition combinations', () {
     const fixture = 'test/dsl_fixtures/combinations_project';
@@ -187,7 +196,7 @@ void main() {
             .resideInPath('barrel.dart')
             .should()
             .not()
-            .importUriMatching(RegExp('package:external/'))
+            .importUriMatching(_Patterns.externalPackage)
             .check(project);
         final missingFile = Heimdall.noFiles().that().resideInPath('missing.dart').should().allowEmpty().exist().check(project);
         final absentLegacyFolder = Heimdall.files().that().resideInPath('..usecase..').shouldNotExist().allowEmpty().check(project);
@@ -220,14 +229,14 @@ void main() {
         final reports = [
           Heimdall.noFiles().that().resideInPath('lib').should().callMethodWithArguments('print', receiver: '').check(project),
           Heimdall.noFiles().that().resideInPath('lib').should().callConstructorWithArguments('Container', exactArguments: true).check(project),
-          Heimdall.noFiles().that().resideInPath('lib').should().containSourceMatching(RegExp(r'\}\s*on\s+Object\b')).check(project),
-          Heimdall.noFiles().that().resideInPath('lib').should().containSourceMatching(RegExp(r'\bWidget\s+_\w+\s*\(')).check(project),
+          Heimdall.noFiles().that().resideInPath('lib').should().containSourceMatching(_Patterns.objectCatch).check(project),
+          Heimdall.noFiles().that().resideInPath('lib').should().containSourceMatching(_Patterns.privateWidget).check(project),
           Heimdall.noFiles()
               .that()
               .resideInPath('lib')
               .should()
               .containSourceMatching(
-                RegExp(r'''==\s*['"][SN]['"]|['"][SN]['"]\s*==\s*'''),
+                _Patterns.flagComparison,
               )
               .check(project),
           Heimdall.noFiles()
@@ -235,9 +244,7 @@ void main() {
               .resideInPath('lib')
               .should()
               .containSourceMatching(
-                RegExp(
-                  r'\bPlatform\.is(?:Android|IOS|Fuchsia|Linux|MacOS|Windows)\b',
-                ),
+                _Patterns.platformCheck,
               )
               .check(project),
         ];
@@ -597,7 +604,7 @@ void main() {
           .publicSignaturesShouldNotUseDynamic(
             pathPattern: 'dynamic_signature.dart',
             ignoredDeclarationNames: {'DynamicAlias'},
-            ignoredDeclarationNamePatterns: [RegExp('^Legacy')],
+            ignoredDeclarationNamePatterns: [_Patterns.legacy],
           )
           .check(project);
 

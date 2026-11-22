@@ -66,6 +66,9 @@ final class ExtensionReferenceIndex {
     }
   }
 
+  static final _nullableSuffix = RegExp(r'\?$');
+  static final _identifier = RegExp(r'^[A-Za-z_$][\w$]*$');
+
   final CompilationUnitMember _item;
   final HeimdallProject _project;
   final _extensions = <ExtensionDeclaration>{};
@@ -207,7 +210,7 @@ final class ExtensionReferenceIndex {
         return (name: type.toSource(), source: source);
       case PostfixExpression(:final operand, :final operator) when operator.lexeme == '!':
         final type = _type(operand);
-        return type == null ? null : (name: type.name.replaceFirst(RegExp(r'\?$'), ''), source: type.source);
+        return type == null ? null : (name: type.name.replaceFirst(_nullableSuffix, ''), source: type.source);
       case IntegerLiteral():
         return (name: 'int', source: source);
       case DoubleLiteral():
@@ -352,7 +355,7 @@ final class ExtensionReferenceIndex {
     var name = type.name;
     var source = type.source;
     final bareName = name.endsWith('?') ? name.substring(0, name.length - 1) : name;
-    if (RegExp(r'^[A-Za-z_$][\w$]*$').hasMatch(bareName)) {
+    if (_identifier.hasMatch(bareName)) {
       for (var ancestor = reference.parent; ancestor != null; ancestor = ancestor.parent) {
         final parameters = switch (ancestor) {
           MethodDeclaration(:final typeParameters) || FunctionExpression(:final typeParameters) => typeParameters,

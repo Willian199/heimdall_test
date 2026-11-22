@@ -36,9 +36,17 @@ void main() {
   });
 
   test('freeze survives relocation and import-root changes while reporting new findings', () {
-    final storeDirectory = Directory.systemTemp.createTempSync('heimdall_baseline_');
-    addTearDown(() => storeDirectory.deleteSync(recursive: true));
-    final rule = Heimdall.classes().should().beFinal().freeze(storePath: '${storeDirectory.path}/baseline.json');
+    const storePath = '$fixture/freeze/heimdall_baseline_test.json';
+    final store = File(storePath);
+    if (store.existsSync()) {
+      store.deleteSync();
+    }
+    addTearDown(() {
+      if (store.existsSync()) {
+        store.deleteSync();
+      }
+    });
+    final rule = Heimdall.classes().should().beFinal().freeze(storePath: storePath);
     final original = importer.importPath('$fixture/freeze/original/lib');
     expect(rule.check(original).findings, hasLength(1));
     expect(rule.check(importer.importPath('$fixture/freeze/copy')).findings, isEmpty);

@@ -4,8 +4,8 @@ import 'dart:io';
 import 'package:analyzer/dart/analysis/analysis_context_collection.dart';
 import 'package:analyzer/dart/analysis/results.dart';
 import 'package:analyzer/dart/ast/ast.dart';
+import 'package:heimdall_test/src/mapper/importer/dart_sdk_path.dart';
 import 'package:heimdall_test/src/mapper/importer/reference_import_options.dart';
-import 'package:path/path.dart' as p;
 
 /// One lazy SDK/package library reader owned by an imported project snapshot.
 ///
@@ -80,10 +80,8 @@ final class ReferenceLibrary {
   });
 
   List<CompilationUnit> _readUnits() {
-    if (_sdkPath != null && !Directory(p.join(_sdkPath, 'lib')).existsSync()) {
-      throw ArgumentError.value(_sdkPath, 'sdkPath', 'Expected a Dart SDK directory containing lib/');
-    }
-    final collection = AnalysisContextCollection(includedPaths: [_packageRoot], sdkPath: _sdkPath);
+    final sdkPath = resolveDartSdkPath(Platform.resolvedExecutable, sdkPath: _sdkPath);
+    final collection = AnalysisContextCollection(includedPaths: [_packageRoot], sdkPath: sdkPath);
     try {
       final session = collection.contextFor(_packageRoot).currentSession;
       final path = session.uriConverter.uriToPath(Uri.parse(uri));

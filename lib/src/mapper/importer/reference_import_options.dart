@@ -63,7 +63,7 @@ final class ReferenceImportOptions {
   /// Packages whose libraries may be consulted on demand.
   final List<String> packages;
 
-  /// Explicit Dart SDK directory, useful when running under Flutter.
+  /// Explicit Dart SDK directory, overriding automatic Dart/Flutter detection.
   final String? sdkPath;
 
   /// Stable cache identity, independent of allowlist ordering and duplicates.

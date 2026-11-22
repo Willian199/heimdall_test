@@ -1,9 +1,12 @@
-## Unreleased
+## 0.11.1
 
+- Add lazy SDK and package library consultation through `ReferenceImportOptions`, with explicit allowlists, configurable SDK paths, and automatic Dart/Flutter SDK detection.
 - Resolve public-signature SDK generics from visible, allowlisted declarations instead of hardcoded type/library lists, respecting combinators, reexports, conditional branches and generic bounds.
 - Fix [#8](https://github.com/Willian199/heimdall_test/issues/8): deduplicate layer findings per source declaration, directive, URI branch, and destination layer.
 - Fix [#9](https://github.com/Willian199/heimdall_test/issues/9): report layer violations in `part` files at the owning library's import location.
 - Fix [#10](https://github.com/Willian199/heimdall_test/issues/10): check top-level functions, accessors, and variables as layer dependency sources and targets, preserving import visibility and local shadowing.
+- Follow referenced types, top-level values, and extension members through barrel imports when building slice dependencies, without adding edges for unused exported declarations.
+- Improve layer dependency resolution for implicit extensions, inferred and promoted receivers, inherited members, operators, and generic bounds.
 - Fix [#15](https://github.com/Willian199/heimdall_test/issues/15): exclude `.gen.dart` and `.mocks.dart` files by default and allow custom exclusions with `ExcludeGeneratedDartImportOption(additionalSuffixes: [...])`.
 
 ## 0.11.0

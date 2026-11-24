@@ -10,11 +10,22 @@ final class LibraryScope {
   /// Imports and parts visible from this source file.
   final List<Directive> dependencies;
 
+  /// Local types in this library scope, never a project-wide name registry.
+  /// Keep all declaration identities for a name rather than choosing one.
+  late final Map<String, List<CompilationUnitMember>> typesByName = _indexTypes();
+
   /// Cached local type and alias names from the imported file collections.
-  late final Set<String> typeNames = Set.unmodifiable({
-    for (final file in files)
-      for (final declaration in [...file.typeDeclarations, ...file.typeAliases]) declaration.name,
-  });
+  late final Set<String> typeNames = Set.unmodifiable(typesByName.keys);
+
+  Map<String, List<CompilationUnitMember>> _indexTypes() {
+    final types = <String, List<CompilationUnitMember>>{};
+    for (final file in files) {
+      for (final declaration in [...file.typeDeclarations, ...file.typeAliases]) {
+        (types[declaration.name] ??= []).add(declaration);
+      }
+    }
+    return Map.unmodifiable({for (final entry in types.entries) entry.key: List<CompilationUnitMember>.unmodifiable(entry.value)});
+  }
 
   /// Cached local function, accessor, and individual variable names.
   late final Set<String> valueNames = Set.unmodifiable({

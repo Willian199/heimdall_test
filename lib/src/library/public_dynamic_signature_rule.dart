@@ -1,6 +1,8 @@
 import 'package:heimdall_test/heimdall_test.dart';
 import 'package:heimdall_test/src/features/queries/declaration_lookup_queries.dart';
+import 'package:heimdall_test/src/features/queries/mixin_type_inference.dart';
 import 'package:heimdall_test/src/features/queries/reference_type_lookup.dart';
+import 'package:heimdall_test/src/mapper/model/type_syntax_index.dart';
 
 /// Public signature hygiene checks for [HeimdallCodeSight].
 extension HeimdallPublicDynamicSignatureRule on HeimdallCodeSight {
@@ -9,6 +11,8 @@ extension HeimdallPublicDynamicSignatureRule on HeimdallCodeSight {
   /// Raw generics are resolved from visible declarations, including allowlisted
   /// SDK/package consultation sources, respecting prefixes, import/export
   /// combinators and reexports. Omitted arguments use the declaration's bounds.
+  /// Mixin applications first infer arguments from their `on` constraints,
+  /// using the superclass and preceding mixins with hierarchy substitutions.
   /// [externalGenericTypeNames] adds names such as `Bloc` or `Response` whose
   /// omitted arguments should count as dynamic. Unqualified names also match
   /// prefixed uses; use `http.Response` to restrict a name to that prefix.
@@ -502,6 +506,12 @@ final class _RawGenericTypeResolver {
   final Set<String> _ignoredTypeKeys;
   final Set<String> _externalGenericTypeNames;
   late final _referenceTypes = ReferenceTypeLookup(_project);
+  late final TypeSyntaxIndex _syntax = _project.typeSyntax;
+  late final _mixinTypes = MixinTypeInference(_referenceTypes, _syntax);
+
+  List<TypeParameter> _parametersOf(AstNode node) => _syntax.parametersOf(node);
+
+  List<NamedType> _memberParentTypes(CompilationUnitMember declaration) => _syntax.memberParentsOf(declaration);
   final _referenceActive = <ReferenceTypeDeclaration>{};
   final Expando<String> _typeKeys = Expando<String>();
 
@@ -535,12 +545,28 @@ final class _RawGenericTypeResolver {
   final Set<AstNode> _active = {};
   final Set<AstNode> _expressionActive = {};
   final Set<AstNode> _typeActive = {};
+  final Set<({CompilationUnitMember declaration, String name, bool call, MethodInvocation? invocation})> _memberActive = {};
   Map<TypeParameter, _DynamicStatus> _bindings = {};
+  Map<TypeParameter, bool?> _directDynamicBindings = {};
+  bool _nonNullableTypes = false;
   final Map<FormalParameter, _DynamicStatus> _callbackBindings = {};
   final Map<FormalParameter, _SdkValue> _callbackValues = {};
   final Set<Expression> _sdkActive = {};
 
-  _DynamicStatus typeStatus(TypeAnnotation? type, CompilationUnitMember origin) {
+  T _withNonNullableTypes<T>(bool nonNullable, T Function() inspect) {
+    final previous = _nonNullableTypes;
+    _nonNullableTypes = nonNullable;
+    try {
+      return inspect();
+    } finally {
+      _nonNullableTypes = previous;
+    }
+  }
+
+  _DynamicStatus typeStatus(TypeAnnotation? type, CompilationUnitMember origin, {bool? nonNullable}) {
+    if (nonNullable != null) {
+      return _withNonNullableTypes(nonNullable, () => typeStatus(type, origin));
+    }
     if (type == null) {
       return _DynamicStatus.unknown;
     }
@@ -549,37 +575,43 @@ final class _RawGenericTypeResolver {
     }
     if (type is RecordTypeAnnotation) {
       return _combine([
-        for (final field in type.positionalFields) typeStatus(field.type, origin),
-        for (final field in type.namedFields?.fields ?? <RecordTypeAnnotationNamedField>[]) typeStatus(field.type, origin),
+        for (final field in type.positionalFields) typeStatus(field.type, origin, nonNullable: false),
+        for (final field in type.namedFields?.fields ?? <RecordTypeAnnotationNamedField>[]) typeStatus(field.type, origin, nonNullable: false),
       ]);
     }
     if (type is GenericFunctionType) {
-      return _combine([
-        if (type.returnType == null) _DynamicStatus.dynamicType else typeStatus(type.returnType, origin),
-        for (final parameter in type.parameters.parameters) parameterStatus(parameter, origin),
-        for (final parameter in type.typeParameters?.typeParameters ?? <TypeParameter>[])
-          if (parameter.bound != null) typeStatus(parameter.bound, origin),
-      ]);
+      return _withNonNullableTypes(
+        false,
+        () => _combine([
+          if (type.returnType == null) _DynamicStatus.dynamicType else typeStatus(type.returnType, origin),
+          for (final parameter in type.parameters.parameters) parameterStatus(parameter, origin),
+          for (final parameter in type.typeParameters?.typeParameters ?? <TypeParameter>[])
+            if (parameter.bound != null) typeStatus(parameter.bound, origin),
+        ]),
+      );
     }
     if (type is! NamedType) {
       return _DynamicStatus.unknown;
     }
     if (type.importPrefix == null && type.name.lexeme == 'dynamic') {
-      return _DynamicStatus.dynamicType;
+      return _nonNullableTypes ? _DynamicStatus.known : _DynamicStatus.dynamicType;
     }
     final arguments = type.typeArguments?.arguments;
-    final argumentStatus = _combine([for (final argument in arguments ?? <TypeAnnotation>[]) typeStatus(argument, origin)]);
+    final argumentStatus = _combine([for (final argument in arguments ?? <TypeAnnotation>[]) typeStatus(argument, origin, nonNullable: false)]);
     if (argumentStatus == _DynamicStatus.dynamicType) {
       return argumentStatus;
     }
-    if (type.importPrefix == null) {
-      for (var scope = type.parent; scope != null; scope = scope.parent) {
-        for (final parameter in _parametersOf(scope)) {
-          if (parameter.name.lexeme == type.name.lexeme) {
-            return _bindings[parameter] ?? _DynamicStatus.known;
-          }
-        }
+    final parameter = _syntax.parameterOf(type);
+    if (parameter != null) {
+      final status = _bindings[parameter] ?? _DynamicStatus.known;
+      if (_nonNullableTypes && status == _DynamicStatus.dynamicType) {
+        return switch (_directDynamicBindings[parameter]) {
+          true => _DynamicStatus.known,
+          false => _DynamicStatus.dynamicType,
+          null => _DynamicStatus.unknown,
+        };
       }
+      return status;
     }
     final declarations = _referenceTypes.visible(origin, type.name.lexeme, prefix: type.importPrefix?.name.lexeme);
     if (declarations.isEmpty) {
@@ -588,16 +620,78 @@ final class _RawGenericTypeResolver {
       final recognized = _externalGenericTypeNames.contains(name) || (prefix != null && _externalGenericTypeNames.contains('$prefix.$name'));
       return arguments == null && recognized ? _DynamicStatus.dynamicType : _DynamicStatus.unknown;
     }
-    return _combine([
-      for (final reference in declarations)
-        if (reference.library != null)
-          _referenceDeclarationStatus(reference, arguments?.map((argument) => typeStatus(argument, origin)).toList())
-        else
-          _localDeclarationStatus(reference.declaration, arguments, origin),
-    ]);
+    return _combine(
+      declarations.map((reference) {
+        final inferred = _mixinArgumentStatuses(type, origin, reference);
+        return reference.library != null
+            ? _referenceDeclarationStatus(
+                reference,
+                inferred?.statuses ?? arguments?.map((argument) => typeStatus(argument, origin, nonNullable: false)).toList(),
+              )
+            : _localDeclarationStatus(reference.declaration, arguments, origin, inferred: inferred);
+      }),
+    );
   }
 
-  _DynamicStatus _localDeclarationStatus(CompilationUnitMember declaration, List<TypeAnnotation>? arguments, CompilationUnitMember origin) {
+  ({List<_DynamicStatus> statuses, List<bool?> roots})? _mixinArgumentStatuses(
+    NamedType type,
+    CompilationUnitMember origin,
+    ReferenceTypeDeclaration reference,
+  ) {
+    if (type.typeArguments != null || type.parent is! WithClause) {
+      return null;
+    }
+    final arguments = _mixinTypes.argumentsFor(type, (declaration: origin, library: null), reference);
+    final active = <MixinTypeArgument>{};
+    final statuses = <MixinTypeArgument, _DynamicStatus>{};
+    _DynamicStatus statusOf(MixinTypeArgument? argument) {
+      if (statuses[argument] case final status?) {
+        return status;
+      }
+      if (argument == null || !active.add(argument)) {
+        return _DynamicStatus.unknown;
+      }
+      try {
+        if (argument.type == null) {
+          return _DynamicStatus.dynamicType;
+        }
+        final bindings = {for (final entry in argument.bindings.entries) entry.key: statusOf(entry.value)};
+        final roots = {for (final entry in argument.bindings.entries) entry.key: _mixinTypes.isDynamic(entry.value, _directDynamicBindings)};
+        final previous = _bindings;
+        final previousRoots = _directDynamicBindings;
+        _bindings = {...previous, ...bindings};
+        _directDynamicBindings = {...previousRoots, ...roots};
+        try {
+          return statuses[argument] = argument.origin.library == null
+              ? typeStatus(argument.type, argument.origin.declaration, nonNullable: false)
+              : _withNonNullableTypes(
+                  false,
+                  () => _referenceAnnotationStatus(argument.type, argument.origin, (name) {
+                    final parameter = _syntax.parameterNamed(argument.origin.declaration, name);
+                    return bindings[parameter] ?? _DynamicStatus.unknown;
+                  }),
+                );
+        } finally {
+          _bindings = previous;
+          _directDynamicBindings = previousRoots;
+        }
+      } finally {
+        active.remove(argument);
+      }
+    }
+
+    return (
+      statuses: arguments.map(statusOf).toList(),
+      roots: arguments.map((argument) => _mixinTypes.isDynamic(argument, _directDynamicBindings)).toList(),
+    );
+  }
+
+  _DynamicStatus _localDeclarationStatus(
+    CompilationUnitMember declaration,
+    List<TypeAnnotation>? arguments,
+    CompilationUnitMember origin, {
+    ({List<_DynamicStatus> statuses, List<bool?> roots})? inferred,
+  }) {
     if (!_active.add(declaration)) {
       return _DynamicStatus.unknown;
     }
@@ -613,7 +707,7 @@ final class _RawGenericTypeResolver {
           ]);
         }
         return _combine(_parametersOf(declaration).map((parameter) => _bindings[parameter] ?? _DynamicStatus.unknown));
-      });
+      }, inferred: inferred);
     } finally {
       _active.remove(declaration);
     }
@@ -629,14 +723,14 @@ final class _RawGenericTypeResolver {
       return _DynamicStatus.unknown;
     }
     try {
-      final parameters = _parametersOf(reference.declaration).toList();
+      final parameters = _parametersOf(reference.declaration);
       final bindings = <String, _DynamicStatus>{};
       final evaluating = <String>{};
       _DynamicStatus defaultFor(String name) {
         if (bindings[name] case final status?) {
           return status;
         }
-        final parameter = parameters.where((parameter) => parameter.name.lexeme == name).firstOrNull;
+        final parameter = _syntax.parameterNamed(reference.declaration, name);
         if (parameter == null || !evaluating.add(name)) {
           return _DynamicStatus.unknown;
         }
@@ -731,12 +825,16 @@ final class _RawGenericTypeResolver {
     CompilationUnitMember declaration,
     List<TypeAnnotation>? arguments,
     CompilationUnitMember origin,
-    _DynamicStatus Function() inspect,
-  ) {
-    final parameters = _parametersOf(declaration).toList();
+    _DynamicStatus Function() inspect, {
+    ({List<_DynamicStatus> statuses, List<bool?> roots})? inferred,
+  }) {
+    final parameters = _parametersOf(declaration);
     final previous = _bindings;
-    final explicit = [for (final argument in arguments ?? <TypeAnnotation>[]) typeStatus(argument, origin)];
+    final previousRoots = _directDynamicBindings;
+    final explicit = inferred?.statuses ?? [for (final argument in arguments ?? <TypeAnnotation>[]) typeStatus(argument, origin, nonNullable: false)];
+    final roots = inferred?.roots ?? [for (final argument in arguments ?? <TypeAnnotation>[]) _directDynamicType(argument, origin)];
     _bindings = {...previous};
+    _directDynamicBindings = {...previousRoots};
     try {
       // Resolve references between bounds recursively, without guessing cycles.
       final evaluating = <TypeParameter>{};
@@ -753,24 +851,30 @@ final class _RawGenericTypeResolver {
             _bindings[other] = defaultFor(other);
           }
         }
-        final status = bound == null ? _DynamicStatus.dynamicType : typeStatus(bound, declaration);
+        final status = bound == null ? _DynamicStatus.dynamicType : typeStatus(bound, declaration, nonNullable: false);
         evaluating.remove(parameter);
         return status;
       }
 
       for (var i = 0; i < parameters.length; i++) {
-        if (arguments != null) {
+        if (arguments != null || inferred != null) {
           _bindings[parameters[i]] = i < explicit.length ? explicit[i] : _DynamicStatus.unknown;
+          _directDynamicBindings[parameters[i]] = i < roots.length ? roots[i] : null;
         }
       }
       for (final parameter in parameters) {
         _bindings[parameter] = _bindings[parameter] ?? defaultFor(parameter);
+        _directDynamicBindings.putIfAbsent(parameter, () => _directDynamicType(parameter.bound, declaration));
       }
       return inspect();
     } finally {
       _bindings = previous;
+      _directDynamicBindings = previousRoots;
     }
   }
+
+  bool? _directDynamicType(TypeAnnotation? type, CompilationUnitMember origin) =>
+      _mixinTypes.isDynamic(MixinTypeArgument(type, (declaration: origin, library: null)), _directDynamicBindings);
 
   _DynamicStatus variableStatus(VariableDeclaration variable, CompilationUnitMember origin) {
     if (!_active.add(variable)) {
@@ -799,6 +903,11 @@ final class _RawGenericTypeResolver {
   }
 
   _DynamicStatus _expressionStatus(Expression expression, CompilationUnitMember origin) {
+    // Nullability removal affects the outer type, never function components,
+    // collection elements or record fields.
+    if (_nonNullableTypes && (expression is TypedLiteral || expression is RecordLiteral || expression is FunctionExpression)) {
+      return _withNonNullableTypes(false, () => _expressionStatus(expression, origin));
+    }
     if (expression is ParenthesizedExpression) {
       return expressionStatus(expression.expression, origin);
     }
@@ -1269,16 +1378,20 @@ final class _RawGenericTypeResolver {
     _DynamicStatus Function() inspect,
   ) {
     final previous = _bindings;
+    final previousRoots = _directDynamicBindings;
     _bindings = {...previous};
+    _directDynamicBindings = {...previousRoots};
     try {
-      final genericParameters = _parametersOf(declaration).toList();
+      final genericParameters = _parametersOf(declaration);
       for (var i = 0; i < genericParameters.length; i++) {
         final generic = genericParameters[i];
         if (types != null && i < types.arguments.length) {
-          _bindings[generic] = typeStatus(types.arguments[i], origin);
+          _bindings[generic] = typeStatus(types.arguments[i], origin, nonNullable: false);
+          _directDynamicBindings[generic] = _directDynamicType(types.arguments[i], origin);
           continue;
         }
         final inferred = <_DynamicStatus>[];
+        final inferredRoots = <bool?>[];
         var position = 0;
         for (final formal in parameters?.parameters ?? <FormalParameter>[]) {
           final normal = _normalParameter(formal);
@@ -1305,18 +1418,37 @@ final class _RawGenericTypeResolver {
             position++;
           }
           if (type is NamedType && type.importPrefix == null && type.name.lexeme == generic.name.lexeme && argument != null) {
-            inferred.add(expressionStatus(argument, origin));
+            final status = _withNonNullableTypes(type.question != null, () => expressionStatus(argument!, origin));
+            final nonNullable = _withNonNullableTypes(true, () => expressionStatus(argument!, origin));
+            inferred.add(status);
+            inferredRoots.add(
+              status != _DynamicStatus.dynamicType
+                  ? false
+                  : nonNullable == _DynamicStatus.known
+                  ? true
+                  : nonNullable == _DynamicStatus.dynamicType
+                  ? false
+                  : null,
+            );
           }
         }
         _bindings[generic] = inferred.isEmpty
             ? generic.bound == null
                   ? _implicitDynamicStatus
-                  : typeStatus(generic.bound, origin)
+                  : typeStatus(generic.bound, _owner(declaration, origin), nonNullable: false)
             : _combine(inferred);
+        _directDynamicBindings[generic] = inferred.isEmpty
+            ? _directDynamicType(generic.bound, _owner(declaration, origin))
+            : inferredRoots.contains(true)
+            ? true
+            : inferredRoots.contains(null)
+            ? null
+            : false;
       }
       return inspect();
     } finally {
       _bindings = previous;
+      _directDynamicBindings = previousRoots;
     }
   }
 
@@ -1352,6 +1484,9 @@ final class _RawGenericTypeResolver {
     CompilationUnitMember origin, {
     String? prefix,
   }) {
+    if (_nonNullableTypes) {
+      return _withNonNullableTypes(false, () => _sdkConstructorStatus(name, constructor, arguments, values, origin, prefix: prefix));
+    }
     final result = _sdkConstructorValue(name, constructor, arguments, values, origin, prefix: prefix);
     if (result == null) {
       return null;
@@ -1969,6 +2104,12 @@ final class _RawGenericTypeResolver {
   }
 
   _DynamicStatus _memberStatus(Expression target, String name, CompilationUnitMember origin, {bool call = false, MethodInvocation? invocation}) {
+    if (target is ParenthesizedExpression) {
+      return _memberStatus(target.expression, name, origin, call: call, invocation: invocation);
+    }
+    if (target is CascadeExpression) {
+      return _memberStatus(target.target, name, origin, call: call, invocation: invocation);
+    }
     final record = _recordComponent(target, name, origin);
     if (record != null) {
       return record is TypeAnnotation ? typeStatus(record, origin) : expressionStatus(record as Expression, origin);
@@ -2053,8 +2194,17 @@ final class _RawGenericTypeResolver {
     return _inParent(type, reference.origin, (declaration) => _declaredMemberStatus(declaration, name, call: call, invocation: invocation));
   }
 
-  _DynamicStatus _declaredMemberStatus(CompilationUnitMember declaration, String name, {bool call = false, MethodInvocation? invocation}) {
-    if (!_active.add(declaration)) {
+  _DynamicStatus _declaredMemberStatus(
+    CompilationUnitMember declaration,
+    String name, {
+    bool call = false,
+    MethodInvocation? invocation,
+    bool searchParents = true,
+  }) {
+    // Nested calls may inspect another member of the same mixin while binding
+    // arguments. Guard the member use rather than blocking its whole owner.
+    final key = (declaration: declaration, name: name, call: call, invocation: invocation);
+    if (!_memberActive.add(key)) {
       return _DynamicStatus.unknown;
     }
     try {
@@ -2093,15 +2243,19 @@ final class _RawGenericTypeResolver {
           );
         }
       }
-      for (final parent in _parentTypes(declaration)) {
-        final status = _inParent(parent, declaration, (parent) => _declaredMemberStatus(parent, name, call: call, invocation: invocation));
+      for (final type in searchParents ? _memberParentTypes(declaration) : <NamedType>[]) {
+        final status = _inParent(
+          type,
+          declaration,
+          (parent) => _declaredMemberStatus(parent, name, call: call, invocation: invocation, searchParents: type.parent is! WithClause),
+        );
         if (status != _DynamicStatus.unknown) {
           return status;
         }
       }
       return _DynamicStatus.unknown;
     } finally {
-      _active.remove(declaration);
+      _memberActive.remove(key);
     }
   }
 
@@ -2330,7 +2484,13 @@ final class _RawGenericTypeResolver {
         return _DynamicStatus.unknown;
       }
       try {
-        return _withBindings(alias, type.typeArguments?.arguments, origin, () => _inParent(alias.type as NamedType, alias, inspect));
+        return _withBindings(
+          alias,
+          type.typeArguments?.arguments,
+          origin,
+          () => _inParent(alias.type as NamedType, alias, inspect),
+          inferred: _mixinArgumentStatuses(type, origin, (declaration: alias, library: null)),
+        );
       } finally {
         _active.remove(alias);
       }
@@ -2339,17 +2499,28 @@ final class _RawGenericTypeResolver {
     if (parent == null) {
       return _DynamicStatus.unknown;
     }
-    return _withBindings(parent, type.typeArguments?.arguments, origin, () => inspect(parent));
+    return _withBindings(
+      parent,
+      type.typeArguments?.arguments,
+      origin,
+      () => inspect(parent),
+      inferred: _mixinArgumentStatuses(type, origin, (declaration: parent, library: null)),
+    );
   }
 
   _DynamicStatus? _inheritedSignature(MethodDeclaration method, FormalParameter? parameter, CompilationUnitMember origin) {
-    final parents = _parentTypes(origin).toList();
+    final parents = _memberParentTypes(origin);
     if (parents.isEmpty) {
       return null;
     }
     final matches = <_DynamicStatus>[];
+    var inheritedFound = false;
     for (final type in parents) {
-      var found = true;
+      final interface = type.parent is ImplementsClause || type.parent is MixinOnClause;
+      if (inheritedFound && !interface) {
+        continue;
+      }
+      var found = false;
       final status = _inParent(type, origin, (parent) {
         if (!_active.add(parent)) {
           return _DynamicStatus.unknown;
@@ -2365,10 +2536,14 @@ final class _RawGenericTypeResolver {
               )
               .firstOrNull;
           if (inherited == null) {
+            if (type.parent is WithClause) {
+              return _DynamicStatus.unknown;
+            }
             final ancestor = _inheritedSignature(method, parameter, parent);
             found = ancestor != null;
             return ancestor ?? _DynamicStatus.unknown;
           }
+          found = true;
           if (parameter == null) {
             return methodReturnStatus(inherited, parent);
           }
@@ -2380,9 +2555,16 @@ final class _RawGenericTypeResolver {
       });
       if (found) {
         matches.add(status);
+        inheritedFound |= !interface;
       }
     }
-    return matches.isEmpty ? null : _combine(matches);
+    // Interface return inference selects a more precise signature when a
+    // concrete return and dynamic both apply. Parameter inference is contravariant.
+    return matches.isEmpty
+        ? null
+        : parameter == null && matches.contains(_DynamicStatus.known)
+        ? _DynamicStatus.known
+        : _combine(matches);
   }
 
   _VisibleTypeReferenceIndex _indexFor(
@@ -2419,28 +2601,6 @@ final class _VisibleTypeReferenceIndex {
 
   final Map<String, TypeAlias> aliases = {};
   final Map<String, CompilationUnitMember> declarations = {};
-}
-
-Iterable<TypeParameter> _parametersOf(AstNode node) {
-  final parameters = switch (node) {
-    ClassDeclaration(:final namePart) => namePart.typeParameters,
-    EnumDeclaration(:final namePart) => namePart.typeParameters,
-    ExtensionTypeDeclaration(:final primaryConstructor) => primaryConstructor.typeParameters,
-    FunctionDeclaration(:final functionExpression) => functionExpression.typeParameters,
-    _ => node.childEntities.whereType<TypeParameterList>().firstOrNull,
-  };
-  return parameters?.typeParameters ?? const <TypeParameter>[];
-}
-
-Iterable<NamedType> _parentTypes(CompilationUnitMember declaration) sync* {
-  for (final node in declaration.childEntities.whereType<AstNode>()) {
-    if (node is ExtendsClause || node is ImplementsClause || node is WithClause || node is MixinOnClause) {
-      yield* node.childEntities.whereType<NamedType>();
-    }
-  }
-  if (declaration is ClassTypeAlias) {
-    yield declaration.superclass;
-  }
 }
 
 FormalParameter? _matchingParameter(FormalParameter parameter, List<FormalParameter> source, List<FormalParameter> target) {

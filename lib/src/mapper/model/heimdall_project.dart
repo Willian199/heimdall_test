@@ -4,6 +4,7 @@ import 'package:heimdall_test/heimdall_test.dart';
 import 'package:heimdall_test/src/mapper/model/declaration_dependency_index.dart';
 import 'package:heimdall_test/src/mapper/model/declaration_namespace_index.dart';
 import 'package:heimdall_test/src/mapper/model/library_scope_index.dart';
+import 'package:heimdall_test/src/mapper/model/type_syntax_index.dart';
 import 'package:meta/meta.dart';
 import 'package:path/path.dart' as p;
 
@@ -71,6 +72,10 @@ final class HeimdallProject {
   /// Internal library scopes derived from the importer's resolved part targets.
   @internal
   late final LibraryScopeIndex libraryScopes = LibraryScopeIndex(this);
+
+  /// Internal type syntax reused by queries without caching inferred bindings.
+  @internal
+  late final TypeSyntaxIndex typeSyntax = TypeSyntaxIndex();
 
   /// Internal dependency results reused across rules over this snapshot.
   @internal

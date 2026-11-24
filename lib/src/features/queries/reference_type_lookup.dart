@@ -16,18 +16,21 @@ final class ReferenceTypeLookup {
   final HeimdallProject _project;
   final _visible = <(String, String?, String), List<ReferenceTypeDeclaration>>{};
   final _exported = <(Object, String), List<ReferenceTypeDeclaration>>{};
+  final _referenceVisible = <(ReferenceLibrary, String?, String), List<ReferenceTypeDeclaration>>{};
+  // A name only selects candidates inside one library. Each candidate retains
+  // its AST identity and library; homonyms from other libraries stay distinct.
+  final _libraryTypes = <ReferenceLibrary, Map<String, List<ReferenceTypeDeclaration>>>{};
 
   List<ReferenceTypeDeclaration> visible(CompilationUnitMember origin, String name, {String? prefix}) {
     return _visible.putIfAbsent((origin.sourcePath, prefix, name), () {
       final scope = _project.libraryScopes.scopeOf(origin);
       if (prefix == null) {
-        final local = [
-          for (final file in scope.files)
-            for (final symbol in _project.declarationNamespace.declaredSymbols(file))
-              if (symbol.name == name && symbol.kind == DeclarationSymbolKind.type) (declaration: symbol.declaration, library: null),
-        ];
-        if (local.isNotEmpty || scope.names.contains(name)) {
-          return local;
+        final local = scope.typesByName[name];
+        if (local != null) {
+          return [for (final declaration in local) (declaration: declaration, library: null)];
+        }
+        if (scope.names.contains(name)) {
+          return const [];
         }
       }
       final imports = scope.dependencies.whereType<ImportDirective>();
@@ -46,7 +49,10 @@ final class ReferenceTypeLookup {
   }
 
   /// Resolves names in a consultation AST without attaching validation context.
-  List<ReferenceTypeDeclaration> inLibrary(ReferenceLibrary library, String name, {String? prefix}) {
+  List<ReferenceTypeDeclaration> inLibrary(ReferenceLibrary library, String name, {String? prefix}) =>
+      _referenceVisible.putIfAbsent((library, prefix, name), () => _inLibrary(library, name, prefix: prefix));
+
+  List<ReferenceTypeDeclaration> _inLibrary(ReferenceLibrary library, String name, {String? prefix}) {
     if (prefix == null) {
       final own = exported(library, name);
       if (own.isNotEmpty) {
@@ -93,18 +99,7 @@ final class ReferenceTypeLookup {
       ];
     }
     if (source is ReferenceLibrary) {
-      final local = [
-        for (final unit in source.units)
-          for (final declaration in unit.declarations)
-            if ((declaration is ClassDeclaration ||
-                    declaration is ClassTypeAlias ||
-                    declaration is EnumDeclaration ||
-                    declaration is MixinDeclaration ||
-                    declaration is ExtensionTypeDeclaration ||
-                    declaration is TypeAlias) &&
-                _name(declaration) == name)
-              (declaration: declaration, library: source),
-      ];
+      final local = _libraryTypes.putIfAbsent(source, () => _indexLibraryTypes(source))[name] ?? const <ReferenceTypeDeclaration>[];
       if (local.isNotEmpty) {
         return local;
       }
@@ -115,6 +110,19 @@ final class ReferenceTypeLookup {
       ];
     }
     return const [];
+  }
+
+  Map<String, List<ReferenceTypeDeclaration>> _indexLibraryTypes(ReferenceLibrary library) {
+    final types = <String, List<ReferenceTypeDeclaration>>{};
+    for (final unit in library.units) {
+      for (final declaration in unit.declarations) {
+        final name = _name(declaration);
+        if (name != null) {
+          (types[name] ??= []).add((declaration: declaration, library: library));
+        }
+      }
+    }
+    return types;
   }
 
   Iterable<ReferenceTypeDeclaration> _through(UriBasedDirective directive, String name, Set<Object> visiting) sync* {

@@ -1,5 +1,7 @@
 import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/dart/ast/visitor.dart';
+import 'package:heimdall_test/src/util/extension/ast_node_extension.dart';
+import 'package:heimdall_test/src/util/extension/statement_extension.dart';
 
 /// Internal field relationships for a method or getter.
 final class MemberRelationshipIndex {
@@ -52,7 +54,7 @@ final class _ReturnVisitor extends RecursiveAstVisitor<void> {
   @override
   void visitTryStatement(TryStatement node) {
     final finallyBlock = node.finallyBlock;
-    if (finallyBlock != null && _alwaysExits(finallyBlock)) {
+    if (finallyBlock != null && finallyBlock.alwaysExits) {
       finallyBlock.accept(this);
     } else {
       super.visitTryStatement(node);
@@ -84,14 +86,6 @@ final class _ReturnVisitor extends RecursiveAstVisitor<void> {
     }
   }
 }
-
-bool _alwaysExits(Statement statement) => switch (statement) {
-  ReturnStatement() => true,
-  ExpressionStatement(:final expression) => expression is ThrowExpression || expression is RethrowExpression,
-  Block(:final statements) => statements.any(_alwaysExits),
-  IfStatement(:final thenStatement, :final elseStatement) => elseStatement != null && _alwaysExits(thenStatement) && _alwaysExits(elseStatement),
-  _ => false,
-};
 
 Set<String> _fieldsInElement(CollectionElement element) {
   if (element is Expression) {
@@ -141,17 +135,17 @@ bool _isShadowed(SimpleIdentifier identifier) {
         if (statement is FunctionDeclarationStatement && statement.functionDeclaration.name.lexeme == name) {
           return true;
         }
-        if (statement is PatternVariableDeclarationStatement && _declaresName(statement.declaration.pattern, name)) {
+        if (statement is PatternVariableDeclarationStatement && statement.declaration.pattern.declaresName(name)) {
           return true;
         }
       }
     }
     if (parent is ForStatement &&
-        !(parent.forLoopParts is ForEachParts && _contains((parent.forLoopParts as ForEachParts).iterable, identifier)) &&
-        _declaresName(parent.forLoopParts, name)) {
+        !(parent.forLoopParts is ForEachParts && (parent.forLoopParts as ForEachParts).iterable.containsNode(identifier)) &&
+        parent.forLoopParts.declaresName(name)) {
       return true;
     }
-    if (parent is ForElement && _declaresName(parent.forLoopParts, name)) {
+    if (parent is ForElement && parent.forLoopParts.declaresName(name)) {
       return true;
     }
     if (parent is CatchClause && (parent.exceptionParameter?.name.lexeme == name || parent.stackTraceParameter?.name.lexeme == name)) {
@@ -161,39 +155,24 @@ bool _isShadowed(SimpleIdentifier identifier) {
         parent.caseClause != null &&
         parent.thenStatement.offset <= identifier.offset &&
         identifier.end <= parent.thenStatement.end &&
-        _declaresName(parent.caseClause!, name)) {
+        (parent.caseClause!).declaresName(name)) {
       return true;
     }
-    if (parent is SwitchPatternCase && _declaresName(parent.guardedPattern.pattern, name)) {
+    if (parent is SwitchPatternCase && parent.guardedPattern.pattern.declaresName(name)) {
       return true;
     }
     if (parent is IfElement &&
         parent.caseClause != null &&
-        _contains(parent.thenElement, identifier) &&
-        _declaresName(parent.caseClause!.guardedPattern.pattern, name)) {
+        parent.thenElement.containsNode(identifier) &&
+        parent.caseClause!.guardedPattern.pattern.declaresName(name)) {
       return true;
     }
-    if (parent is SwitchExpressionCase && _declaresName(parent.guardedPattern.pattern, name)) {
+    if (parent is SwitchExpressionCase && parent.guardedPattern.pattern.declaresName(name)) {
       return true;
     }
   }
   return false;
 }
-
-bool _declaresName(AstNode node, String name) {
-  if (node is VariableDeclaration && node.name.lexeme == name) {
-    return true;
-  }
-  if (node is DeclaredIdentifier && node.name.lexeme == name) {
-    return true;
-  }
-  if (node is DeclaredVariablePattern && node.name.lexeme == name) {
-    return true;
-  }
-  return node.childEntities.whereType<AstNode>().any((child) => _declaresName(child, name));
-}
-
-bool _contains(AstNode scope, AstNode node) => scope.offset <= node.offset && node.end <= scope.end;
 
 Set<String> _guaranteedFieldsInElement(CollectionElement element) {
   if (element is IfElement) {

@@ -1,5 +1,6 @@
 import 'package:heimdall_test/heimdall_test.dart';
-import 'package:heimdall_test/src/features/file_features/helpers/source_file_location.dart';
+import 'package:heimdall_test/src/util/extension/heimdall_source_file_extension.dart';
+import 'package:heimdall_test/src/util/extension/uri_based_directive_extension.dart';
 
 /// Predicate-side DSL for export URI rules.
 extension FileExportUriPredicateRules on FilePredicateBuilder {
@@ -66,12 +67,8 @@ extension FileExportUriShouldRules on FileShouldBuilder {
         final findings = item.exportDirectives
             .where((directive) => directive.targetUris.contains(uri))
             .map(
-              (directive) => fileNodeFinding(
-                item,
-                directive,
-                'exports forbidden URI $uri',
-                offset: matchingDirectiveUris(directive, (value) => value == uri).first.offset,
-              ),
+              (directive) =>
+                  item.nodeFinding(directive, 'exports forbidden URI $uri', offset: directive.matchingUris((value) => value == uri).first.offset),
             )
             .toList();
 

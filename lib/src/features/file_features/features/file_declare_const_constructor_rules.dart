@@ -1,6 +1,5 @@
 import 'package:heimdall_test/heimdall_test.dart';
-import 'package:heimdall_test/src/features/file_features/helpers/file_constructor_queries.dart';
-import 'package:heimdall_test/src/features/file_features/helpers/source_file_location.dart';
+import 'package:heimdall_test/src/util/extension/heimdall_source_file_extension.dart';
 
 /// Predicate-side DSL for const constructor rules.
 extension FileDeclareConstConstructorPredicateRules on FilePredicateBuilder {
@@ -135,10 +134,7 @@ HeimdallPredicate<HeimdallSourceFile> _fileDeclaresConstConstructor({
 }) {
   return HeimdallPredicate(
     'declare const constructor',
-    (item, _) => fileConstructors(
-      item,
-      className: className,
-    ).any((constructor) => constructor.isConst),
+    (item, _) => item.constructorsForClass(className: className).any((constructor) => constructor.isConst),
   );
 }
 
@@ -146,10 +142,7 @@ HeimdallCondition<HeimdallSourceFile> _fileShouldDeclareConstConstructor({
   String? className,
 }) {
   return HeimdallCondition('declare const constructor', (item, _) {
-    final hasConstructor = fileConstructors(
-      item,
-      className: className,
-    ).any((constructor) => constructor.isConst);
+    final hasConstructor = item.constructorsForClass(className: className).any((constructor) => constructor.isConst);
     final findings = hasConstructor
         ? const <HeimdallValidationInfo>[]
         : [
@@ -171,10 +164,7 @@ HeimdallPredicate<HeimdallSourceFile> _fileDoesNotDeclareConstConstructor({
 }) {
   return HeimdallPredicate(
     'not declare const constructor',
-    (item, _) => !fileConstructors(
-      item,
-      className: className,
-    ).any((constructor) => constructor.isConst),
+    (item, _) => !item.constructorsForClass(className: className).any((constructor) => constructor.isConst),
   );
 }
 
@@ -182,15 +172,11 @@ HeimdallCondition<HeimdallSourceFile> _fileShouldNotDeclareConstConstructor({
   String? className,
 }) {
   return HeimdallCondition('not declare const constructor', (item, _) {
-    final findings = fileConstructors(item, className: className)
+    final findings = item
+        .constructorsForClass(className: className)
         .where((constructor) => constructor.isConst)
         .map(
-          (constructor) => fileNodeFinding(
-            item,
-            constructor,
-            'declares forbidden const constructor',
-            offset: constructor.constKeyword?.offset,
-          ),
+          (constructor) => item.nodeFinding(constructor, 'declares forbidden const constructor', offset: constructor.constKeyword?.offset),
         )
         .toList();
     return HeimdallFindings(

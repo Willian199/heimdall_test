@@ -4,7 +4,9 @@ import 'package:heimdall_test/heimdall_test.dart';
 import 'package:heimdall_test/src/mapper/model/declaration_dependency_index.dart';
 import 'package:heimdall_test/src/mapper/model/declaration_namespace_index.dart';
 import 'package:heimdall_test/src/mapper/model/library_scope_index.dart';
+import 'package:heimdall_test/src/mapper/model/reference_type_lookup.dart';
 import 'package:heimdall_test/src/mapper/model/type_syntax_index.dart';
+import 'package:heimdall_test/src/util/enum/declaration_symbol_kind.dart';
 import 'package:meta/meta.dart';
 import 'package:path/path.dart' as p;
 
@@ -86,6 +88,10 @@ final class HeimdallProject {
 
   /// SDK and package library queries cached separately from validation sources.
   late final ReferenceLibraryImporter referenceLibraries = ReferenceLibraryImporter(packageRootPath, referenceOptions);
+
+  /// Shared visibility lookup over project and caller-configured references.
+  @internal
+  late final ReferenceTypeLookup referenceTypes = ReferenceTypeLookup(this);
 
   final _exportedTypeDeclarationsCache = <HeimdallSourceFile, List<CompilationUnitMember>>{};
   final _visibleTypeDeclarationsCache = <(Directive, HeimdallSourceFile), List<CompilationUnitMember>>{};

@@ -1,7 +1,5 @@
 import 'package:heimdall_test/heimdall_test.dart';
 
-export 'heimdall_findings.dart';
-
 /// A finding produced by a Heimdall rule.
 final class HeimdallValidationInfo {
   /// Creates a finding with an optional source location.

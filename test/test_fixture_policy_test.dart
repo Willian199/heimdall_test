@@ -1,6 +1,10 @@
 import 'package:heimdall_test/heimdall_test.dart';
 import 'package:test/test.dart';
 
+abstract final class _RegexPatterns {
+  static final directFixtureAccess = RegExp('^(dart:io|package:(file|path|analyzer)/)');
+}
+
 void main() {
   test('tests and helpers access fixed sources only through the package', () {
     final project = const HeimdallFileImporter(useCache: false).importPath('test');
@@ -10,7 +14,7 @@ void main() {
         .and()
         .haveNameDifferentFrom('publication_regression_test.dart')
         .should()
-        .notImportUriMatching(RegExp('^(dart:io|package:(file|path|analyzer)/)'))
+        .notImportUriMatching(_RegexPatterns.directFixtureAccess)
         .check(project)
         .assertNoFindings();
 

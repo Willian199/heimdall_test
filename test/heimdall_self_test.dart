@@ -2,6 +2,14 @@ import 'package:heimdall_test/heimdall_test.dart';
 
 import 'package:test/test.dart';
 
+abstract final class _RegexPatterns {
+  static final dartFileName = RegExp(r'^[a-z][a-z0-9_]*\.dart$');
+  static final camelCaseBoundary = RegExp('([a-z0-9])([A-Z])');
+  static final acronymBoundary = RegExp('([A-Z]+)([A-Z][a-z])');
+  static final pascalCase = RegExp(r'^[A-Z][A-Za-z0-9]*$');
+  static final upperCaseLetter = RegExp('[A-Z]');
+}
+
 void main() {
   group('Heimdall self architecture', () {
     late final HeimdallProject project;
@@ -55,6 +63,14 @@ void main() {
           .assertNoFindings();
     });
 
+    test('keeps exports in barrel files without imports or implementations', () {
+      for (final file in project.files.where((file) => file.directives.whereType<ExportDirective>().isNotEmpty)) {
+        expect(file.directives.whereType<ImportDirective>(), isEmpty, reason: file.relativePath);
+        expect(file.declarations.whereType<ClassDeclaration>(), isEmpty, reason: file.relativePath);
+        expect(file.declarations.whereType<ExtensionDeclaration>(), isEmpty, reason: file.relativePath);
+      }
+    });
+
     test('keeps Dart source content reads inside importer parsing code', () {
       Heimdall.noFiles()
           .that()
@@ -72,6 +88,38 @@ void main() {
           ])
           .check(project)
           .assertNoFindings();
+    });
+
+    test('keeps fixed regular expressions in static final fields', () {
+      Iterable<AstNode> descendants(AstNode node) sync* {
+        yield node;
+        for (final child in node.childEntities.whereType<AstNode>()) {
+          yield* descendants(child);
+        }
+      }
+
+      for (final file in project.files) {
+        for (final node in file.declarations.expand(descendants)) {
+          final arguments = switch (node) {
+            InstanceCreationExpression(:final constructorName, :final argumentList) when constructorName.type.name.lexeme == 'RegExp' =>
+              argumentList.arguments,
+            MethodInvocation(:final target, :final methodName, :final argumentList) when target == null && methodName.name == 'RegExp' =>
+              argumentList.arguments,
+            _ => null,
+          };
+          final pattern = arguments?.firstOrNull?.argumentExpression;
+          if (pattern is! StringLiteral || pattern.stringValue == null) {
+            continue;
+          }
+          final variable = node.parent;
+          final field = variable?.parent?.parent;
+          final reason = '${file.relativePath}:${node.offset} must declare its fixed regex in a static final field';
+          expect(variable, isA<VariableDeclaration>(), reason: reason);
+          expect(field, isA<FieldDeclaration>(), reason: reason);
+          final declaration = field! as FieldDeclaration;
+          expect(declaration.isStatic && declaration.fields.isFinal, isTrue, reason: reason);
+        }
+      }
     });
 
     test('keeps built-in sight classes final', () {
@@ -93,9 +141,26 @@ void main() {
     });
 
     test('keeps source file and type names conventional', () {
-      Heimdall.files().that().resideInPath('src/**').should().haveNameMatching(RegExp(r'^[a-z][a-z0-9_]*\.dart$')).check(project).assertNoFindings();
+      Heimdall.files().that().resideInPath('src/**').should().haveNameMatching(_RegexPatterns.dartFileName).check(project).assertNoFindings();
 
       Heimdall.classes().that().resideInPath('src/**').should().satisfy(_havePascalCasePublicTypeNames()).check(project).assertNoFindings();
+    });
+
+    test('keeps utility files named after their single extension receiver', () {
+      final files = project.files.where((file) => file.relativePath.startsWith('src/util/extension/'));
+      expect(files, isNotEmpty);
+      for (final file in files) {
+        final extensions = file.declarations.whereType<ExtensionDeclaration>().toList();
+        expect(extensions, hasLength(1), reason: file.relativePath);
+        final receiver = extensions.single.onClause?.extendedType;
+        expect(receiver, isA<NamedType>(), reason: file.relativePath);
+        final typeName = (receiver! as NamedType).name.lexeme;
+        final baseName = typeName
+            .replaceAllMapped(_RegexPatterns.camelCaseBoundary, (match) => '${match[1]}_${match[2]}')
+            .replaceAllMapped(_RegexPatterns.acronymBoundary, (match) => '${match[1]}_${match[2]}')
+            .toLowerCase();
+        expect(file.relativePath.split('/').last, '${baseName}_extension.dart', reason: file.relativePath);
+      }
     });
 
     test('keeps core rule files named after their public rule class', () {
@@ -148,6 +213,8 @@ void main() {
           ])
           .layer('Features')
           .definedBy(['src/features/(**)'])
+          .layer('Util')
+          .definedBy(['src/util/(**)'])
           .layer('Dsl')
           .definedBy([
             'src/dsl.dart',
@@ -161,13 +228,15 @@ void main() {
           .whereLayer('Public')
           .mayOnlyAccessLayers(['Core', 'Dsl', 'Library', 'Plugins', 'Features'])
           .whereLayer('Core')
-          .mayOnlyAccessLayers(['Core', 'Dsl', 'Features'])
+          .mayOnlyAccessLayers(['Core', 'Dsl', 'Features', 'Util'])
           .whereLayer('Features')
-          .mayOnlyAccessLayers(['Core', 'Dsl', 'Features'])
+          .mayOnlyAccessLayers(['Core', 'Dsl', 'Features', 'Util'])
+          .whereLayer('Util')
+          .mayOnlyAccessLayers(['Core', 'Util'])
           .whereLayer('Dsl')
-          .mayOnlyAccessLayers(['Core', 'Dsl', 'Library', 'Features'])
+          .mayOnlyAccessLayers(['Core', 'Dsl', 'Library', 'Features', 'Util'])
           .whereLayer('Library')
-          .mayOnlyAccessLayers(['Core', 'Dsl', 'Library', 'Features'])
+          .mayOnlyAccessLayers(['Core', 'Dsl', 'Library', 'Features', 'Util'])
           .whereLayer('Plugins')
           .mayOnlyAccessLayers(['Core'])
           .asRule()
@@ -179,12 +248,11 @@ void main() {
 }
 
 HeimdallCondition<CompilationUnitMember> _havePascalCasePublicTypeNames() {
-  final pascalCase = RegExp(r'^[A-Z][A-Za-z0-9]*$');
   return HeimdallCondition('have PascalCase public type names', (
     declaration,
     _,
   ) {
-    final findings = !declaration.isPublic || pascalCase.hasMatch(declaration.name)
+    final findings = !declaration.isPublic || _RegexPatterns.pascalCase.hasMatch(declaration.name)
         ? const <HeimdallValidationInfo>[]
         : [
             HeimdallValidationInfo(
@@ -257,7 +325,7 @@ String? _singleReturnedLocalMethodName(MethodDeclaration method) {
   if (wrappedRuleName == method.name.lexeme) {
     return null;
   }
-  if (wrappedRuleName.startsWith(RegExp('[A-Z]'))) {
+  if (wrappedRuleName.startsWith(_RegexPatterns.upperCaseLetter)) {
     return null;
   }
   return wrappedRuleName;

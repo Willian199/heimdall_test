@@ -1,6 +1,6 @@
 import 'package:heimdall_test/heimdall_test.dart';
 import 'package:heimdall_test/src/features/queries/member_queries.dart';
-import 'package:heimdall_test/src/features/queries/static_method_queries.dart';
+import 'package:heimdall_test/src/util/extension/calls/ast_node_extension.dart';
 
 /// Predicate-side DSL for static method invocation rules.
 extension MemberCallStaticMethodPredicateRules on MemberPredicateBuilder {
@@ -181,7 +181,7 @@ bool _memberCallsStaticMethod(
   HeimdallProject project,
 ) {
   for (final root in member.executableRoots) {
-    if (astNodeHasStaticMethodInvocation(root, targetType, methodName, project)) {
+    if (root.hasStaticMethodInvocation(targetType, methodName, project)) {
       return true;
     }
   }

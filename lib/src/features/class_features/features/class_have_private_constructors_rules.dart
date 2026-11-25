@@ -1,4 +1,5 @@
 import 'package:heimdall_test/heimdall_test.dart';
+import 'package:heimdall_test/src/util/extension/extension_type_declaration_extension.dart';
 
 /// Predicate-side DSL for classes whose constructors must be private.
 extension ClassHaveOnlyPrivateConstructorsPredicateRules on ClassPredicateBuilder {
@@ -126,8 +127,7 @@ HeimdallCondition<CompilationUnitMember> _classShouldHaveOnlyPrivateConstructors
                 ),
               )
               .toList();
-
-    if (item is ExtensionTypeDeclaration && !(item.primaryConstructor.constructorName?.name.lexeme.startsWith('_') ?? false)) {
+    if (item is ExtensionTypeDeclaration && !(item.extensionTypePrimaryConstructor.constructorName?.name.lexeme.startsWith('_') ?? false)) {
       findings.add(HeimdallValidationInfo.forSubject(item, '${item.name} declares a public primary constructor'));
     }
 
@@ -203,7 +203,7 @@ HeimdallPredicate<CompilationUnitMember> _classHasPrivateConstructor(
 }
 
 bool _hasPrivateConstructor(CompilationUnitMember item, String name) {
-  if (item is ExtensionTypeDeclaration && item.primaryConstructor.constructorName?.name.lexeme == name && name.startsWith('_')) {
+  if (item is ExtensionTypeDeclaration && item.extensionTypePrimaryConstructor.constructorName?.name.lexeme == name && name.startsWith('_')) {
     return true;
   }
   return item.constructors.cast<ClassMember>().any(
@@ -214,7 +214,8 @@ bool _hasPrivateConstructor(CompilationUnitMember item, String name) {
 bool _hasOnlyPrivateConstructors(CompilationUnitMember item) {
   final constructors = item.constructors;
   if (item is ExtensionTypeDeclaration) {
-    return (item.primaryConstructor.constructorName?.name.lexeme.startsWith('_') ?? false) && constructors.every((member) => member.isPrivate);
+    return (item.extensionTypePrimaryConstructor.constructorName?.name.lexeme.startsWith('_') ?? false) &&
+        constructors.every((member) => member.isPrivate);
   }
   return constructors.isNotEmpty && constructors.every((member) => member.isPrivate);
 }

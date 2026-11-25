@@ -1,5 +1,6 @@
 import 'package:heimdall_test/heimdall_test.dart';
 import 'package:heimdall_test/src/features/queries/member_queries.dart';
+import 'package:heimdall_test/src/util/extension/calls/class_member_extension.dart';
 
 /// Predicate-side DSL for executable method call rules.
 extension MemberCallMethodPredicateRules on MemberPredicateBuilder {
@@ -129,5 +130,5 @@ HeimdallPredicate<ClassMember> _memberMatchesCallMethod(String methodName) {
 
 /// Returns `true` when [member] calls [methodName].
 bool _memberCallsMethod(ClassMember member, String methodName, HeimdallProject project) {
-  return memberHasMethodInvocationWhere(member, (name) => name == methodName, project: project);
+  return member.hasMethodInvocationWhere((name) => name == methodName, project: project);
 }

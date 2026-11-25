@@ -1,3 +1,5 @@
+export 'package:heimdall_test/src/util/enum/member_kind.dart';
+
 export 'features/member_access_field_rules.dart';
 export 'features/member_annotated_with_rules.dart';
 export 'features/member_annotated_with_type_name_ending_with_rules.dart';

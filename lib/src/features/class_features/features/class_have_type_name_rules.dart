@@ -1,5 +1,5 @@
 import 'package:heimdall_test/heimdall_test.dart';
-import 'package:heimdall_test/src/features/queries/declaration_location_queries.dart';
+import 'package:heimdall_test/src/util/extension/compilation_unit_member_extension.dart';
 
 /// Predicate-side DSL for exact class type name rules.
 extension ClassHaveTypeNamePredicateRules on ClassPredicateBuilder {
@@ -121,7 +121,7 @@ HeimdallCondition<CompilationUnitMember> _classShouldHaveTypeName(String name) {
 HeimdallCondition<CompilationUnitMember> _classShouldNotHaveTypeName(String name) {
   return HeimdallCondition('not have type name $name', (item, _) {
     final matches = item.name == name;
-    final location = matches ? item.sourceLocationAt(declarationNameOffset(item)) : null;
+    final location = matches ? item.sourceLocationAt(item.nameOffset) : null;
     final findings = location == null
         ? const <HeimdallValidationInfo>[]
         : [

@@ -1,5 +1,5 @@
 import 'package:heimdall_test/heimdall_test.dart';
-import 'package:heimdall_test/src/features/queries/declaration_type_queries.dart';
+import 'package:heimdall_test/src/util/extension/relationships/compilation_unit_member_extension.dart';
 
 /// Predicate-side DSL for implemented type prefix rules.
 extension ClassImplementStartingWithPredicateRules on ClassPredicateBuilder {
@@ -104,11 +104,7 @@ HeimdallPredicate<CompilationUnitMember> _classImplementsStartingWith(
 ) {
   return HeimdallPredicate(
     'implement starting with $prefix',
-    (item, project) => implementsTypeNamedWhere(
-      item,
-      project,
-      (typeName) => typeName.startsWith(prefix),
-    ),
+    (item, project) => item.implementsTypeNamedWhere(project, (typeName) => typeName.startsWith(prefix)),
   );
 }
 
@@ -117,11 +113,7 @@ HeimdallPredicate<CompilationUnitMember> _classDoesNotImplementStartingWith(
 ) {
   return HeimdallPredicate(
     'not implement starting with $prefix',
-    (item, project) => !implementsTypeNamedWhere(
-      item,
-      project,
-      (typeName) => typeName.startsWith(prefix),
-    ),
+    (item, project) => !item.implementsTypeNamedWhere(project, (typeName) => typeName.startsWith(prefix)),
   );
 }
 
@@ -129,12 +121,7 @@ HeimdallCondition<CompilationUnitMember> _classShouldImplementStartingWith(
   String prefix,
 ) {
   return HeimdallCondition('implement starting with $prefix', (item, project) {
-    final findings =
-        implementsTypeNamedWhere(
-          item,
-          project,
-          (typeName) => typeName.startsWith(prefix),
-        )
+    final findings = item.implementsTypeNamedWhere(project, (typeName) => typeName.startsWith(prefix))
         ? const <HeimdallValidationInfo>[]
         : [
             HeimdallValidationInfo(
@@ -155,12 +142,7 @@ HeimdallCondition<CompilationUnitMember> _classShouldNotImplementStartingWith(
   String prefix,
 ) {
   return HeimdallCondition('not implement starting with $prefix', (item, project) {
-    final findings =
-        !implementsTypeNamedWhere(
-          item,
-          project,
-          (typeName) => typeName.startsWith(prefix),
-        )
+    final findings = !item.implementsTypeNamedWhere(project, (typeName) => typeName.startsWith(prefix))
         ? const <HeimdallValidationInfo>[]
         : [
             HeimdallValidationInfo(

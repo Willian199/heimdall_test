@@ -4,9 +4,10 @@ import 'package:heimdall_test/src/core/heimdall_condition.dart';
 import 'package:heimdall_test/src/core/heimdall_predicate.dart';
 import 'package:heimdall_test/src/core/member_rules/member_predicate_builder.dart';
 import 'package:heimdall_test/src/core/member_rules/member_should_builder.dart';
-import 'package:heimdall_test/src/core/non_empty_iterable.dart';
 import 'package:heimdall_test/src/features/queries/member_queries.dart';
 import 'package:heimdall_test/src/mapper/model/heimdall_project.dart';
+import 'package:heimdall_test/src/util/extension/calls/class_member_extension.dart';
+import 'package:heimdall_test/src/util/extension/iterable_extension.dart';
 
 /// Predicate-side DSL for member pattern rules.
 extension MemberCallConstructorTypeNameEndingWithPredicateRules on MemberPredicateBuilder {
@@ -118,7 +119,7 @@ HeimdallCondition<ClassMember> _callConstructorTypeNameEndingWithCondition(Strin
 }
 
 bool _memberCallsConstructorTypeName(ClassMember item, String suffix, HeimdallProject project) {
-  return memberHasConstructorCallWhere(item, project, (typeName) => typeName.endsWith(suffix));
+  return item.hasConstructorCallWhere(project, (typeName) => typeName.endsWith(suffix));
 }
 
 HeimdallPredicate<ClassMember> _callConstructorTypeNameEndingWithPredicate(String suffix) {

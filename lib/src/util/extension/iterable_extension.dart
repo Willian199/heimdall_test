@@ -1,4 +1,4 @@
-/// Helpers for validating iterable arguments used by fluent rule variants.
+/// Shared queries for [Iterable] nodes.
 extension IterableExtension<T> on Iterable<T> {
   /// Converts this iterable to a list and rejects empty values.
   List<T> toNonEmptyList(String name) {

@@ -1,6 +1,6 @@
 import 'package:heimdall_test/heimdall_test.dart';
 import 'package:heimdall_test/src/features/queries/declaration_rule_predicates.dart';
-import 'package:heimdall_test/src/features/queries/declaration_type_queries.dart';
+import 'package:heimdall_test/src/util/extension/relationships/compilation_unit_member_extension.dart';
 
 /// Predicate-side DSL for class superclass suffix rules.
 extension ClassExtendTypeNameEndingWithPredicateRules on ClassPredicateBuilder {
@@ -105,11 +105,7 @@ HeimdallPredicate<CompilationUnitMember> _classDoesNotExtendTypeNameEndingWith(
 ) {
   return HeimdallPredicate(
     'not extend type name ending with $suffix',
-    (item, project) => !extendsTypeNamedWhere(
-      item,
-      project,
-      (typeName) => typeName.endsWith(suffix),
-    ),
+    (item, project) => !item.extendsTypeNamedWhere(project, (typeName) => typeName.endsWith(suffix)),
   );
 }
 
@@ -117,12 +113,7 @@ HeimdallCondition<CompilationUnitMember> _classShouldExtendTypeNameEndingWith(
   String suffix,
 ) {
   return HeimdallCondition('extend type name ending with $suffix', (item, project) {
-    final findings =
-        extendsTypeNamedWhere(
-          item,
-          project,
-          (typeName) => typeName.endsWith(suffix),
-        )
+    final findings = item.extendsTypeNamedWhere(project, (typeName) => typeName.endsWith(suffix))
         ? const <HeimdallValidationInfo>[]
         : [
             HeimdallValidationInfo(
@@ -143,12 +134,7 @@ HeimdallCondition<CompilationUnitMember> _classShouldNotExtendTypeNameEndingWith
   String suffix,
 ) {
   return HeimdallCondition('not extend type name ending with $suffix', (item, project) {
-    final findings =
-        !extendsTypeNamedWhere(
-          item,
-          project,
-          (typeName) => typeName.endsWith(suffix),
-        )
+    final findings = !item.extendsTypeNamedWhere(project, (typeName) => typeName.endsWith(suffix))
         ? const <HeimdallValidationInfo>[]
         : [
             HeimdallValidationInfo(

@@ -1,5 +1,12 @@
 import 'package:heimdall_test/heimdall_test.dart';
 
+abstract final class _RegexPatterns {
+  static final allVariant = RegExp(r'All([A-Z]|$)');
+  static final anyVariant = RegExp(r'Any([A-Z]|$)');
+  static final noneVariant = RegExp(r'None([A-Z]|$)');
+  static final satisfiesDescription = RegExp("'satisfy [a-z][A-Za-z0-9_]*'");
+}
+
 HeimdallCondition<HeimdallSourceFile> extensionsDeclareMethods({
   required Iterable<String> builderNames,
   required int target,
@@ -126,21 +133,21 @@ HeimdallCondition<HeimdallSourceFile> conditionDescriptionsAreReadable({
       final findings = [
         for (final declaration in file.declarations) ...[
           for (final creation in _instanceCreationsOf(declaration, 'HeimdallCondition'))
-            if (_hasGeneratedDescription(creation.argumentList.arguments.firstOrNull, ruleGroupName))
+            if (_hasGeneratedDescription(creation.argumentList.arguments.firstOrNull?.argumentExpression, ruleGroupName))
               _unreadableDescriptionFinding(
                 file,
                 creation.offset,
                 'HeimdallCondition',
-                creation.argumentList.arguments.first,
+                creation.argumentList.arguments.first.argumentExpression,
               ),
           for (final invocation in _functionInvocationsOf(declaration))
             if (_conditionHelperNames.contains(invocation.methodName.name) &&
-                _hasGeneratedDescription(invocation.argumentList.arguments.firstOrNull, ruleGroupName))
+                _hasGeneratedDescription(invocation.argumentList.arguments.firstOrNull?.argumentExpression, ruleGroupName))
               _unreadableDescriptionFinding(
                 file,
                 invocation.offset,
                 invocation.methodName.name,
-                invocation.argumentList.arguments.first,
+                invocation.argumentList.arguments.first.argumentExpression,
               ),
         ],
       ];
@@ -202,12 +209,12 @@ void assertFeatureExtensionVariantCallsStaticMethods({
           'resideOutsideOfAllPathsMatching' => 'noneOf',
           'haveAllImportsShareAnyPrefix' => 'anyOf',
           'haveNoPrefixSharedByAllImports' => 'noneOf',
-          _ when RegExp(r'All([A-Z]|$)').hasMatch(name) => 'allOf',
-          _ when RegExp(r'Any([A-Z]|$)').hasMatch(name) => 'anyOf',
-          _ when RegExp(r'None([A-Z]|$)').hasMatch(name) => 'noneOf',
+          _ when _RegexPatterns.allVariant.hasMatch(name) => 'allOf',
+          _ when _RegexPatterns.anyVariant.hasMatch(name) => 'anyOf',
+          _ when _RegexPatterns.noneVariant.hasMatch(name) => 'noneOf',
           _ => null,
         };
-        
+
         if (operation == null) {
           continue;
         }
@@ -340,7 +347,7 @@ bool _hasGeneratedPredicateDescription(
   InstanceCreationExpression creation,
   String ruleGroupName,
 ) {
-  return _hasGeneratedDescription(creation.argumentList.arguments.firstOrNull, ruleGroupName);
+  return _hasGeneratedDescription(creation.argumentList.arguments.firstOrNull?.argumentExpression, ruleGroupName);
 }
 
 bool _hasGeneratedDescription(Expression? description, String ruleGroupName) {
@@ -352,8 +359,8 @@ bool _hasGeneratedDescription(Expression? description, String ruleGroupName) {
   final generatedDescriptionPattern = RegExp(
     "'${RegExp.escape(ruleGroupName)}(?:Matches|Does|Should|Must|Have|Be|Call|Access|Receive|Reside|Declare)[A-Z]",
   );
-  final satisfiesBuilderMethodPattern = RegExp("'satisfy [a-z][A-Za-z0-9_]*'");
-  return generatedDescriptionPattern.hasMatch(descriptionSource) || satisfiesBuilderMethodPattern.hasMatch(descriptionSource);
+
+  return generatedDescriptionPattern.hasMatch(descriptionSource) || _RegexPatterns.satisfiesDescription.hasMatch(descriptionSource);
 }
 
 Iterable<MethodInvocation> _functionInvocationsOf(AstNode root) sync* {

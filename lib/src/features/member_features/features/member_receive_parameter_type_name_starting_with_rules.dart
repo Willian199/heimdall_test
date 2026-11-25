@@ -4,9 +4,9 @@ import 'package:heimdall_test/src/core/heimdall_condition.dart';
 import 'package:heimdall_test/src/core/heimdall_predicate.dart';
 import 'package:heimdall_test/src/core/member_rules/member_predicate_builder.dart';
 import 'package:heimdall_test/src/core/member_rules/member_should_builder.dart';
-import 'package:heimdall_test/src/core/non_empty_iterable.dart';
-import 'package:heimdall_test/src/features/member_features/helpers/member_parameter_type_name_rule_helpers.dart';
 import 'package:heimdall_test/src/features/queries/member_queries.dart';
+import 'package:heimdall_test/src/util/extension/iterable_extension.dart';
+import 'package:heimdall_test/src/util/extension/parameters/class_member_extension.dart';
 
 /// Predicate-side DSL for parameter type-name prefix rules.
 extension MemberReceiveParameterTypeNameStartingWithPredicateRules on MemberPredicateBuilder {
@@ -103,43 +103,27 @@ extension MemberReceiveParameterTypeNameStartingWithShouldRules on MemberShouldB
 HeimdallPredicate<ClassMember> _memberParameterTypeNameStartsWith(String prefix) {
   return HeimdallPredicate(
     'receive parameter type name starting with $prefix',
-    (item, project) => memberReceivesResolvedParameterTypeNameWhere(
-      item,
-      project,
-      (typeName) => typeName.startsWith(prefix),
-    ),
+    (item, project) => item.receivesResolvedParameterTypeNameWhere(project, (typeName) => typeName.startsWith(prefix)),
   );
 }
 
 HeimdallPredicate<ClassMember> _memberDoesNotReceiveParameterTypeNameStartingWith(String prefix) {
   return HeimdallPredicate(
     'not receive parameter type name starting with $prefix',
-    (item, project) => !memberReceivesResolvedParameterTypeNameWhere(
-      item,
-      project,
-      (typeName) => typeName.startsWith(prefix),
-    ),
+    (item, project) => !item.receivesResolvedParameterTypeNameWhere(project, (typeName) => typeName.startsWith(prefix)),
   );
 }
 
 HeimdallCondition<ClassMember> _memberShouldReceiveParameterTypeNameStartingWith(String prefix) {
   return memberCondition(
     'receive parameter type name starting with $prefix',
-    (item, project) => memberReceivesResolvedParameterTypeNameWhere(
-      item,
-      project,
-      (typeName) => typeName.startsWith(prefix),
-    ),
+    (item, project) => item.receivesResolvedParameterTypeNameWhere(project, (typeName) => typeName.startsWith(prefix)),
   );
 }
 
 HeimdallCondition<ClassMember> _memberShouldNotReceiveParameterTypeNameStartingWith(String prefix) {
   return prohibitedMemberCondition(
     'receive parameter type name starting with $prefix',
-    (item, project) => memberReceivesResolvedParameterTypeNameWhere(
-      item,
-      project,
-      (typeName) => typeName.startsWith(prefix),
-    ),
+    (item, project) => item.receivesResolvedParameterTypeNameWhere(project, (typeName) => typeName.startsWith(prefix)),
   );
 }

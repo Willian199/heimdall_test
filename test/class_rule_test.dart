@@ -3,6 +3,11 @@ import 'dart:io';
 import 'package:heimdall_test/heimdall_test.dart';
 import 'package:test/test.dart';
 
+abstract final class _RegexPatterns {
+  static final data = RegExp('data');
+  static final composite = RegExp('Composite');
+}
+
 void main() {
   group('Class rules', () {
     const fixture = 'test/class_fixtures/class_rules_project';
@@ -77,7 +82,7 @@ void main() {
       );
 
       final result = Heimdall.classes().that().haveTypeName('User').should().resideInPath('lib/src/data/**').check(project);
-      final matchingResult = Heimdall.classes().that().haveTypeName('User').should().resideInPathMatching(RegExp('data')).check(project);
+      final matchingResult = Heimdall.classes().that().haveTypeName('User').should().resideInPathMatching(_RegexPatterns.data).check(project);
       final outsideResult = Heimdall.classes().that().haveTypeName('User').should().resideOutsideOfPath('lib/src/domain/**').check(project);
 
       expect(
@@ -651,7 +656,7 @@ void main() {
           .and()
           .haveTypeNameStartingWithNoneOf(['_'])
           .and()
-          .haveTypeNameMatchingAnyOf([RegExp('Composite')])
+          .haveTypeNameMatchingAnyOf([_RegexPatterns.composite])
           .and()
           .resideInAnyPath(['missing', '**domain/**'])
           .and()

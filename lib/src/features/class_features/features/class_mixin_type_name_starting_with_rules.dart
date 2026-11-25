@@ -1,6 +1,6 @@
 import 'package:heimdall_test/heimdall_test.dart';
 import 'package:heimdall_test/src/features/queries/declaration_rule_predicates.dart';
-import 'package:heimdall_test/src/features/queries/declaration_type_queries.dart';
+import 'package:heimdall_test/src/util/extension/relationships/compilation_unit_member_extension.dart';
 
 /// Predicate-side DSL for class mixin prefix rules.
 extension ClassMixinTypeNameStartingWithPredicateRules on ClassPredicateBuilder {
@@ -105,11 +105,7 @@ HeimdallPredicate<CompilationUnitMember> _classDoesNotMixinTypeNameStartingWith(
 ) {
   return HeimdallPredicate(
     'not mixin type name starting with $prefix',
-    (item, project) => !mixesInTypeNamedWhere(
-      item,
-      project,
-      (typeName) => typeName.startsWith(prefix),
-    ),
+    (item, project) => !item.mixesInTypeNamedWhere(project, (typeName) => typeName.startsWith(prefix)),
   );
 }
 
@@ -117,12 +113,7 @@ HeimdallCondition<CompilationUnitMember> _classShouldMixinTypeNameStartingWith(
   String prefix,
 ) {
   return HeimdallCondition('mixin type name starting with $prefix', (item, project) {
-    final findings =
-        mixesInTypeNamedWhere(
-          item,
-          project,
-          (typeName) => typeName.startsWith(prefix),
-        )
+    final findings = item.mixesInTypeNamedWhere(project, (typeName) => typeName.startsWith(prefix))
         ? const <HeimdallValidationInfo>[]
         : [
             HeimdallValidationInfo(
@@ -143,12 +134,7 @@ HeimdallCondition<CompilationUnitMember> _classShouldNotMixinTypeNameStartingWit
   String prefix,
 ) {
   return HeimdallCondition('not mixin type name starting with $prefix', (item, project) {
-    final findings =
-        !mixesInTypeNamedWhere(
-          item,
-          project,
-          (typeName) => typeName.startsWith(prefix),
-        )
+    final findings = !item.mixesInTypeNamedWhere(project, (typeName) => typeName.startsWith(prefix))
         ? const <HeimdallValidationInfo>[]
         : [
             HeimdallValidationInfo(

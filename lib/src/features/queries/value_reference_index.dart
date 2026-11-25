@@ -1,7 +1,9 @@
 import 'package:analyzer/dart/element/element.dart';
 import 'package:heimdall_test/src/core.dart';
-import 'package:heimdall_test/src/features/queries/value_reference_queries.dart';
 import 'package:heimdall_test/src/mapper/model/declaration_namespace_index.dart';
+import 'package:heimdall_test/src/util/enum/declaration_symbol_kind.dart';
+import 'package:heimdall_test/src/util/extension/scope/ast_node_extension.dart';
+import 'package:heimdall_test/src/util/extension/simple_identifier_extension.dart';
 
 /// Collects value references once, indexed by import prefix and symbol name.
 ///
@@ -32,7 +34,7 @@ final class ValueReferenceIndex {
           final isSelector =
               parent is PropertyAccess && identical(parent.propertyName, expression) ||
               parent is PrefixedIdentifier && identical(parent.identifier, expression);
-          if (!isSelector && isValueReference(expression)) {
+          if (!isSelector && expression.isValueReference) {
             _record(expression);
           }
       }
@@ -61,7 +63,7 @@ final class ValueReferenceIndex {
 
   void _record(SimpleIdentifier reference, {SimpleIdentifier? prefix}) {
     final binding = prefix ?? reference;
-    if (reference.element == null && hasValueReceiver(binding, binding.name, _project)) {
+    if (reference.element == null && binding.hasValueReceiver(binding.name, _project)) {
       return;
     }
     (_references[(prefix?.name, reference.name)] ??= []).add(reference);

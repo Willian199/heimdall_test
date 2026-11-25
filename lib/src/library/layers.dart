@@ -1,5 +1,6 @@
 import 'package:heimdall_test/src/core.dart';
 import 'package:heimdall_test/src/features/queries/declaration_dependency_queries.dart';
+import 'package:heimdall_test/src/util/enum/layer_constraint_direction.dart';
 
 /// Creates a layer architecture builder.
 HeimdallLayers heimdallLayers() => HeimdallLayers();
@@ -146,20 +147,18 @@ final class HeimdallLayerGate {
 }
 
 final class _LayerConstraint {
-  const _LayerConstraint.onlyAccess(this.layer, this.layers) : direction = _LayerConstraintDirection.access;
+  const _LayerConstraint.onlyAccess(this.layer, this.layers) : direction = LayerConstraintDirection.access;
 
-  const _LayerConstraint.onlyBeAccessedBy(this.layer, this.layers) : direction = _LayerConstraintDirection.beAccessedBy;
+  const _LayerConstraint.onlyBeAccessedBy(this.layer, this.layers) : direction = LayerConstraintDirection.beAccessedBy;
 
   final String layer;
   final List<String> layers;
-  final _LayerConstraintDirection direction;
+  final LayerConstraintDirection direction;
 
   bool forbidsAccess(String sourceLayer, String targetLayer) => switch (direction) {
-    _LayerConstraintDirection.access => layer == sourceLayer && !layers.contains(targetLayer),
-    _LayerConstraintDirection.beAccessedBy => layer == targetLayer && !layers.contains(sourceLayer),
+    LayerConstraintDirection.access => layer == sourceLayer && !layers.contains(targetLayer),
+    LayerConstraintDirection.beAccessedBy => layer == targetLayer && !layers.contains(sourceLayer),
   };
 }
-
-enum _LayerConstraintDirection { access, beAccessedBy }
 
 bool _alwaysLayerCandidate(CompilationUnitMember item, HeimdallProject _) => true;

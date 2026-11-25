@@ -1,8 +1,9 @@
-// Internal, query-only type resolution; reference ASTs never become subjects.
+// Shared query-only type resolution; reference ASTs never become subjects.
 // ignore_for_file: public_member_api_docs
 
 import 'package:heimdall_test/src/core.dart';
-import 'package:heimdall_test/src/mapper/model/declaration_namespace_index.dart';
+import 'package:heimdall_test/src/util/enum/declaration_symbol_kind.dart';
+import 'package:heimdall_test/src/util/extension/extension_type_declaration_extension.dart';
 
 typedef ReferenceTypeDeclaration = ({CompilationUnitMember declaration, ReferenceLibrary? library});
 
@@ -38,14 +39,70 @@ final class ReferenceTypeLookup {
         for (final directive in imports)
           if (directive.prefix?.name == prefix && _allows(directive.combinators, name)) ..._through(directive, name, {}),
       };
-      if (imported.isNotEmpty || prefix != null || imports.any((directive) => directive.targetUris.contains('dart:core'))) {
+      if (imported.isNotEmpty || prefix != null) {
         return List.unmodifiable(imported);
       }
-      // An explicit dart:core import suppresses the implicit core namespace,
-      // including when it is prefixed or excludes this name with combinators.
-      final core = _project.referenceLibraries.library('dart:core');
-      return core == null ? const [] : exported(core, name);
+      return List.unmodifiable({for (final library in _configuredSdkLibraries(imports)) ...exported(library, name)});
     });
+  }
+
+  /// Checks a compiler-provided name whose library has no source declaration.
+  /// The caller supplies both the name and its library URI.
+  bool isIntrinsicVisible(CompilationUnitMember origin, String name, String libraryUri, {String? prefix}) {
+    final scope = _project.libraryScopes.scopeOf(origin);
+    if (prefix == null && scope.names.contains(name) || visible(origin, name, prefix: prefix).isNotEmpty) {
+      return false;
+    }
+    final library = _project.referenceLibraries.library(libraryUri);
+    if (library == null || library.units.isEmpty) {
+      return false;
+    }
+    bool exports(Object source, Set<Object> visiting) {
+      if (!visiting.add(source)) {
+        return false;
+      }
+      if (source == library) {
+        return true;
+      }
+      final directives = switch (source) {
+        HeimdallSourceFile() => source.exportDirectives,
+        ReferenceLibrary() => source.units.expand((unit) => unit.directives).whereType<ExportDirective>(),
+        _ => const <ExportDirective>[],
+      };
+      for (final directive in directives.where((directive) => _allows(directive.combinators, name))) {
+        for (final uri in _uris(directive)) {
+          if (source is HeimdallSourceFile &&
+              directive.resolvedTargets
+                  .where((target) => target.uri == uri)
+                  .map((target) => target.file)
+                  .whereType<HeimdallSourceFile>()
+                  .any((file) => exports(file, {...visiting}))) {
+            return true;
+          }
+          final resolved = source is ReferenceLibrary ? Uri.parse(source.uri).resolve(uri).toString() : uri;
+          final reference = _project.referenceLibraries.library(resolved);
+          if (reference != null && exports(reference, {...visiting})) {
+            return true;
+          }
+        }
+      }
+      return false;
+    }
+
+    final imports = scope.dependencies.whereType<ImportDirective>();
+    for (final directive in imports.where((directive) => directive.prefix?.name == prefix && _allows(directive.combinators, name))) {
+      for (final uri in directive.targetUris) {
+        final files = directive.resolvedTargets.where((target) => target.uri == uri).map((target) => target.file).whereType<HeimdallSourceFile>();
+        if (files.any((file) => exports(file, {}))) {
+          return true;
+        }
+        final reference = _project.referenceLibraries.library(uri);
+        if (reference != null && exports(reference, {})) {
+          return true;
+        }
+      }
+    }
+    return prefix == null && _configuredSdkLibraries(imports).contains(library);
   }
 
   /// Resolves names in a consultation AST without attaching validation context.
@@ -65,11 +122,18 @@ final class ReferenceTypeLookup {
         if (directive.prefix?.name == prefix && _allows(directive.combinators, name))
           for (final uri in _uris(directive)) ..._referenceUri(uri, library, name, {}),
     };
-    if (imported.isNotEmpty || prefix != null || imports.any((directive) => _uris(directive).contains('dart:core'))) {
+    if (imported.isNotEmpty || prefix != null) {
       return List.unmodifiable(imported);
     }
-    final core = _project.referenceLibraries.library('dart:core');
-    return core == null ? const [] : exported(core, name);
+    return List.unmodifiable({for (final reference in _configuredSdkLibraries(imports)) ...exported(reference, name)});
+  }
+
+  Iterable<ReferenceLibrary> _configuredSdkLibraries(Iterable<ImportDirective> imports) {
+    final explicit = imports.expand(_uris).toSet();
+    return _project.referenceOptions.sdkLibraries
+        .where((uri) => !explicit.contains(uri))
+        .map(_project.referenceLibraries.library)
+        .whereType<ReferenceLibrary>();
   }
 
   List<ReferenceTypeDeclaration> exported(Object source, String name) {
@@ -153,7 +217,7 @@ String? _name(CompilationUnitMember declaration) => switch (declaration) {
   TypeAlias() => declaration.name.lexeme,
   EnumDeclaration() => declaration.namePart.typeName.lexeme,
   MixinDeclaration() => declaration.name.lexeme,
-  ExtensionTypeDeclaration() => declaration.primaryConstructor.typeName.lexeme,
+  ExtensionTypeDeclaration() => declaration.extensionTypePrimaryConstructor.typeName.lexeme,
   _ => null,
 };
 

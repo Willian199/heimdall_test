@@ -1,6 +1,6 @@
 import 'package:heimdall_test/heimdall_test.dart';
 import 'package:heimdall_test/src/features/queries/declaration_rule_predicates.dart';
-import 'package:heimdall_test/src/features/queries/declaration_type_queries.dart';
+import 'package:heimdall_test/src/util/extension/relationships/compilation_unit_member_extension.dart';
 
 /// Predicate-side DSL for implemented type suffix rules.
 extension ClassImplementTypeNameEndingWithPredicateRules on ClassPredicateBuilder {
@@ -105,11 +105,7 @@ HeimdallPredicate<CompilationUnitMember> _classDoesNotImplementTypeNameEndingWit
 ) {
   return HeimdallPredicate(
     'not implement type name ending with $suffix',
-    (item, project) => !implementsTypeNamedWhere(
-      item,
-      project,
-      (typeName) => typeName.endsWith(suffix),
-    ),
+    (item, project) => !item.implementsTypeNamedWhere(project, (typeName) => typeName.endsWith(suffix)),
   );
 }
 
@@ -117,12 +113,7 @@ HeimdallCondition<CompilationUnitMember> _classShouldImplementTypeNameEndingWith
   String suffix,
 ) {
   return HeimdallCondition('implement type name ending with $suffix', (item, project) {
-    final findings =
-        implementsTypeNamedWhere(
-          item,
-          project,
-          (typeName) => typeName.endsWith(suffix),
-        )
+    final findings = item.implementsTypeNamedWhere(project, (typeName) => typeName.endsWith(suffix))
         ? const <HeimdallValidationInfo>[]
         : [
             HeimdallValidationInfo(
@@ -143,12 +134,7 @@ HeimdallCondition<CompilationUnitMember> _classShouldNotImplementTypeNameEndingW
   String suffix,
 ) {
   return HeimdallCondition('not implement type name ending with $suffix', (item, project) {
-    final findings =
-        !implementsTypeNamedWhere(
-          item,
-          project,
-          (typeName) => typeName.endsWith(suffix),
-        )
+    final findings = !item.implementsTypeNamedWhere(project, (typeName) => typeName.endsWith(suffix))
         ? const <HeimdallValidationInfo>[]
         : [
             HeimdallValidationInfo(

@@ -4,9 +4,9 @@ import 'package:heimdall_test/src/core/heimdall_condition.dart';
 import 'package:heimdall_test/src/core/heimdall_predicate.dart';
 import 'package:heimdall_test/src/core/member_rules/member_predicate_builder.dart';
 import 'package:heimdall_test/src/core/member_rules/member_should_builder.dart';
-import 'package:heimdall_test/src/core/non_empty_iterable.dart';
 import 'package:heimdall_test/src/features/queries/member_queries.dart';
 import 'package:heimdall_test/src/mapper/model/heimdall_member.dart';
+import 'package:heimdall_test/src/util/extension/iterable_extension.dart';
 
 /// Predicate-side DSL for executable parameter rules.
 extension MemberHaveRequiredParameterPredicateRules on MemberPredicateBuilder {
@@ -135,8 +135,5 @@ bool _isRequiredParameter(FormalParameter parameter, String name) {
   if (parameter.name?.lexeme != name) {
     return false;
   }
-  if (parameter is! DefaultFormalParameter) {
-    return true;
-  }
-  return parameter.isRequiredNamed;
+  return parameter.isRequired;
 }

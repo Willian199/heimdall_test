@@ -1,10 +1,10 @@
 import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/source/line_info.dart';
-import 'package:heimdall_test/src/features/queries/type_annotation_queries.dart';
 import 'package:heimdall_test/src/mapper/model/executable_ast_index.dart';
 import 'package:heimdall_test/src/mapper/model/heimdall_declaration.dart';
 import 'package:heimdall_test/src/mapper/model/member_relationship_index.dart';
 import 'package:heimdall_test/src/mapper/model/returned_constructor_parameter_index.dart';
+import 'package:heimdall_test/src/util/extension/class_member_extension.dart';
 
 final _contexts = Expando<_MemberContext>('heimdall.memberContext');
 
@@ -147,9 +147,9 @@ final class _MemberContext {
     required this.sourcePath,
     required this.relativePath,
     required this.lineInfo,
-  }) : name = _nameOf(node),
+  }) : name = node.syntaxName,
        location = lineInfo.getLocation(node.offset),
-       type = _typeOf(node),
+       type = node.explicitTypeName,
        isField = node is FieldDeclaration,
        isMethod = node is MethodDeclaration,
        isConstructor = node is ConstructorDeclaration,
@@ -158,8 +158,8 @@ final class _MemberContext {
        isConst = node is FieldDeclaration ? node.fields.isConst : node is ConstructorDeclaration && node.constKeyword != null,
        isFactory = node is ConstructorDeclaration && node.factoryKeyword != null,
        annotationNodes = List.unmodifiable(node.metadata),
-       parameters = List.unmodifiable(_parametersOf(node)),
-       executableRoots = List.unmodifiable(_executableRootsOf(node)) {
+       parameters = List.unmodifiable(node.formalParameters),
+       executableRoots = List.unmodifiable(node.executableSyntaxRoots) {
     annotations = List.unmodifiable(
       annotationNodes.map((annotation) => annotation.name.name),
     );
@@ -193,48 +193,4 @@ final class _MemberContext {
       ? ReturnedConstructorParameterIndex(executableRoots, ownerName: owner.name, parameterNames: parameterNames).fieldsUpdatedInEveryReturn
       : const {};
   late final bool isPrivate;
-}
-
-String _nameOf(ClassMember member) {
-  if (member is FieldDeclaration) {
-    return member.fields.variables.map((variable) => variable.name.lexeme).join(', ');
-  }
-  if (member is MethodDeclaration) {
-    return member.name.lexeme;
-  }
-  if (member is ConstructorDeclaration) {
-    return member.name?.lexeme ?? 'new';
-  }
-  return member.toSource().split(RegExp(r'\s+')).take(3).join(' ');
-}
-
-String? _typeOf(ClassMember member) {
-  if (member is MethodDeclaration) {
-    return typeAnnotationName(member.returnType);
-  }
-  if (member is FieldDeclaration) {
-    return typeAnnotationName(member.fields.type);
-  }
-  return null;
-}
-
-List<FormalParameter> _parametersOf(ClassMember member) {
-  return switch (member) {
-    MethodDeclaration(:final parameters) => parameters?.parameters ?? const <FormalParameter>[],
-    ConstructorDeclaration(:final parameters) => parameters.parameters,
-    _ => const <FormalParameter>[],
-  };
-}
-
-List<AstNode> _executableRootsOf(ClassMember member) {
-  if (member is MethodDeclaration) {
-    return [?member.parameters, member.body];
-  }
-  if (member is ConstructorDeclaration) {
-    return [member.parameters, ...member.initializers, member.body];
-  }
-  if (member is FieldDeclaration) {
-    return member.fields.variables.map((variable) => variable.initializer).whereType<Expression>().toList();
-  }
-  return const [];
 }

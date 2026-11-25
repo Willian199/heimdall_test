@@ -1,10 +1,17 @@
 import 'package:analyzer/dart/element/element.dart';
 import 'package:heimdall_test/src/core.dart';
-import 'package:heimdall_test/src/features/queries/declaration_lookup_queries.dart';
-import 'package:heimdall_test/src/features/queries/generic_assignability_queries.dart';
-import 'package:heimdall_test/src/features/queries/sdk_type_queries.dart';
-import 'package:heimdall_test/src/features/queries/type_annotation_queries.dart';
-import 'package:heimdall_test/src/features/queries/value_reference_queries.dart';
+import 'package:heimdall_test/src/util/extension/extension_declaration_extension.dart';
+import 'package:heimdall_test/src/util/extension/lookup/compilation_unit_member_extension.dart';
+import 'package:heimdall_test/src/util/extension/named_type_extension.dart';
+import 'package:heimdall_test/src/util/extension/scope/ast_node_extension.dart';
+import 'package:heimdall_test/src/util/extension/sdk/compilation_unit_member_extension.dart';
+import 'package:heimdall_test/src/util/extension/simple_identifier_extension.dart';
+import 'package:heimdall_test/src/util/extension_applicability.dart';
+
+abstract final class _RegexPatterns {
+  static final nullableSuffix = RegExp(r'\?$');
+  static final identifier = RegExp(r'^[A-Za-z_$][\w$]*$');
+}
 
 typedef _ReceiverType = ({String name, CompilationUnitMember source});
 typedef _Access = ({Expression receiver, String name, Element? element, bool read, bool write, bool nullAware});
@@ -99,17 +106,17 @@ final class ExtensionReferenceIndex {
     if (access.nullAware && receiver.name.endsWith('?')) {
       receiver = (name: receiver.name.substring(0, receiver.name.length - 1), source: receiver.source);
     }
-    final declaration = declarationNamedFrom(receiver.source, _project, receiver.name.split('<').first.replaceAll('?', ''));
+    final declaration = receiver.source.declarationNamed(_project, receiver.name.split('<').first.replaceAll('?', ''));
     if (declaration != null && _instanceMember(declaration, access.name, {}) != null) {
       return {};
     }
-    final sdkType = sdkTypeName(receiver.source, receiver.name.split('<').first.replaceAll('?', ''), _project);
+    final sdkType = receiver.source.sdkTypeName(receiver.name.split('<').first.replaceAll('?', ''), _project);
     if (sdkType != null && _project.referenceLibraries.hasSdkInstanceMember(sdkType, access.name)) {
       return {};
     }
     final applicable = <ExtensionApplicability>[];
     for (final extension in providing) {
-      final match = extensionApplicabilityFor(extension, receiver.source, receiver.name, _project);
+      final match = extension.applicabilityFor(receiver.source, receiver.name, _project);
       if (match != null) {
         applicable.add(match);
       }
@@ -162,7 +169,7 @@ final class ExtensionReferenceIndex {
       _ => <NamedType>[],
     };
     for (final parent in parents) {
-      final target = declarationNamedFrom(owner, _project, namedTypeReferenceName(parent));
+      final target = owner.declarationNamed(_project, parent.referenceName);
       final member = target == null ? null : _instanceMember(target, name, visited);
       if (member != null) {
         return member;
@@ -207,7 +214,7 @@ final class ExtensionReferenceIndex {
         return (name: type.toSource(), source: source);
       case PostfixExpression(:final operand, :final operator) when operator.lexeme == '!':
         final type = _type(operand);
-        return type == null ? null : (name: type.name.replaceFirst(RegExp(r'\?$'), ''), source: type.source);
+        return type == null ? null : (name: type.name.replaceFirst(_RegexPatterns.nullableSuffix, ''), source: type.source);
       case IntegerLiteral():
         return (name: 'int', source: source);
       case DoubleLiteral():
@@ -231,11 +238,11 @@ final class ExtensionReferenceIndex {
       case PropertyAccess(:final realTarget, :final propertyName):
         return _memberType(realTarget, propertyName.name);
       case PrefixedIdentifier(:final prefix, :final identifier):
-        final type = declarationNamedFrom(source, _project, prefix.name);
+        final type = source.declarationNamed(_project, prefix.name);
         if (type is EnumDeclaration && type.body.constants.any((constant) => constant.name.lexeme == identifier.name)) {
           return (name: type.namePart.typeName.lexeme, source: type);
         }
-        if (!hasValueReceiver(prefix, prefix.name, _project)) {
+        if (!prefix.hasValueReceiver(prefix.name, _project)) {
           final imported = _importedValueType(source, identifier.name, prefix.name);
           if (imported != null) {
             return imported;
@@ -244,7 +251,7 @@ final class ExtensionReferenceIndex {
         return _memberType(prefix, identifier.name);
       case MethodInvocation(:final target, :final methodName):
         final reference = target == null ? methodName.name : '${target.toSource()}.${methodName.name}';
-        final constructor = declarationNamedFrom(source, _project, reference);
+        final constructor = source.declarationNamed(_project, reference);
         if (constructor != null && constructor is! ExtensionDeclaration) {
           return (name: '$reference${expression.typeArguments?.toSource() ?? ''}', source: source);
         }
@@ -254,7 +261,7 @@ final class ExtensionReferenceIndex {
             return result;
           }
         } else {
-          if (isShadowedValue(methodName)) {
+          if (methodName.isShadowedValue) {
             return null;
           }
           for (final file in _project.libraryScopes.scopeOf(source).files) {
@@ -266,7 +273,7 @@ final class ExtensionReferenceIndex {
           }
         }
         final prefix = target is SimpleIdentifier ? target.name : null;
-        if (target is SimpleIdentifier && hasValueReceiver(target, target.name, _project)) {
+        if (target is SimpleIdentifier && target.hasValueReceiver(target.name, _project)) {
           return null;
         }
         if (target == null || prefix != null) {
@@ -325,7 +332,7 @@ final class ExtensionReferenceIndex {
     if (type == null || type.name == 'dynamic') {
       return null;
     }
-    final owner = declarationNamedFrom(type.source, _project, type.name.split('<').first.replaceAll('?', ''));
+    final owner = type.source.declarationNamed(_project, type.name.split('<').first.replaceAll('?', ''));
     final member = owner == null ? null : _instanceMember(owner, name, {});
     if (member is MethodDeclaration && member.returnType != null) {
       return (name: member.returnType!.toSource(), source: _source(member));
@@ -352,7 +359,7 @@ final class ExtensionReferenceIndex {
     var name = type.name;
     var source = type.source;
     final bareName = name.endsWith('?') ? name.substring(0, name.length - 1) : name;
-    if (RegExp(r'^[A-Za-z_$][\w$]*$').hasMatch(bareName)) {
+    if (_RegexPatterns.identifier.hasMatch(bareName)) {
       for (var ancestor = reference.parent; ancestor != null; ancestor = ancestor.parent) {
         final parameters = switch (ancestor) {
           MethodDeclaration(:final typeParameters) || FunctionExpression(:final typeParameters) => typeParameters,
@@ -381,17 +388,11 @@ final class ExtensionReferenceIndex {
         ConstructorDeclaration(:final parameters) => parameters.parameters,
         _ => null,
       };
-      for (var parameter in parameters ?? <FormalParameter>[]) {
+      for (final parameter in parameters ?? <FormalParameter>[]) {
         if (parameter.name?.lexeme != reference.name) {
           continue;
         }
-        if (parameter is DefaultFormalParameter) {
-          parameter = parameter.parameter;
-        }
-        final annotation = switch (parameter) {
-          SimpleFormalParameter(:final type) || FieldFormalParameter(:final type) || SuperFormalParameter(:final type) => type,
-          _ => null,
-        };
+        final annotation = parameter.functionTypedSuffix == null ? parameter.type : null;
         if (annotation != null) {
           return _lexicalType(reference, (name: annotation.toSource(), source: source), parameter);
         }
@@ -422,7 +423,7 @@ final class ExtensionReferenceIndex {
         }
       }
     }
-    if (isShadowedValue(reference)) {
+    if (reference.isShadowedValue) {
       return null;
     }
     final member = _instanceMember(source, reference.name, {});

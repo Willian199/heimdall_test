@@ -1,7 +1,7 @@
 import 'package:heimdall_test/heimdall_test.dart';
 import 'package:heimdall_test/src/features/member_features/helpers/member_owner_rule_helpers.dart';
-import 'package:heimdall_test/src/features/queries/declaration_type_queries.dart';
 import 'package:heimdall_test/src/features/queries/member_queries.dart';
+import 'package:heimdall_test/src/util/extension/relationships/compilation_unit_member_extension.dart';
 
 /// Predicate-side DSL for member owner declaration rules.
 extension MemberDeclaredInClassesAssignableMatchingPredicateRules on MemberPredicateBuilder {
@@ -98,11 +98,7 @@ extension MemberDeclaredInClassesAssignableMatchingShouldRules on MemberShouldBu
 HeimdallPredicate<CompilationUnitMember> _classAssignableToTypeNameMatching(RegExp pattern) {
   return HeimdallPredicate(
     'assignable to type name matching ${pattern.pattern}',
-    (item, project) => isAssignableToTypeNamedWhere(
-      item,
-      project,
-      pattern.hasMatch,
-    ),
+    (item, project) => item.isAssignableToTypeNamedWhere(project, pattern.hasMatch),
   );
 }
 

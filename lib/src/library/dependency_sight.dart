@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:heimdall_test/heimdall_test.dart';
+import 'package:heimdall_test/src/util/extension/yaml_map_extension.dart';
 import 'package:path/path.dart' as p;
 import 'package:yaml/yaml.dart';
 
@@ -135,11 +136,11 @@ final class HeimdallDependencySight {
               'dependency_overrides',
             ];
             for (final section in sections) {
-              final dependencies = _yamlMapValue(yaml, section);
+              final dependencies = yaml.valueForKey(section);
               if (dependencies is! YamlMap) {
                 continue;
               }
-              final dependencyNode = _yamlMapValue(dependencies, packageName);
+              final dependencyNode = dependencies.valueForKey(packageName);
               if (dependencyNode == null) {
                 continue;
               }
@@ -175,16 +176,6 @@ String? _captureFeature(String path, Iterable<String> featurePatterns) {
     final feature = captureSlicePathSegment(path, pattern);
     if (feature != null) {
       return feature;
-    }
-  }
-  return null;
-}
-
-YamlNode? _yamlMapValue(YamlMap map, String key) {
-  for (final entry in map.nodes.entries) {
-    final keyNode = entry.key;
-    if (keyNode is YamlScalar && keyNode.value == key) {
-      return entry.value;
     }
   }
   return null;

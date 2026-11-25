@@ -1,5 +1,5 @@
 import 'package:heimdall_test/heimdall_test.dart';
-import 'package:heimdall_test/src/features/file_features/helpers/source_file_location.dart';
+import 'package:heimdall_test/src/util/extension/heimdall_source_file_extension.dart';
 
 /// Predicate-side DSL for declared class rules.
 extension FileDeclareClassPredicateRules on FilePredicateBuilder {
@@ -147,8 +147,7 @@ HeimdallCondition<HeimdallSourceFile> _fileShouldNotDeclareClass(
           (declaration) => declaration.name == className,
         )
         .map(
-          (declaration) => fileNodeFinding(
-            item,
+          (declaration) => item.nodeFinding(
             declaration,
             'declares forbidden class $className',
             offset: switch (declaration) {

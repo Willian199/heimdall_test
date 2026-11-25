@@ -5,6 +5,7 @@ import 'package:heimdall_test/src/library/code_sight.dart';
 import 'package:heimdall_test/src/library/dependency_sight.dart';
 import 'package:heimdall_test/src/library/layers.dart';
 import 'package:heimdall_test/src/library/slices.dart';
+import 'package:heimdall_test/src/util/enum/member_selection.dart';
 
 /// Entry point for Heimdall's fluent rule DSL.
 ///

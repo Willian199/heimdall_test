@@ -1,6 +1,25 @@
 import 'package:heimdall_test/heimdall_test.dart';
 import 'package:test/test.dart';
 
+abstract final class _RegexPatterns {
+  static final base = RegExp('Base');
+  static final entity = RegExp('Entity');
+  static final legacy = RegExp('Legacy');
+  static final user = RegExp('User');
+  static final account = RegExp('Account');
+  static final behavior = RegExp('Behavior');
+  static final tracking = RegExp('Tracking');
+  static final aggregate = RegExp('Aggregate');
+  static final gateway = RegExp('Gateway');
+  static final port = RegExp('Port');
+  static final src = RegExp('src');
+  static final test = RegExp('test');
+  static final endsWithDart = RegExp(r'\.dart$');
+  static final example = RegExp('example');
+  static final underscore = RegExp('_');
+  static final legacyConstructorName = RegExp('legacy');
+}
+
 void main() {
   group('Class rule DSL contract', () {
     test('keeps predicate and should builder class methods in sync', () {
@@ -99,24 +118,24 @@ void main() {
       () {
         ClassPredicateBuilder(
           inverted: false,
-        ).extendTypeNameMatching(RegExp('Base'));
+        ).extendTypeNameMatching(_RegexPatterns.base);
         ClassPredicateBuilder(
           inverted: false,
-        ).extendTypeNameMatchingAnyOf([RegExp('Base'), RegExp('Entity')]);
+        ).extendTypeNameMatchingAnyOf([_RegexPatterns.base, _RegexPatterns.entity]);
         ClassPredicateBuilder(
           inverted: false,
-        ).extendTypeNameMatchingAllOf([RegExp('Base')]);
+        ).extendTypeNameMatchingAllOf([_RegexPatterns.base]);
         ClassPredicateBuilder(
           inverted: false,
-        ).extendTypeNameMatchingNoneOf([RegExp('Legacy')]);
+        ).extendTypeNameMatchingNoneOf([_RegexPatterns.legacy]);
 
-        Heimdall.classes().should().extendTypeNameMatching(RegExp('Base'));
+        Heimdall.classes().should().extendTypeNameMatching(_RegexPatterns.base);
         Heimdall.classes().should().extendTypeNameMatchingAnyOf([
-          RegExp('Base'),
-          RegExp('Entity'),
+          _RegexPatterns.base,
+          _RegexPatterns.entity,
         ]);
-        Heimdall.classes().should().extendTypeNameMatchingAllOf([RegExp('Base')]);
-        Heimdall.classes().should().extendTypeNameMatchingNoneOf([RegExp('Legacy')]);
+        Heimdall.classes().should().extendTypeNameMatchingAllOf([_RegexPatterns.base]);
+        Heimdall.classes().should().extendTypeNameMatchingNoneOf([_RegexPatterns.legacy]);
       },
     );
 
@@ -183,24 +202,24 @@ void main() {
     test(
       'exposes class type name matching variants on predicate and should builders',
       () {
-        ClassPredicateBuilder(inverted: false).haveTypeNameMatching(RegExp('User'));
+        ClassPredicateBuilder(inverted: false).haveTypeNameMatching(_RegexPatterns.user);
         ClassPredicateBuilder(
           inverted: false,
-        ).haveTypeNameMatchingAnyOf([RegExp('User'), RegExp('Account')]);
+        ).haveTypeNameMatchingAnyOf([_RegexPatterns.user, _RegexPatterns.account]);
         ClassPredicateBuilder(
           inverted: false,
-        ).haveTypeNameMatchingAllOf([RegExp('User')]);
+        ).haveTypeNameMatchingAllOf([_RegexPatterns.user]);
         ClassPredicateBuilder(
           inverted: false,
-        ).haveTypeNameMatchingNoneOf([RegExp('Legacy')]);
+        ).haveTypeNameMatchingNoneOf([_RegexPatterns.legacy]);
 
-        Heimdall.classes().should().haveTypeNameMatching(RegExp('User'));
+        Heimdall.classes().should().haveTypeNameMatching(_RegexPatterns.user);
         Heimdall.classes().should().haveTypeNameMatchingAnyOf([
-          RegExp('User'),
-          RegExp('Account'),
+          _RegexPatterns.user,
+          _RegexPatterns.account,
         ]);
-        Heimdall.classes().should().haveTypeNameMatchingAllOf([RegExp('User')]);
-        Heimdall.classes().should().haveTypeNameMatchingNoneOf([RegExp('Legacy')]);
+        Heimdall.classes().should().haveTypeNameMatchingAllOf([_RegexPatterns.user]);
+        Heimdall.classes().should().haveTypeNameMatchingNoneOf([_RegexPatterns.legacy]);
       },
     );
 
@@ -249,24 +268,24 @@ void main() {
     );
 
     test('exposes mixin matching variants on predicate and should builders', () {
-      ClassPredicateBuilder(inverted: false).applyMixinTypeNameMatching(RegExp('Behavior'));
+      ClassPredicateBuilder(inverted: false).applyMixinTypeNameMatching(_RegexPatterns.behavior);
       ClassPredicateBuilder(
         inverted: false,
-      ).applyMixinTypeNameMatchingAnyOf([RegExp('Behavior'), RegExp('Tracking')]);
+      ).applyMixinTypeNameMatchingAnyOf([_RegexPatterns.behavior, _RegexPatterns.tracking]);
       ClassPredicateBuilder(
         inverted: false,
-      ).applyMixinTypeNameMatchingAllOf([RegExp('Behavior')]);
+      ).applyMixinTypeNameMatchingAllOf([_RegexPatterns.behavior]);
       ClassPredicateBuilder(
         inverted: false,
-      ).applyMixinTypeNameMatchingNoneOf([RegExp('Legacy')]);
+      ).applyMixinTypeNameMatchingNoneOf([_RegexPatterns.legacy]);
 
-      Heimdall.classes().should().applyMixinTypeNameMatching(RegExp('Behavior'));
+      Heimdall.classes().should().applyMixinTypeNameMatching(_RegexPatterns.behavior);
       Heimdall.classes().should().applyMixinTypeNameMatchingAnyOf([
-        RegExp('Behavior'),
-        RegExp('Tracking'),
+        _RegexPatterns.behavior,
+        _RegexPatterns.tracking,
       ]);
-      Heimdall.classes().should().applyMixinTypeNameMatchingAllOf([RegExp('Behavior')]);
-      Heimdall.classes().should().applyMixinTypeNameMatchingNoneOf([RegExp('Legacy')]);
+      Heimdall.classes().should().applyMixinTypeNameMatchingAllOf([_RegexPatterns.behavior]);
+      Heimdall.classes().should().applyMixinTypeNameMatchingNoneOf([_RegexPatterns.legacy]);
     });
 
     test('exposes annotation variants on predicate and should builders', () {
@@ -336,34 +355,34 @@ void main() {
       () {
         ClassPredicateBuilder(
           inverted: false,
-        ).areAnnotatedWithTypeNameMatching(RegExp('Entity'));
+        ).areAnnotatedWithTypeNameMatching(_RegexPatterns.entity);
 
         ClassPredicateBuilder(
           inverted: false,
         ).areAnnotatedWithTypeNameMatchingAnyOf([
-          RegExp('Entity'),
-          RegExp('Aggregate'),
+          _RegexPatterns.entity,
+          _RegexPatterns.aggregate,
         ]);
         ClassPredicateBuilder(
           inverted: false,
-        ).areAnnotatedWithTypeNameMatchingAllOf([RegExp('Entity')]);
+        ).areAnnotatedWithTypeNameMatchingAllOf([_RegexPatterns.entity]);
         ClassPredicateBuilder(
           inverted: false,
-        ).areAnnotatedWithTypeNameMatchingNoneOf([RegExp('Legacy')]);
+        ).areAnnotatedWithTypeNameMatchingNoneOf([_RegexPatterns.legacy]);
 
         Heimdall.classes().should().beAnnotatedWithTypeNameMatching(
-          RegExp('Entity'),
+          _RegexPatterns.entity,
         );
 
         Heimdall.classes().should().beAnnotatedWithTypeNameMatchingAnyOf([
-          RegExp('Entity'),
-          RegExp('Aggregate'),
+          _RegexPatterns.entity,
+          _RegexPatterns.aggregate,
         ]);
         Heimdall.classes().should().beAnnotatedWithTypeNameMatchingAllOf([
-          RegExp('Entity'),
+          _RegexPatterns.entity,
         ]);
         Heimdall.classes().should().beAnnotatedWithTypeNameMatchingNoneOf([
-          RegExp('Legacy'),
+          _RegexPatterns.legacy,
         ]);
       },
     );
@@ -423,29 +442,29 @@ void main() {
       () {
         ClassPredicateBuilder(
           inverted: false,
-        ).implementTypeNameMatching(RegExp('Gateway'));
+        ).implementTypeNameMatching(_RegexPatterns.gateway);
 
         ClassPredicateBuilder(
           inverted: false,
-        ).implementTypeNameMatchingAnyOf([RegExp('Gateway'), RegExp('Port')]);
+        ).implementTypeNameMatchingAnyOf([_RegexPatterns.gateway, _RegexPatterns.port]);
         ClassPredicateBuilder(
           inverted: false,
-        ).implementTypeNameMatchingAllOf([RegExp('Gateway')]);
+        ).implementTypeNameMatchingAllOf([_RegexPatterns.gateway]);
         ClassPredicateBuilder(
           inverted: false,
-        ).implementTypeNameMatchingNoneOf([RegExp('Legacy')]);
+        ).implementTypeNameMatchingNoneOf([_RegexPatterns.legacy]);
 
-        Heimdall.classes().should().implementTypeNameMatching(RegExp('Gateway'));
+        Heimdall.classes().should().implementTypeNameMatching(_RegexPatterns.gateway);
 
         Heimdall.classes().should().implementTypeNameMatchingAnyOf([
-          RegExp('Gateway'),
-          RegExp('Port'),
+          _RegexPatterns.gateway,
+          _RegexPatterns.port,
         ]);
         Heimdall.classes().should().implementTypeNameMatchingAllOf([
-          RegExp('Gateway'),
+          _RegexPatterns.gateway,
         ]);
         Heimdall.classes().should().implementTypeNameMatchingNoneOf([
-          RegExp('Legacy'),
+          _RegexPatterns.legacy,
         ]);
       },
     );
@@ -520,29 +539,29 @@ void main() {
       () {
         ClassPredicateBuilder(
           inverted: false,
-        ).areAssignableToTypeNameMatching(RegExp('Entity'));
+        ).areAssignableToTypeNameMatching(_RegexPatterns.entity);
         ClassPredicateBuilder(
           inverted: false,
-        ).areAssignableToTypeNameMatchingAnyOf([RegExp('Entity'), RegExp('Aggregate')]);
+        ).areAssignableToTypeNameMatchingAnyOf([_RegexPatterns.entity, _RegexPatterns.aggregate]);
         ClassPredicateBuilder(
           inverted: false,
-        ).areAssignableToTypeNameMatchingAllOf([RegExp('Entity')]);
+        ).areAssignableToTypeNameMatchingAllOf([_RegexPatterns.entity]);
         ClassPredicateBuilder(
           inverted: false,
-        ).areAssignableToTypeNameMatchingNoneOf([RegExp('Legacy')]);
+        ).areAssignableToTypeNameMatchingNoneOf([_RegexPatterns.legacy]);
 
         Heimdall.classes().should().beAssignableToTypeNameMatching(
-          RegExp('Entity'),
+          _RegexPatterns.entity,
         );
         Heimdall.classes().should().beAssignableToTypeNameMatchingAnyOf([
-          RegExp('Entity'),
-          RegExp('Aggregate'),
+          _RegexPatterns.entity,
+          _RegexPatterns.aggregate,
         ]);
         Heimdall.classes().should().beAssignableToTypeNameMatchingAllOf([
-          RegExp('Entity'),
+          _RegexPatterns.entity,
         ]);
         Heimdall.classes().should().beAssignableToTypeNameMatchingNoneOf([
-          RegExp('Legacy'),
+          _RegexPatterns.legacy,
         ]);
       },
     );
@@ -604,16 +623,16 @@ void main() {
 
         ClassPredicateBuilder(
           inverted: false,
-        ).dependOnClassesWithTypeNameMatching(RegExp('Entity'));
+        ).dependOnClassesWithTypeNameMatching(_RegexPatterns.entity);
         ClassPredicateBuilder(
           inverted: false,
-        ).dependOnAllClassesWithTypeNameMatching([RegExp('Entity')]);
+        ).dependOnAllClassesWithTypeNameMatching([_RegexPatterns.entity]);
         ClassPredicateBuilder(
           inverted: false,
-        ).dependOnAnyClassesWithTypeNameMatching([RegExp('Entity')]);
+        ).dependOnAnyClassesWithTypeNameMatching([_RegexPatterns.entity]);
         ClassPredicateBuilder(
           inverted: false,
-        ).dependOnNoClassesWithTypeNameMatching([RegExp('Legacy')]);
+        ).dependOnNoClassesWithTypeNameMatching([_RegexPatterns.legacy]);
 
         Heimdall.classes().should().dependOnClassesWithTypeName('Entity');
         Heimdall.classes().should().dependOnAllClassesWithTypeName(['Entity']);
@@ -649,16 +668,16 @@ void main() {
           'Legacy',
         ]);
         Heimdall.classes().should().dependOnClassesWithTypeNameMatching(
-          RegExp('Entity'),
+          _RegexPatterns.entity,
         );
         Heimdall.classes().should().dependOnAllClassesWithTypeNameMatching([
-          RegExp('Entity'),
+          _RegexPatterns.entity,
         ]);
         Heimdall.classes().should().dependOnAnyClassesWithTypeNameMatching([
-          RegExp('Entity'),
+          _RegexPatterns.entity,
         ]);
         Heimdall.classes().should().dependOnNoClassesWithTypeNameMatching([
-          RegExp('Legacy'),
+          _RegexPatterns.legacy,
         ]);
       },
     );
@@ -697,24 +716,24 @@ void main() {
         '**/*.dart',
       ]);
 
-      ClassPredicateBuilder(inverted: false).resideInPathMatching(RegExp('src'));
+      ClassPredicateBuilder(inverted: false).resideInPathMatching(_RegexPatterns.src);
       ClassPredicateBuilder(
         inverted: false,
-      ).resideInAnyPathMatching([RegExp('src'), RegExp('test')]);
+      ).resideInAnyPathMatching([_RegexPatterns.src, _RegexPatterns.test]);
       ClassPredicateBuilder(
         inverted: false,
-      ).resideInAllPathsMatching([RegExp(r'\.dart$')]);
+      ).resideInAllPathsMatching([_RegexPatterns.endsWithDart]);
       ClassPredicateBuilder(
         inverted: false,
-      ).resideOutsideOfAllPathsMatching([RegExp('example')]);
+      ).resideOutsideOfAllPathsMatching([_RegexPatterns.example]);
 
-      Heimdall.classes().should().resideInPathMatching(RegExp('src'));
+      Heimdall.classes().should().resideInPathMatching(_RegexPatterns.src);
       Heimdall.classes().should().resideInAnyPathMatching([
-        RegExp('src'),
-        RegExp('test'),
+        _RegexPatterns.src,
+        _RegexPatterns.test,
       ]);
-      Heimdall.classes().should().resideInAllPathsMatching([RegExp(r'\.dart$')]);
-      Heimdall.classes().should().resideOutsideOfAllPathsMatching([RegExp('example')]);
+      Heimdall.classes().should().resideInAllPathsMatching([_RegexPatterns.endsWithDart]);
+      Heimdall.classes().should().resideOutsideOfAllPathsMatching([_RegexPatterns.example]);
     });
 
     test('exposes class member declaration variants on both builders', () {
@@ -772,16 +791,16 @@ void main() {
       ).declareConstructorWithNameStartingWithAnyOf(['_', 'named']);
       ClassPredicateBuilder(inverted: false).declareConstructorWithNameStartingWithAllOf(['_']);
       ClassPredicateBuilder(inverted: false).declareConstructorWithNameStartingWithNoneOf(['legacy']);
-      ClassPredicateBuilder(inverted: false).declareConstructorWithNameMatching(RegExp('_'));
+      ClassPredicateBuilder(inverted: false).declareConstructorWithNameMatching(_RegexPatterns.underscore);
       ClassPredicateBuilder(
         inverted: false,
-      ).declareConstructorWithNameMatchingAnyOf([RegExp('_')]);
+      ).declareConstructorWithNameMatchingAnyOf([_RegexPatterns.underscore]);
       ClassPredicateBuilder(
         inverted: false,
-      ).declareConstructorWithNameMatchingAllOf([RegExp('_')]);
+      ).declareConstructorWithNameMatchingAllOf([_RegexPatterns.underscore]);
       ClassPredicateBuilder(
         inverted: false,
-      ).declareConstructorWithNameMatchingNoneOf([RegExp('legacy')]);
+      ).declareConstructorWithNameMatchingNoneOf([_RegexPatterns.legacyConstructorName]);
 
       Heimdall.classes().should().declareConstructor();
       Heimdall.classes().should().declareAnyConstructor(['new', '_']);
@@ -801,11 +820,11 @@ void main() {
       ]);
       Heimdall.classes().should().declareConstructorWithNameStartingWithAllOf(['_']);
       Heimdall.classes().should().declareConstructorWithNameStartingWithNoneOf(['legacy']);
-      Heimdall.classes().should().declareConstructorWithNameMatching(RegExp('_'));
-      Heimdall.classes().should().declareConstructorWithNameMatchingAnyOf([RegExp('_')]);
-      Heimdall.classes().should().declareConstructorWithNameMatchingAllOf([RegExp('_')]);
+      Heimdall.classes().should().declareConstructorWithNameMatching(_RegexPatterns.underscore);
+      Heimdall.classes().should().declareConstructorWithNameMatchingAnyOf([_RegexPatterns.underscore]);
+      Heimdall.classes().should().declareConstructorWithNameMatchingAllOf([_RegexPatterns.underscore]);
       Heimdall.classes().should().declareConstructorWithNameMatchingNoneOf([
-        RegExp('legacy'),
+        _RegexPatterns.legacyConstructorName,
       ]);
 
       ClassPredicateBuilder(inverted: false).haveOnlyStaticMembers();

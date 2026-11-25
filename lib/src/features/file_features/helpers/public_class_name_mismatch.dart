@@ -1,4 +1,5 @@
 import 'package:heimdall_test/heimdall_test.dart';
+import 'package:heimdall_test/src/util/extension/string_extension.dart';
 import 'package:path/path.dart' as p;
 
 /// Creates a predicate that accepts files with zero or one public class.
@@ -50,25 +51,12 @@ PublicClassNameMismatch? publicClassNameMismatch(
   }
 
   final declaration = classes.single;
-  final expected = _camelToSnake(declaration.name);
+  final expected = declaration.name.toSnakeCase();
   final actual = p.basenameWithoutExtension(item.relativePath);
   if (actual == expected) {
     return null;
   }
   return PublicClassNameMismatch(declaration, expected);
-}
-
-String _camelToSnake(String value) {
-  return value
-      .replaceAllMapped(
-        RegExp('([a-z0-9])([A-Z])'),
-        (match) => '${match.group(1)}_${match.group(2)}',
-      )
-      .replaceAllMapped(
-        RegExp('([A-Z]+)([A-Z][a-z])'),
-        (match) => '${match.group(1)}_${match.group(2)}',
-      )
-      .toLowerCase();
 }
 
 /// Describes a public class whose expected file name differs from its file.

@@ -1,6 +1,10 @@
 import 'package:heimdall_test/heimdall_test.dart';
 import 'package:test/test.dart';
 
+abstract final class _RegexPatterns {
+  static final endsWithValues = RegExp(r'Values$');
+}
+
 void main() {
   test('64-bit typed data lists are assignable to List<int>', () {
     final project = const HeimdallFileImporter(useCache: false).importPath(
@@ -9,7 +13,7 @@ void main() {
 
     final report = Heimdall.fields()
         .that()
-        .haveNameMatching(RegExp(r'Values$'))
+        .haveNameMatching(_RegexPatterns.endsWithValues)
         .should()
         .haveDeclaredFieldTypeAssignableTo('List<int>')
         .check(project);

@@ -1,5 +1,5 @@
 import 'package:heimdall_test/src/core.dart';
-import 'package:heimdall_test/src/features/queries/reference_type_lookup.dart';
+import 'package:heimdall_test/src/mapper/model/reference_type_lookup.dart';
 import 'package:heimdall_test/src/mapper/model/type_syntax_index.dart';
 
 /// A type argument together with its namespace and hierarchy substitutions.
@@ -322,11 +322,7 @@ Map<String, TypeAnnotation?>? _structuralFields(TypeAnnotation? type) {
     return {
       'return': type.returnType,
       for (final parameter in type.parameters.parameters)
-        parameter.isNamed ? 'named:${parameter.name?.lexeme}' : '${position++}': switch (parameter) {
-          SimpleFormalParameter() => parameter.type,
-          DefaultFormalParameter(:final parameter) when parameter is SimpleFormalParameter => parameter.type,
-          _ => null,
-        },
+        parameter.isNamed ? 'named:${parameter.name?.lexeme}' : '${position++}': parameter.functionTypedSuffix == null ? parameter.type : null,
     };
   }
   return null;

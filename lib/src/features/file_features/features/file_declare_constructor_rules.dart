@@ -1,6 +1,5 @@
 import 'package:heimdall_test/heimdall_test.dart';
-import 'package:heimdall_test/src/features/file_features/helpers/file_constructor_queries.dart';
-import 'package:heimdall_test/src/features/file_features/helpers/source_file_location.dart';
+import 'package:heimdall_test/src/util/extension/heimdall_source_file_extension.dart';
 
 /// Predicate-side DSL for declared constructor rules.
 extension FileDeclareConstructorPredicateRules on FilePredicateBuilder {
@@ -165,9 +164,11 @@ HeimdallCondition<HeimdallSourceFile> _fileShouldDeclareConstructor({
   String? className,
 }) {
   return HeimdallCondition('declare constructor $name', (item, _) {
-    final hasConstructor = fileConstructors(item, className: className).any(
-      (constructor) => _constructorName(constructor) == name,
-    );
+    final hasConstructor = item
+        .constructorsForClass(className: className)
+        .any(
+          (constructor) => _constructorName(constructor) == name,
+        );
     final findings = hasConstructor
         ? const <HeimdallValidationInfo>[]
         : [
@@ -190,9 +191,11 @@ HeimdallPredicate<HeimdallSourceFile> _fileDeclaresConstructor({
 }) {
   return HeimdallPredicate(
     'declare constructor $name',
-    (item, _) => fileConstructors(item, className: className).any(
-      (constructor) => _constructorName(constructor) == name,
-    ),
+    (item, _) => item
+        .constructorsForClass(className: className)
+        .any(
+          (constructor) => _constructorName(constructor) == name,
+        ),
   );
 }
 
@@ -201,15 +204,12 @@ HeimdallCondition<HeimdallSourceFile> _fileShouldNotDeclareConstructor({
   String? className,
 }) {
   return HeimdallCondition('not declare constructor $name', (item, _) {
-    final findings = fileConstructors(item, className: className)
+    final findings = item
+        .constructorsForClass(className: className)
         .where((constructor) => _constructorName(constructor) == name)
         .map(
-          (constructor) => fileNodeFinding(
-            item,
-            constructor,
-            'declares forbidden constructor $name',
-            offset: constructor.name?.offset ?? constructor.offset,
-          ),
+          (constructor) =>
+              item.nodeFinding(constructor, 'declares forbidden constructor $name', offset: constructor.name?.offset ?? constructor.offset),
         )
         .toList();
     return HeimdallFindings(
@@ -226,9 +226,11 @@ HeimdallPredicate<HeimdallSourceFile> _fileDoesNotDeclareConstructor({
 }) {
   return HeimdallPredicate(
     'not declare constructor $name',
-    (item, _) => !fileConstructors(item, className: className).any(
-      (constructor) => _constructorName(constructor) == name,
-    ),
+    (item, _) => !item
+        .constructorsForClass(className: className)
+        .any(
+          (constructor) => _constructorName(constructor) == name,
+        ),
   );
 }
 

@@ -1,5 +1,5 @@
 import 'package:heimdall_test/heimdall_test.dart';
-import 'package:heimdall_test/src/features/file_features/helpers/source_file_location.dart';
+import 'package:heimdall_test/src/util/extension/heimdall_source_file_extension.dart';
 
 /// Predicate-side DSL for documentation comment regex rules.
 extension FileContentStructurePredicateRules on FilePredicateBuilder {
@@ -181,12 +181,7 @@ HeimdallCondition<HeimdallSourceFile> _fileShouldNotHaveDocumentationCommentMatc
         continue;
       }
       findings.add(
-        fileNodeFinding(
-          item,
-          node,
-          'has forbidden documentation comment matching ${pattern.pattern}',
-          offset: comment.offset,
-        ),
+        item.nodeFinding(node, 'has forbidden documentation comment matching ${pattern.pattern}', offset: comment.offset),
       );
     }
     return HeimdallFindings(

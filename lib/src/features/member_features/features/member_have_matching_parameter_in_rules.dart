@@ -1,5 +1,6 @@
 import 'package:heimdall_test/heimdall_test.dart';
 import 'package:heimdall_test/src/features/queries/field_relationship_queries.dart';
+import 'package:heimdall_test/src/util/extension/relationships/class_member_extension.dart';
 
 /// Predicate-side have a matching parameter in rules.
 extension MemberHaveMatchingParameterInPredicateRules on MemberPredicateBuilder {
@@ -61,7 +62,7 @@ HeimdallPredicate<ClassMember> _matches(
 }) {
   return HeimdallPredicate(
     '${prohibited ? 'not ' : ''}have a matching parameter in $methodName',
-    (item, _) => prohibited ? !fieldMatchesMethod(item, methodName, returnedList: false) : fieldMatchesMethod(item, methodName, returnedList: false),
+    (item, _) => prohibited ? !item.fieldMatchesMethod(methodName, returnedList: false) : item.fieldMatchesMethod(methodName, returnedList: false),
   );
 }
 

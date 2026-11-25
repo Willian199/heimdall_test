@@ -1,5 +1,7 @@
 import 'package:analyzer/source/line_info.dart';
 import 'package:heimdall_test/heimdall_test.dart';
+import 'package:heimdall_test/src/util/extension/compilation_unit_member_extension.dart';
+import 'package:heimdall_test/src/util/extension/extension_type_declaration_extension.dart';
 
 final _contexts = Expando<_DeclarationContext>('heimdall.declarationContext');
 
@@ -62,7 +64,7 @@ extension HeimdallDeclaration on CompilationUnitMember {
   /// Total number of parameters across declared constructors.
   int get constructorParameterCount =>
       constructors.fold<int>(0, (count, constructor) => count + constructor.parameters.parameters.length) +
-      (this is ExtensionTypeDeclaration ? (this as ExtensionTypeDeclaration).primaryConstructor.formalParameters.parameters.length : 0);
+      (this is ExtensionTypeDeclaration ? (this as ExtensionTypeDeclaration).extensionTypePrimaryConstructor.formalParameters.parameters.length : 0);
 
   /// Method declarations owned by this declaration.
   List<MethodDeclaration> get methods => _context.methods;
@@ -144,70 +146,16 @@ void attachDeclarationContext({
   );
 }
 
-String _nameOf(CompilationUnitMember member) {
-  if (member is ClassDeclaration) {
-    return member.namePart.typeName.lexeme;
-  }
-  if (member is MixinDeclaration) {
-    return member.name.lexeme;
-  }
-  if (member is EnumDeclaration) {
-    return member.namePart.typeName.lexeme;
-  }
-  if (member is ExtensionDeclaration) {
-    return member.name?.lexeme ?? '<anonymous extension>';
-  }
-  if (member is ExtensionTypeDeclaration) {
-    return member.primaryConstructor.typeName.lexeme;
-  }
-  if (member is TypeAlias) {
-    return member.name.lexeme;
-  }
-  if (member is FunctionDeclaration) {
-    return member.name.lexeme;
-  }
-  if (member is TopLevelVariableDeclaration) {
-    return member.variables.variables.map((variable) => variable.name.lexeme).join(', ');
-  }
-  return member.toSource().split(RegExp(r'\s+')).take(3).join(' ');
-}
-
-List<ClassMember> _membersOf(CompilationUnitMember member) {
-  if (member is ClassDeclaration) {
-    return _membersFromClassBody(member.body);
-  }
-  if (member is MixinDeclaration) {
-    return member.body.members;
-  }
-  if (member is EnumDeclaration) {
-    return member.body.members;
-  }
-  if (member is ExtensionDeclaration) {
-    return member.body.members;
-  }
-  if (member is ExtensionTypeDeclaration) {
-    return _membersFromClassBody(member.body);
-  }
-  return const [];
-}
-
-List<ClassMember> _membersFromClassBody(ClassBody body) {
-  return switch (body) {
-    BlockClassBody(:final members) => members,
-    _ => const <ClassMember>[],
-  };
-}
-
 final class _DeclarationContext {
   _DeclarationContext({
     required CompilationUnitMember node,
     required this.sourcePath,
     required this.relativePath,
     required this.lineInfo,
-  }) : name = _nameOf(node),
+  }) : name = node.syntaxName,
        location = lineInfo.getLocation(node.offset),
        annotationNodes = List.unmodifiable(node.metadata),
-       members = List.unmodifiable(_membersOf(node)),
+       members = List.unmodifiable(node.syntaxMembers),
        isTypeDeclaration =
            node is ClassDeclaration ||
            node is ClassTypeAlias ||

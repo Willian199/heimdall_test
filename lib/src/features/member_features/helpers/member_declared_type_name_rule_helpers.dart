@@ -1,11 +1,13 @@
 import 'package:analyzer/dart/ast/ast.dart';
 import 'package:heimdall_test/src/core/heimdall_condition.dart';
+import 'package:heimdall_test/src/core/heimdall_findings.dart';
 import 'package:heimdall_test/src/core/heimdall_predicate.dart';
 import 'package:heimdall_test/src/core/heimdall_validation_info.dart';
-import 'package:heimdall_test/src/features/queries/generic_assignability_queries.dart';
 import 'package:heimdall_test/src/features/queries/member_queries.dart';
 import 'package:heimdall_test/src/mapper/model/heimdall_member.dart';
 import 'package:heimdall_test/src/mapper/model/heimdall_project.dart';
+import 'package:heimdall_test/src/util/extension/assignability/compilation_unit_member_extension.dart';
+import 'package:heimdall_test/src/util/extension/class_member_extension.dart';
 
 /// Creates a predicate that applies [test] to a member's declared field type name.
 HeimdallPredicate<ClassMember> memberDeclaredTypeNamePredicate(
@@ -15,7 +17,7 @@ HeimdallPredicate<ClassMember> memberDeclaredTypeNamePredicate(
   return HeimdallPredicate(
     description,
     (item, _) {
-      final typeName = _memberDeclaredTypeName(item);
+      final typeName = item.declaredFieldTypeName;
       return typeName != null && test(typeName);
     },
   );
@@ -29,7 +31,7 @@ HeimdallPredicate<ClassMember> memberDoesNotHaveDeclaredTypeNamePredicate(
   return HeimdallPredicate(
     'not $description',
     (item, _) {
-      final typeName = _memberDeclaredTypeName(item);
+      final typeName = item.declaredFieldTypeName;
       return typeName == null || !test(typeName);
     },
   );
@@ -41,7 +43,7 @@ HeimdallCondition<ClassMember> memberDeclaredTypeNameCondition(
   bool Function(String typeName) test,
 ) {
   return HeimdallCondition(description, (item, _) {
-    final typeName = _memberDeclaredTypeName(item);
+    final typeName = item.declaredFieldTypeName;
     if (typeName != null && test(typeName)) {
       return HeimdallFindings(
         subject: item,
@@ -71,7 +73,7 @@ HeimdallCondition<ClassMember> memberMustNotHaveDeclaredTypeNameCondition(
   return prohibitedMemberCondition(
     description,
     (item, _) {
-      final typeName = _memberDeclaredTypeName(item);
+      final typeName = item.declaredFieldTypeName;
       return typeName != null && test(typeName);
     },
   );
@@ -88,14 +90,5 @@ bool memberDeclaredTypeIsAssignableTo(
     return false;
   }
 
-  return instantiatedTypeIsAssignableTo(
-    member.owner,
-    declaredTypeName,
-    typeName,
-    project,
-  );
-}
-
-String? _memberDeclaredTypeName(ClassMember member) {
-  return member.isField ? member.type : null;
+  return member.owner.instantiatedTypeIsAssignableTo(declaredTypeName, typeName, project);
 }

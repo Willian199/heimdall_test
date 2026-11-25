@@ -1,6 +1,6 @@
 import 'package:heimdall_test/heimdall_test.dart';
-import 'package:heimdall_test/src/features/member_features/helpers/member_return_type_rule_helpers.dart';
 import 'package:heimdall_test/src/features/queries/member_queries.dart';
+import 'package:heimdall_test/src/util/extension/class_member_extension.dart';
 
 /// Predicate-side DSL for member method return type-name rules.
 extension MemberHaveReturnTypeNameMatchingPredicateRules on MemberPredicateBuilder {
@@ -97,13 +97,13 @@ extension MemberHaveReturnTypeNameMatchingShouldRules on MemberShouldBuilder {
 HeimdallPredicate<ClassMember> _memberReturnTypeName(RegExp pattern) {
   return HeimdallPredicate(
     'have return type name matching ${pattern.pattern}',
-    (item, _) => memberReturnTypeName(item) != null && pattern.hasMatch(memberReturnTypeName(item)!),
+    (item, _) => item.returnTypeName != null && pattern.hasMatch(item.returnTypeName!),
   );
 }
 
 HeimdallCondition<ClassMember> _memberShouldHaveReturnTypeName(RegExp pattern) {
   return HeimdallCondition('have return type name matching ${pattern.pattern}', (item, _) {
-    final type = memberReturnTypeName(item);
+    final type = item.returnTypeName;
     final matches = type != null && pattern.hasMatch(type);
     final location = item.location;
     final findings = [
@@ -133,13 +133,13 @@ HeimdallCondition<ClassMember> _memberShouldHaveReturnTypeName(RegExp pattern) {
 HeimdallCondition<ClassMember> _memberShouldNotHaveReturnTypeNameMatching(RegExp pattern) {
   return prohibitedMemberCondition(
     'have return type name matching ${pattern.pattern}',
-    (item, _) => memberReturnTypeName(item) != null && pattern.hasMatch(memberReturnTypeName(item)!),
+    (item, _) => item.returnTypeName != null && pattern.hasMatch(item.returnTypeName!),
   );
 }
 
 HeimdallPredicate<ClassMember> _memberDoesNotHaveReturnTypeNameMatching(RegExp pattern) {
   return HeimdallPredicate(
     'not have return type name matching ${pattern.pattern}',
-    (item, project) => memberReturnTypeName(item) == null || !pattern.hasMatch(memberReturnTypeName(item)!),
+    (item, project) => item.returnTypeName == null || !pattern.hasMatch(item.returnTypeName!),
   );
 }

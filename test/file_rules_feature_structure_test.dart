@@ -3,6 +3,10 @@ import 'package:test/test.dart';
 
 import 'feature_structure_helpers.dart';
 
+abstract final class _RegexPatterns {
+  static final relativePathMessage = RegExp(r"message:\s*'\$\{(?:item|file)\.relativePath\}");
+}
+
 const _fileRuleFeaturesPath = 'src/features/file_features/features/*.dart';
 const _fileFeaturesExportPath = 'src/features/file_features/export.dart';
 const _packageExportPath = 'heimdall_test.dart';
@@ -74,7 +78,7 @@ void main() {
           .resideInAnyPath(_fileDiagnosticSourcePaths)
           .should()
           .containNoSourceMatching([
-            RegExp(r"message:\s*'\$\{(?:item|file)\.relativePath\}"),
+            _RegexPatterns.relativePathMessage,
           ])
           .check(project)
           .assertNoFindings();

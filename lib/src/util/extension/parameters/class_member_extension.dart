@@ -1,74 +1,70 @@
 import 'package:analyzer/dart/ast/ast.dart';
-import 'package:heimdall_test/src/features/queries/declaration_lookup_queries.dart';
-import 'package:heimdall_test/src/features/queries/generic_assignability_queries.dart';
-import 'package:heimdall_test/src/features/queries/type_annotation_queries.dart';
 import 'package:heimdall_test/src/mapper/model/heimdall_declaration.dart';
 import 'package:heimdall_test/src/mapper/model/heimdall_member.dart';
 import 'package:heimdall_test/src/mapper/model/heimdall_project.dart';
+import 'package:heimdall_test/src/util/extension/assignability/compilation_unit_member_extension.dart';
+import 'package:heimdall_test/src/util/extension/formal_parameter_extension.dart';
+import 'package:heimdall_test/src/util/extension/lookup/compilation_unit_member_extension.dart';
+import 'package:heimdall_test/src/util/extension/named_type_extension.dart';
 
-final _typeParameterReferencePattern = RegExp(r'[A-Za-z_$][A-Za-z0-9_$]*(?:\.[A-Za-z_$][A-Za-z0-9_$]*)*\??');
-
-/// Returns whether [member] receives a parameter whose resolved type name satisfies [test].
-bool memberReceivesResolvedParameterTypeNameWhere(
-  ClassMember member,
-  HeimdallProject project,
-  bool Function(String typeName) test,
-) {
-  return member.parameters.any((parameter) {
-    final typeName = _resolvedParameterTypeName(
-      parameter,
-      member: member,
-      project: project,
-    );
-    return typeName != null && test(typeName);
-  });
+abstract final class _RegexPatterns {
+  static final typeParameterReference = RegExp(r'[A-Za-z_$][A-Za-z0-9_$]*(?:\.[A-Za-z_$][A-Za-z0-9_$]*)*\??');
 }
 
-/// Returns whether [member] receives a parameter whose resolved type is assignable to [typeName].
-bool memberReceivesParameterAssignableTo(
-  ClassMember member,
-  HeimdallProject project,
-  String typeName,
-) {
-  return member.parameters.any((parameter) {
-    var parameterTypeName = _resolvedParameterTypeName(
-      parameter,
-      member: member,
-      project: project,
-    );
+/// Parameters queries for [ClassMember] nodes.
+extension ClassMemberParametersExtension on ClassMember {
+  /// Returns whether this node receives a parameter whose resolved type name satisfies [test].
+  bool receivesResolvedParameterTypeNameWhere(
+    HeimdallProject project,
+    bool Function(String typeName) test,
+  ) {
+    return parameters.any((parameter) {
+      final typeName = _resolvedParameterTypeName(
+        parameter,
+        member: this,
+        project: project,
+      );
+      return typeName != null && test(typeName);
+    });
+  }
 
-    if (parameterTypeName == null) {
-      return false;
-    }
+  /// Returns whether this node receives a parameter whose resolved type is assignable to [typeName].
+  bool receivesParameterAssignableTo(
+    HeimdallProject project,
+    String typeName,
+  ) {
+    return parameters.any((parameter) {
+      var parameterTypeName = _resolvedParameterTypeName(
+        parameter,
+        member: this,
+        project: project,
+      );
 
-    if (member is MethodDeclaration) {
-      for (final formal in member.typeParameters?.typeParameters ?? <TypeParameter>[]) {
-        if (parameterTypeName == formal.name.lexeme) {
-          parameterTypeName = formal.bound?.toSource() ?? 'Object?';
+      if (parameterTypeName == null) {
+        return false;
+      }
+
+      if (this case MethodDeclaration(:final typeParameters)) {
+        for (final formal in typeParameters?.typeParameters ?? <TypeParameter>[]) {
+          if (parameterTypeName == formal.name.lexeme) {
+            parameterTypeName = formal.bound?.toSource() ?? 'Object?';
+          }
         }
       }
-    }
 
-    CompilationUnitMember? actualSource;
-    final inner = parameter is DefaultFormalParameter ? parameter.parameter : parameter;
+      CompilationUnitMember? actualSource;
+      if (parameter is SuperFormalParameter && parameter.type == null && owner is ClassDeclaration) {
+        final owner = this.owner as ClassDeclaration;
+        final parent = owner.extendsClause?.superclass;
 
-    if (inner is SuperFormalParameter && inner.type == null && member.owner is ClassDeclaration) {
-      final owner = member.owner as ClassDeclaration;
-      final parent = owner.extendsClause?.superclass;
-
-      if (parent != null && parameterTypeName!.contains('.')) {
-        actualSource = declarationNamedFrom(owner, project, namedTypeReferenceName(parent));
+        if (parent != null && parameterTypeName!.contains('.')) {
+          actualSource = owner.declarationNamed(project, parent.referenceName);
+        }
       }
-    }
 
-    return instantiatedTypeIsAssignableTo(
-      member.owner,
-      parameterTypeName!,
-      typeName,
-      project,
-      actualSource: actualSource,
-    );
-  });
+      return owner.instantiatedTypeIsAssignableTo(parameterTypeName!, typeName, project, actualSource: actualSource);
+    });
+  }
 }
 
 String? _resolvedParameterTypeName(
@@ -77,13 +73,12 @@ String? _resolvedParameterTypeName(
   required HeimdallProject project,
   Set<String>? visited,
 }) {
-  final explicitType = _parameterTypeName(parameter);
+  final explicitType = parameter.declaredTypeName;
   if (explicitType != null) {
     return explicitType;
   }
 
-  final inner = parameter is DefaultFormalParameter ? parameter.parameter : parameter;
-  return switch (inner) {
+  return switch (parameter) {
     FieldFormalParameter(:final name) => _fieldTypeName(member.owner, name.lexeme),
     SuperFormalParameter(:final name) => _superParameterTypeName(
       member,
@@ -91,17 +86,6 @@ String? _resolvedParameterTypeName(
       name.lexeme,
       visited ?? <String>{},
     ),
-    _ => null,
-  };
-}
-
-String? _parameterTypeName(FormalParameter parameter) {
-  final inner = parameter is DefaultFormalParameter ? parameter.parameter : parameter;
-  return switch (inner) {
-    SimpleFormalParameter(:final type) => typeAnnotationName(type),
-    FieldFormalParameter(:final type) => typeAnnotationName(type),
-    SuperFormalParameter(:final type) => typeAnnotationName(type),
-    FunctionTypedFormalParameter() => 'Function${inner.question == null ? '' : '?'}',
     _ => null,
   };
 }
@@ -127,14 +111,14 @@ String? _superParameterTypeName(
   }
 
   final superclassName = switch (owner.extendsClause?.superclass) {
-    final NamedType type => namedTypeReferenceName(type),
+    final NamedType type => type.referenceName,
     null => null,
   };
   if (superclassName == null) {
     return null;
   }
 
-  final superclass = declarationNamedFrom(owner, project, superclassName);
+  final superclass = owner.declarationNamed(project, superclassName);
   if (superclass == null) {
     return null;
   }
@@ -181,7 +165,7 @@ String? _superParameterTypeName(
             : typeParameters[i].bound?.toSource() ?? 'dynamic',
     };
     return inheritedType.replaceAllMapped(
-      _typeParameterReferencePattern,
+      _RegexPatterns.typeParameterReference,
       (match) {
         final name = match[0]!;
         final nullable = name.endsWith('?');

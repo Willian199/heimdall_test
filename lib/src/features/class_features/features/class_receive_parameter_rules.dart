@@ -1,5 +1,6 @@
 import 'package:heimdall_test/heimdall_test.dart';
-import 'package:heimdall_test/src/features/queries/parameter_queries.dart';
+import 'package:heimdall_test/src/util/extension/extension_type_declaration_extension.dart';
+import 'package:heimdall_test/src/util/extension/formal_parameter_extension.dart';
 
 /// Predicate-side DSL for constructor parameter rules.
 extension ClassReceiveParameterPredicateRules on ClassPredicateBuilder {
@@ -167,16 +168,15 @@ HeimdallPredicate<CompilationUnitMember> _classDoesNotReceiveParameter(
 
 bool _receivesParameter(CompilationUnitMember item, String parameterName) {
   if (item is ExtensionTypeDeclaration &&
-      item.primaryConstructor.formalParameters.parameters.any((parameter) => isPositionalOrRequiredNamedParameter(parameter, parameterName))) {
+      item.extensionTypePrimaryConstructor.formalParameters.parameters.any(
+        (parameter) => parameter.matchesPositionalOrRequiredNamedParameter(parameterName),
+      )) {
     return true;
   }
 
   return item.constructors.any(
     (constructor) => constructor.parameters.parameters.any(
-      (parameter) => isPositionalOrRequiredNamedParameter(
-        parameter,
-        parameterName,
-      ),
+      (parameter) => parameter.matchesPositionalOrRequiredNamedParameter(parameterName),
     ),
   );
 }
@@ -186,15 +186,15 @@ Iterable<({AstNode constructor, FormalParameter parameter})> _matchingParameters
   String parameterName,
 ) sync* {
   if (item is ExtensionTypeDeclaration) {
-    for (final parameter in item.primaryConstructor.formalParameters.parameters) {
-      if (isPositionalOrRequiredNamedParameter(parameter, parameterName)) {
-        yield (constructor: item.primaryConstructor, parameter: parameter);
+    for (final parameter in item.extensionTypePrimaryConstructor.formalParameters.parameters) {
+      if (parameter.matchesPositionalOrRequiredNamedParameter(parameterName)) {
+        yield (constructor: item.extensionTypePrimaryConstructor, parameter: parameter);
       }
     }
   }
   for (final constructor in item.constructors) {
     for (final parameter in constructor.parameters.parameters) {
-      if (isPositionalOrRequiredNamedParameter(parameter, parameterName)) {
+      if (parameter.matchesPositionalOrRequiredNamedParameter(parameterName)) {
         yield (constructor: constructor, parameter: parameter);
       }
     }

@@ -4,9 +4,9 @@ import 'package:heimdall_test/src/core/heimdall_condition.dart';
 import 'package:heimdall_test/src/core/heimdall_predicate.dart';
 import 'package:heimdall_test/src/core/member_rules/member_predicate_builder.dart';
 import 'package:heimdall_test/src/core/member_rules/member_should_builder.dart';
-import 'package:heimdall_test/src/core/non_empty_iterable.dart';
-import 'package:heimdall_test/src/features/member_features/helpers/member_return_type_rule_helpers.dart';
 import 'package:heimdall_test/src/features/queries/member_queries.dart';
+import 'package:heimdall_test/src/util/extension/class_member_extension.dart';
+import 'package:heimdall_test/src/util/extension/iterable_extension.dart';
 
 /// Predicate-side DSL for raw method return type rules.
 extension MemberHaveReturnTypePredicateRules on MemberPredicateBuilder {
@@ -20,7 +20,7 @@ extension MemberHaveReturnTypePredicateRules on MemberPredicateBuilder {
     return satisfy(
       HeimdallPredicate(
         'not have return type $type',
-        (item, project) => memberReturnTypeName(item) != type,
+        (item, project) => item.returnTypeName != type,
       ),
     );
   }
@@ -71,7 +71,7 @@ extension MemberHaveReturnTypeShouldRules on MemberShouldBuilder {
     return satisfy(
       prohibitedMemberCondition(
         'have return type $type',
-        (item, project) => memberReturnTypeName(item) == type,
+        (item, project) => item.returnTypeName == type,
       ),
     );
   }
@@ -113,13 +113,13 @@ extension MemberHaveReturnTypeShouldRules on MemberShouldBuilder {
 HeimdallPredicate<ClassMember> _memberHasReturnType(String type) {
   return HeimdallPredicate(
     'have raw return type $type',
-    (item, _) => memberReturnTypeName(item) == type,
+    (item, _) => item.returnTypeName == type,
   );
 }
 
 HeimdallCondition<ClassMember> _memberShouldHaveReturnType(String type) {
   return memberCondition(
     'have raw return type $type',
-    (item, _) => memberReturnTypeName(item) == type,
+    (item, _) => item.returnTypeName == type,
   );
 }

@@ -1,6 +1,6 @@
 import 'package:heimdall_test/heimdall_test.dart';
 import 'package:heimdall_test/src/features/queries/declaration_rule_predicates.dart';
-import 'package:heimdall_test/src/features/queries/declaration_type_queries.dart';
+import 'package:heimdall_test/src/util/extension/relationships/compilation_unit_member_extension.dart';
 
 /// Predicate-side DSL for class superclass prefix rules.
 extension ClassExtendTypeNameStartingWithPredicateRules on ClassPredicateBuilder {
@@ -105,11 +105,7 @@ HeimdallPredicate<CompilationUnitMember> _classDoesNotExtendTypeNameStartingWith
 ) {
   return HeimdallPredicate(
     'not extend type name starting with $prefix',
-    (item, project) => !extendsTypeNamedWhere(
-      item,
-      project,
-      (typeName) => typeName.startsWith(prefix),
-    ),
+    (item, project) => !item.extendsTypeNamedWhere(project, (typeName) => typeName.startsWith(prefix)),
   );
 }
 
@@ -117,12 +113,7 @@ HeimdallCondition<CompilationUnitMember> _classShouldExtendTypeNameStartingWith(
   String prefix,
 ) {
   return HeimdallCondition('extend type name starting with $prefix', (item, project) {
-    final findings =
-        extendsTypeNamedWhere(
-          item,
-          project,
-          (typeName) => typeName.startsWith(prefix),
-        )
+    final findings = item.extendsTypeNamedWhere(project, (typeName) => typeName.startsWith(prefix))
         ? const <HeimdallValidationInfo>[]
         : [
             HeimdallValidationInfo(
@@ -143,12 +134,7 @@ HeimdallCondition<CompilationUnitMember> _classShouldNotExtendTypeNameStartingWi
   String prefix,
 ) {
   return HeimdallCondition('not extend type name starting with $prefix', (item, project) {
-    final findings =
-        !extendsTypeNamedWhere(
-          item,
-          project,
-          (typeName) => typeName.startsWith(prefix),
-        )
+    final findings = !item.extendsTypeNamedWhere(project, (typeName) => typeName.startsWith(prefix))
         ? const <HeimdallValidationInfo>[]
         : [
             HeimdallValidationInfo(

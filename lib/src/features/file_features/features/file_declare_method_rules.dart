@@ -1,5 +1,5 @@
 import 'package:heimdall_test/heimdall_test.dart';
-import 'package:heimdall_test/src/features/file_features/helpers/source_file_location.dart';
+import 'package:heimdall_test/src/util/extension/heimdall_source_file_extension.dart';
 
 /// Predicate-side DSL for declared method rules.
 extension FileDeclareMethodPredicateRules on FilePredicateBuilder {
@@ -138,12 +138,7 @@ HeimdallCondition<HeimdallSourceFile> _fileShouldNotDeclareMethod(
   return HeimdallCondition('not declare method $methodName', (item, _) {
     final findings = _matchingMethods(item, methodName)
         .map(
-          (match) => fileNodeFinding(
-            item,
-            match.node,
-            'declares forbidden method $methodName',
-            offset: match.offset,
-          ),
+          (match) => item.nodeFinding(match.node, 'declares forbidden method $methodName', offset: match.offset),
         )
         .toList();
     return HeimdallFindings(

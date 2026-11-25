@@ -1,12 +1,12 @@
 import 'package:heimdall_test/heimdall_test.dart';
-import 'package:heimdall_test/src/features/queries/declaration_type_queries.dart';
-import 'package:heimdall_test/src/features/queries/generic_assignability_queries.dart';
+import 'package:heimdall_test/src/util/extension/assignability/compilation_unit_member_extension.dart';
+import 'package:heimdall_test/src/util/extension/relationships/compilation_unit_member_extension.dart';
 
 /// Matches declarations assignable to [typeName], including inherited types.
 HeimdallPredicate<CompilationUnitMember> classAssignableTo(String typeName) {
   return HeimdallPredicate(
     'are assignable to $typeName',
-    (item, project) => instantiatedTypeIsAssignableTo(item, item.name, typeName, project),
+    (item, project) => item.instantiatedTypeIsAssignableTo(item.name, typeName, project),
   );
 }
 
@@ -16,11 +16,7 @@ HeimdallPredicate<CompilationUnitMember> classAssignableToTypeNameEndingWith(
 ) {
   return HeimdallPredicate(
     'are assignable to type name ending with $suffix',
-    (item, project) => isAssignableToTypeNamedWhere(
-      item,
-      project,
-      (typeName) => typeName.endsWith(suffix),
-    ),
+    (item, project) => item.isAssignableToTypeNamedWhere(project, (typeName) => typeName.endsWith(suffix)),
   );
 }
 
@@ -28,7 +24,7 @@ HeimdallPredicate<CompilationUnitMember> classAssignableToTypeNameEndingWith(
 HeimdallPredicate<CompilationUnitMember> classExtends(String typeName) {
   return HeimdallPredicate(
     'extend $typeName',
-    (item, project) => instantiatedTypeHasRelationship(item, typeName, project, relationship: 'extends'),
+    (item, project) => item.instantiatedTypeHasRelationship(typeName, project, relationship: 'extends'),
   );
 }
 
@@ -38,11 +34,7 @@ HeimdallPredicate<CompilationUnitMember> classExtendsTypeNameEndingWith(
 ) {
   return HeimdallPredicate(
     'extend type name ending with $suffix',
-    (item, project) => extendsTypeNamedWhere(
-      item,
-      project,
-      (typeName) => typeName.endsWith(suffix),
-    ),
+    (item, project) => item.extendsTypeNamedWhere(project, (typeName) => typeName.endsWith(suffix)),
   );
 }
 
@@ -52,11 +44,7 @@ HeimdallPredicate<CompilationUnitMember> classExtendsTypeNameStartingWith(
 ) {
   return HeimdallPredicate(
     'extend type name starting with $prefix',
-    (item, project) => extendsTypeNamedWhere(
-      item,
-      project,
-      (typeName) => typeName.startsWith(prefix),
-    ),
+    (item, project) => item.extendsTypeNamedWhere(project, (typeName) => typeName.startsWith(prefix)),
   );
 }
 
@@ -64,7 +52,7 @@ HeimdallPredicate<CompilationUnitMember> classExtendsTypeNameStartingWith(
 HeimdallPredicate<CompilationUnitMember> classImplements(String typeName) {
   return HeimdallPredicate(
     'implement $typeName',
-    (item, project) => instantiatedTypeHasRelationship(item, typeName, project, relationship: 'implements'),
+    (item, project) => item.instantiatedTypeHasRelationship(typeName, project, relationship: 'implements'),
   );
 }
 
@@ -74,11 +62,7 @@ HeimdallPredicate<CompilationUnitMember> classImplementsTypeNameEndingWith(
 ) {
   return HeimdallPredicate(
     'implement type name ending with $suffix',
-    (item, project) => implementsTypeNamedWhere(
-      item,
-      project,
-      (typeName) => typeName.endsWith(suffix),
-    ),
+    (item, project) => item.implementsTypeNamedWhere(project, (typeName) => typeName.endsWith(suffix)),
   );
 }
 
@@ -86,7 +70,7 @@ HeimdallPredicate<CompilationUnitMember> classImplementsTypeNameEndingWith(
 HeimdallPredicate<CompilationUnitMember> classMixesIn(String typeName) {
   return HeimdallPredicate(
     'mixin $typeName',
-    (item, project) => instantiatedTypeHasRelationship(item, typeName, project, relationship: 'mixins'),
+    (item, project) => item.instantiatedTypeHasRelationship(typeName, project, relationship: 'mixins'),
   );
 }
 
@@ -96,11 +80,7 @@ HeimdallPredicate<CompilationUnitMember> classMixesInTypeNameEndingWith(
 ) {
   return HeimdallPredicate(
     'mixin type name ending with $suffix',
-    (item, project) => mixesInTypeNamedWhere(
-      item,
-      project,
-      (typeName) => typeName.endsWith(suffix),
-    ),
+    (item, project) => item.mixesInTypeNamedWhere(project, (typeName) => typeName.endsWith(suffix)),
   );
 }
 
@@ -110,10 +90,6 @@ HeimdallPredicate<CompilationUnitMember> classMixesInTypeNameStartingWith(
 ) {
   return HeimdallPredicate(
     'mixin type name starting with $prefix',
-    (item, project) => mixesInTypeNamedWhere(
-      item,
-      project,
-      (typeName) => typeName.startsWith(prefix),
-    ),
+    (item, project) => item.mixesInTypeNamedWhere(project, (typeName) => typeName.startsWith(prefix)),
   );
 }

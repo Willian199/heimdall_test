@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:analyzer/dart/analysis/features.dart';
+import 'package:heimdall_test/src/util/extension/yaml_map_extension.dart';
 import 'package:path/path.dart' as p;
 import 'package:pub_semver/pub_semver.dart';
 import 'package:yaml/yaml.dart';
@@ -41,13 +42,13 @@ final class ImportPackageContext {
 }
 
 String? _readPackageName(YamlMap? pubspec) {
-  final name = pubspec == null ? null : _yamlMapValue(pubspec, 'name');
+  final name = pubspec?.valueForKey('name');
   return name is YamlScalar && name.value is String ? name.value as String : null;
 }
 
 FeatureSet _readFeatureSet(YamlMap? pubspec) {
-  final environment = pubspec == null ? null : _yamlMapValue(pubspec, 'environment');
-  final sdkNode = environment is YamlMap ? _yamlMapValue(environment, 'sdk') : null;
+  final environment = pubspec?.valueForKey('environment');
+  final sdkNode = environment is YamlMap ? environment.valueForKey('sdk') : null;
   final sdkConstraint = sdkNode is YamlScalar && sdkNode.value is String ? sdkNode.value as String : null;
   if (sdkConstraint == null) {
     return FeatureSet.latestLanguageVersion();
@@ -75,16 +76,6 @@ YamlMap? _readPubspecYaml(String root) {
   }
   final yaml = loadYamlNode(pubspec.readAsStringSync());
   return yaml is YamlMap ? yaml : null;
-}
-
-YamlNode? _yamlMapValue(YamlMap map, String key) {
-  for (final entry in map.nodes.entries) {
-    final keyNode = entry.key;
-    if (keyNode is YamlScalar && keyNode.value == key) {
-      return entry.value;
-    }
-  }
-  return null;
 }
 
 String? _findPackageRoot(String path) {

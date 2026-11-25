@@ -1,5 +1,6 @@
 ## Unreleased
 
+- **Breaking change:** Fix [#21](https://github.com/Willian199/heimdall_test/issues/21): support analyzer 13 and 14 with `>=13.0.0 <15.0.0`, dropping analyzer 12 support, and migrate formal parameter, named argument, record field, and extension type queries to the updated AST APIs.
 - Fix [#23](https://github.com/Willian199/heimdall_test/issues/23): infer omitted mixin arguments from `on` constraints and instantiated supertypes in public dynamic signature checks, including inherited signatures, while retaining findings for actual `dynamic` arguments.
 
 ## 0.11.1

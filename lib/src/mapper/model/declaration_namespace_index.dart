@@ -1,23 +1,6 @@
 import 'package:analyzer/dart/element/element.dart';
 import 'package:heimdall_test/src/core.dart';
-
-/// The namespace category of an individual top-level symbol.
-enum DeclarationSymbolKind {
-  /// A type or type alias.
-  type,
-
-  /// A top-level function.
-  function,
-
-  /// A top-level getter.
-  getter,
-
-  /// A top-level setter.
-  setter,
-
-  /// One variable, independently of others in the same declaration.
-  variable,
-}
+import 'package:heimdall_test/src/util/enum/declaration_symbol_kind.dart';
 
 /// Internal association between a visible name and its original declaration.
 final class DeclarationSymbol {

@@ -1,5 +1,6 @@
 import 'package:heimdall_test/heimdall_test.dart';
 import 'package:heimdall_test/src/features/queries/member_queries.dart';
+import 'package:heimdall_test/src/util/extension/calls/class_member_extension.dart';
 
 /// Predicate-side DSL for member pattern rules.
 extension MemberCallMethodNameMatchingPredicateRules on MemberPredicateBuilder {
@@ -95,7 +96,7 @@ extension MemberCallMethodNameMatchingShouldRules on MemberShouldBuilder {
 
 HeimdallCondition<ClassMember> _callMethodNameMatchingCondition(RegExp pattern) {
   return HeimdallCondition('call method name matching $pattern', (item, _) {
-    final invocation = memberMethodInvocationWhere(item, (methodName) => pattern.hasMatch(methodName));
+    final invocation = item.methodInvocationWhere((methodName) => pattern.hasMatch(methodName));
     final passed = invocation != null;
     final location = invocation == null
         ? (
@@ -121,7 +122,7 @@ HeimdallCondition<ClassMember> _callMethodNameMatchingCondition(RegExp pattern) 
 }
 
 bool _memberCallsMethodName(ClassMember item, RegExp pattern) {
-  return memberHasMethodInvocationWhere(item, (methodName) => pattern.hasMatch(methodName));
+  return item.hasMethodInvocationWhere((methodName) => pattern.hasMatch(methodName));
 }
 
 HeimdallCondition<ClassMember> _memberShouldNotCallMethodNameMatching(RegExp pattern) {

@@ -1,5 +1,5 @@
 import 'package:heimdall_test/heimdall_test.dart';
-import 'package:heimdall_test/src/features/queries/declaration_location_queries.dart';
+import 'package:heimdall_test/src/util/extension/compilation_unit_member_extension.dart';
 
 /// Predicate-side DSL for class type name prefix rules.
 extension ClassHaveTypeNameStartingWithPredicateRules on ClassPredicateBuilder {
@@ -131,7 +131,7 @@ HeimdallCondition<CompilationUnitMember> _classShouldNotHaveTypeNameStartingWith
 ) {
   return HeimdallCondition('not have type name starting with $prefix', (item, _) {
     final matches = item.name.startsWith(prefix);
-    final location = matches ? item.sourceLocationAt(declarationNameOffset(item)) : null;
+    final location = matches ? item.sourceLocationAt(item.nameOffset) : null;
     final findings = location == null
         ? const <HeimdallValidationInfo>[]
         : [

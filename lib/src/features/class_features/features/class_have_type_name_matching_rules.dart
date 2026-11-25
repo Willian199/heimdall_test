@@ -1,5 +1,5 @@
 import 'package:heimdall_test/heimdall_test.dart';
-import 'package:heimdall_test/src/features/queries/declaration_location_queries.dart';
+import 'package:heimdall_test/src/util/extension/compilation_unit_member_extension.dart';
 
 /// Predicate-side DSL for class type name regex rules.
 extension ClassHaveTypeNameMatchingPredicateRules on ClassPredicateBuilder {
@@ -113,7 +113,7 @@ HeimdallCondition<CompilationUnitMember> _classShouldHaveTypeNameMatching(
 ) {
   return HeimdallCondition('have type name matching ${pattern.pattern}', (item, _) {
     final matches = pattern.hasMatch(item.name);
-    final location = matches ? item.sourceLocationAt(declarationNameOffset(item)) : null;
+    final location = matches ? item.sourceLocationAt(item.nameOffset) : null;
     final findings = [
       if (location != null)
         HeimdallValidationInfo(
@@ -142,7 +142,7 @@ HeimdallCondition<CompilationUnitMember> _classShouldNotHaveTypeNameMatching(
 ) {
   return HeimdallCondition('not have type name matching ${pattern.pattern}', (item, _) {
     final matches = pattern.hasMatch(item.name);
-    final location = matches ? item.sourceLocationAt(declarationNameOffset(item)) : null;
+    final location = matches ? item.sourceLocationAt(item.nameOffset) : null;
     final findings = [
       if (location != null)
         HeimdallValidationInfo(

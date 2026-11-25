@@ -1,6 +1,5 @@
 import 'package:heimdall_test/heimdall_test.dart';
 import 'package:heimdall_test/src/features/file_features/helpers/import_style_conditions.dart';
-export 'public_dynamic_signature_rule.dart';
 
 /// Built-in rules for source-code hygiene checks.
 final class HeimdallCodeSight {

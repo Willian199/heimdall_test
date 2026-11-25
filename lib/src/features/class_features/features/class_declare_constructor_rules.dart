@@ -1,5 +1,6 @@
 import 'package:heimdall_test/heimdall_test.dart';
-import 'package:heimdall_test/src/features/queries/declaration_location_queries.dart';
+import 'package:heimdall_test/src/util/extension/constructor_declaration_extension.dart';
+import 'package:heimdall_test/src/util/extension/extension_type_declaration_extension.dart';
 
 /// Predicate-side DSL for declared constructor rules.
 extension ClassDeclareConstructorPredicateRules on ClassPredicateBuilder {
@@ -136,7 +137,7 @@ HeimdallCondition<CompilationUnitMember> _classShouldNotDeclareConstructor({
   return HeimdallCondition('not declare constructor $name', (item, _) {
     final findings = _matchingConstructors(item, name).map(
       (constructor) {
-        final location = constructorLocation(constructor);
+        final location = constructor.nameLocation;
         return HeimdallValidationInfo(
           filePath: item.sourcePath,
           line: location.line,
@@ -164,7 +165,7 @@ HeimdallPredicate<CompilationUnitMember> _classDeclaresConstructor({
 }
 
 bool _declaresConstructor(CompilationUnitMember item, String name) {
-  if (item is ExtensionTypeDeclaration && (item.primaryConstructor.constructorName?.name.lexeme ?? 'new') == name) {
+  if (item is ExtensionTypeDeclaration && (item.extensionTypePrimaryConstructor.constructorName?.name.lexeme ?? 'new') == name) {
     return true;
   }
 

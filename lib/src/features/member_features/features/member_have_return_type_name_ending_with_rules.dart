@@ -1,6 +1,6 @@
 import 'package:heimdall_test/heimdall_test.dart';
-import 'package:heimdall_test/src/features/member_features/helpers/member_return_type_rule_helpers.dart';
 import 'package:heimdall_test/src/features/queries/member_queries.dart';
+import 'package:heimdall_test/src/util/extension/class_member_extension.dart';
 
 /// Predicate-side DSL for member method return type-name rules.
 extension MemberHaveReturnTypeNameEndingWithPredicateRules on MemberPredicateBuilder {
@@ -97,13 +97,13 @@ extension MemberHaveReturnTypeNameEndingWithShouldRules on MemberShouldBuilder {
 HeimdallPredicate<ClassMember> _memberReturnTypeName(String suffix) {
   return HeimdallPredicate(
     'have return type name ending with $suffix',
-    (item, _) => memberReturnTypeName(item) != null && memberReturnTypeName(item)!.endsWith(suffix),
+    (item, _) => item.returnTypeName != null && item.returnTypeName!.endsWith(suffix),
   );
 }
 
 HeimdallCondition<ClassMember> _memberShouldHaveReturnTypeName(String suffix) {
   return HeimdallCondition('have return type name ending with $suffix', (item, _) {
-    final type = memberReturnTypeName(item);
+    final type = item.returnTypeName;
     final findings = type != null && type.endsWith(suffix)
         ? const <HeimdallValidationInfo>[]
         : [
@@ -124,13 +124,13 @@ HeimdallCondition<ClassMember> _memberShouldHaveReturnTypeName(String suffix) {
 HeimdallCondition<ClassMember> _memberShouldNotHaveReturnTypeNameEndingWith(String suffix) {
   return prohibitedMemberCondition(
     'have return type name ending with $suffix',
-    (item, _) => memberReturnTypeName(item) != null && memberReturnTypeName(item)!.endsWith(suffix),
+    (item, _) => item.returnTypeName != null && item.returnTypeName!.endsWith(suffix),
   );
 }
 
 HeimdallPredicate<ClassMember> _memberDoesNotHaveReturnTypeNameEndingWith(String suffix) {
   return HeimdallPredicate(
     'not have return type name ending with $suffix',
-    (item, project) => memberReturnTypeName(item) == null || !memberReturnTypeName(item)!.endsWith(suffix),
+    (item, project) => item.returnTypeName == null || !item.returnTypeName!.endsWith(suffix),
   );
 }

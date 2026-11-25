@@ -1,5 +1,5 @@
 import 'package:heimdall_test/heimdall_test.dart';
-import 'package:heimdall_test/src/features/queries/declaration_location_queries.dart';
+import 'package:heimdall_test/src/util/extension/constructor_declaration_extension.dart';
 
 /// Creates a predicate that accepts classes declaring a matching constructor.
 HeimdallPredicate<CompilationUnitMember> classHasConstructorName(String description, bool Function(String name) test) {
@@ -28,8 +28,8 @@ HeimdallCondition<CompilationUnitMember> classShouldHaveConstructorName(String n
         ? [
             HeimdallValidationInfo(
               filePath: item.sourcePath,
-              line: constructorLocation(matchingConstructor).line,
-              column: constructorLocation(matchingConstructor).column,
+              line: matchingConstructor.nameLocation.line,
+              column: matchingConstructor.nameLocation.column,
               message: '${item.name} declares matching constructor ${(matchingConstructor as ClassMember).name}',
             ),
           ]
@@ -54,7 +54,7 @@ HeimdallCondition<CompilationUnitMember> classShouldNotHaveConstructorName(Strin
 
   return HeimdallCondition(description, (item, _) {
     final findings = _matchingConstructors(item, test).map((constructor) {
-      final location = constructorLocation(constructor);
+      final location = constructor.nameLocation;
 
       return HeimdallValidationInfo(
         filePath: item.sourcePath,

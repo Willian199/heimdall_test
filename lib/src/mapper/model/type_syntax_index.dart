@@ -1,4 +1,5 @@
 import 'package:analyzer/dart/ast/ast.dart';
+import 'package:heimdall_test/src/util/extension/extension_type_declaration_extension.dart';
 
 /// Syntax-only metadata shared by queries over an imported project snapshot.
 ///
@@ -19,7 +20,7 @@ final class TypeSyntaxIndex {
     switch (node) {
           ClassDeclaration(:final namePart) => namePart.typeParameters,
           EnumDeclaration(:final namePart) => namePart.typeParameters,
-          ExtensionTypeDeclaration(:final primaryConstructor) => primaryConstructor.typeParameters,
+          ExtensionTypeDeclaration(:final extensionTypePrimaryConstructor) => extensionTypePrimaryConstructor.typeParameters,
           FunctionDeclaration(:final functionExpression) => functionExpression.typeParameters,
           _ => node.childEntities.whereType<TypeParameterList>().firstOrNull,
         }?.typeParameters ??

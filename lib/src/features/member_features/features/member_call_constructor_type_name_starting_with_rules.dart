@@ -4,9 +4,10 @@ import 'package:heimdall_test/src/core/heimdall_condition.dart';
 import 'package:heimdall_test/src/core/heimdall_predicate.dart';
 import 'package:heimdall_test/src/core/member_rules/member_predicate_builder.dart';
 import 'package:heimdall_test/src/core/member_rules/member_should_builder.dart';
-import 'package:heimdall_test/src/core/non_empty_iterable.dart';
 import 'package:heimdall_test/src/features/queries/member_queries.dart';
 import 'package:heimdall_test/src/mapper/model/heimdall_project.dart';
+import 'package:heimdall_test/src/util/extension/calls/class_member_extension.dart';
+import 'package:heimdall_test/src/util/extension/iterable_extension.dart';
 
 /// Predicate-side DSL for member pattern rules.
 extension MemberCallConstructorTypeNameStartingWithPredicateRules on MemberPredicateBuilder {
@@ -108,7 +109,7 @@ HeimdallCondition<ClassMember> _callConstructorTypeNameStartingWithCondition(Str
 }
 
 bool _memberCallsConstructorTypeName(ClassMember item, String prefix, HeimdallProject project) {
-  return memberHasConstructorCallWhere(item, project, (typeName) => typeName.startsWith(prefix));
+  return item.hasConstructorCallWhere(project, (typeName) => typeName.startsWith(prefix));
 }
 
 HeimdallCondition<ClassMember> _memberShouldNotCallConstructorTypeNameStartingWith(String prefix) {

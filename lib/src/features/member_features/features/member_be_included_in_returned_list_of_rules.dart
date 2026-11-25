@@ -1,5 +1,6 @@
 import 'package:heimdall_test/heimdall_test.dart';
 import 'package:heimdall_test/src/features/queries/field_relationship_queries.dart';
+import 'package:heimdall_test/src/util/extension/relationships/class_member_extension.dart';
 
 /// Predicate-side be included in a returned list of rules.
 extension MemberBeIncludedInReturnedListOfPredicateRules on MemberPredicateBuilder {
@@ -61,7 +62,7 @@ HeimdallPredicate<ClassMember> _matches(
 }) {
   return HeimdallPredicate(
     '${prohibited ? 'not ' : ''}be included in a returned list of $methodName',
-    (item, _) => prohibited ? !fieldMatchesMethod(item, methodName, returnedList: true) : fieldMatchesMethod(item, methodName, returnedList: true),
+    (item, _) => prohibited ? !item.fieldMatchesMethod(methodName, returnedList: true) : item.fieldMatchesMethod(methodName, returnedList: true),
   );
 }
 

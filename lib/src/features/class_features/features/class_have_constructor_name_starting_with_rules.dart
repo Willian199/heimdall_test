@@ -4,8 +4,8 @@ import 'package:heimdall_test/src/core/class_rules/class_predicate_builder.dart'
 import 'package:heimdall_test/src/core/class_rules/class_should_builder.dart';
 import 'package:heimdall_test/src/core/heimdall_condition.dart';
 import 'package:heimdall_test/src/core/heimdall_predicate.dart';
-import 'package:heimdall_test/src/core/non_empty_iterable.dart';
 import 'package:heimdall_test/src/features/class_features/helpers/class_constructor_name_rule_helpers.dart';
+import 'package:heimdall_test/src/util/extension/iterable_extension.dart';
 
 /// Predicate-side DSL for constructor name prefix rules.
 extension ClassHaveConstructorNameStartingWithPredicateRules on ClassPredicateBuilder {

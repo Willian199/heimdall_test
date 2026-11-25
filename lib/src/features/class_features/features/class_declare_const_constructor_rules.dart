@@ -1,5 +1,6 @@
 import 'package:heimdall_test/heimdall_test.dart';
-import 'package:heimdall_test/src/features/queries/declaration_location_queries.dart';
+import 'package:heimdall_test/src/util/extension/constructor_declaration_extension.dart';
+import 'package:heimdall_test/src/util/extension/extension_type_declaration_extension.dart';
 
 /// Predicate-side DSL for const constructor rules.
 extension ClassDeclareConstConstructorPredicateRules on ClassPredicateBuilder {
@@ -140,7 +141,7 @@ HeimdallCondition<CompilationUnitMember> _classShouldNotDeclareConstConstructor(
   return HeimdallCondition('not declare const constructor $name', (item, _) {
     final findings = _matchingConstConstructors(item, name).map(
       (constructor) {
-        final location = constructorLocation(constructor);
+        final location = constructor.nameLocation;
         return HeimdallValidationInfo(
           filePath: item.sourcePath,
           line: location.line,
@@ -169,8 +170,8 @@ HeimdallPredicate<CompilationUnitMember> _classDeclaresConstConstructor({
 
 bool _declaresConstConstructor(CompilationUnitMember item, String name) {
   if (item is ExtensionTypeDeclaration &&
-      item.primaryConstructor.constKeyword != null &&
-      (item.primaryConstructor.constructorName?.name.lexeme ?? 'new') == name) {
+      item.extensionTypePrimaryConstructor.constKeyword != null &&
+      (item.extensionTypePrimaryConstructor.constructorName?.name.lexeme ?? 'new') == name) {
     return true;
   }
 

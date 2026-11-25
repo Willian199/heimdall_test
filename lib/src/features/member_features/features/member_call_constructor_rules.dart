@@ -1,5 +1,6 @@
 import 'package:heimdall_test/heimdall_test.dart';
 import 'package:heimdall_test/src/features/queries/member_queries.dart';
+import 'package:heimdall_test/src/util/extension/calls/class_member_extension.dart';
 
 /// Predicate-side DSL for executable constructor call rules.
 extension MemberCallConstructorPredicateRules on MemberPredicateBuilder {
@@ -129,5 +130,5 @@ HeimdallPredicate<ClassMember> _memberMatchesCallConstructor(String typeName) {
 
 /// Returns `true` when [member] calls a constructor of [typeName].
 bool _memberCallsConstructor(ClassMember member, String typeName, HeimdallProject project) {
-  return memberHasConstructorCallWhere(member, project, (name) => name == typeName);
+  return member.hasConstructorCallWhere(project, (name) => name == typeName);
 }

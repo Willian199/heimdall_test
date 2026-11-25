@@ -2,6 +2,10 @@ import 'dart:convert';
 
 import 'package:path/path.dart' as p;
 
+abstract final class _RegexPatterns {
+  static final packageName = RegExp(r'^[a-z_][a-z0-9_]*$');
+}
+
 const _defaultSdkLibraries = ['dart:core', 'dart:async', 'dart:collection', 'dart:typed_data'];
 
 /// Allowlist for lazy, query-only library imports.
@@ -32,7 +36,7 @@ final class ReferenceImportOptions {
       }
     }
     for (final name in names) {
-      if (!_packageName.hasMatch(name)) {
+      if (!_RegexPatterns.packageName.hasMatch(name)) {
         throw ArgumentError.value(name, 'packages', 'Expected a package name');
       }
     }
@@ -51,8 +55,6 @@ final class ReferenceImportOptions {
   const ReferenceImportOptions.none() : sdkLibraries = const [], packageLibraries = const [], packages = const [], sdkPath = null;
 
   const ReferenceImportOptions._({required this.sdkLibraries, required this.packageLibraries, required this.packages, required this.sdkPath});
-
-  static final _packageName = RegExp(r'^[a-z_][a-z0-9_]*$');
 
   /// Exact SDK library URIs available for consultation.
   final List<String> sdkLibraries;
@@ -94,7 +96,7 @@ final class ReferenceImportOptions {
       return false;
     }
     return scheme == 'dart'
-        ? segments.length == 1 && RegExp(r'^[a-z_][a-z0-9_]*$').hasMatch(segments.single)
-        : segments.length > 1 && _packageName.hasMatch(segments.first) && segments.last.endsWith('.dart');
+        ? segments.length == 1 && _RegexPatterns.packageName.hasMatch(segments.single)
+        : segments.length > 1 && _RegexPatterns.packageName.hasMatch(segments.first) && segments.last.endsWith('.dart');
   }
 }

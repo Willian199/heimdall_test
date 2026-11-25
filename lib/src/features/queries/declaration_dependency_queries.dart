@@ -5,7 +5,8 @@ import 'package:heimdall_test/src/core.dart';
 import 'package:heimdall_test/src/features/queries/extension_reference_index.dart';
 import 'package:heimdall_test/src/features/queries/value_reference_index.dart';
 import 'package:heimdall_test/src/mapper/model/declaration_dependency_index.dart';
-import 'package:heimdall_test/src/mapper/model/declaration_namespace_index.dart';
+import 'package:heimdall_test/src/util/enum/declaration_symbol_kind.dart';
+import 'package:heimdall_test/src/util/extension/extension_type_declaration_extension.dart';
 
 /// Returns local type dependencies that [item] references.
 /// Results are immutable and reused within the imported project snapshot.
@@ -187,7 +188,7 @@ final class _IdentifierReferenceVisitor extends RecursiveAstVisitor<void> {
         for (final variable in field.fields.variables) variable.name.lexeme,
       for (final method in owner.methods) method.name.lexeme,
       if (owner is ExtensionTypeDeclaration)
-        for (final parameter in owner.primaryConstructor.formalParameters.parameters)
+        for (final parameter in owner.extensionTypePrimaryConstructor.formalParameters.parameters)
           if (parameter.name != null) parameter.name!.lexeme,
     });
     visit();
@@ -233,7 +234,7 @@ final class _IdentifierReferenceVisitor extends RecursiveAstVisitor<void> {
       node,
       () => _withScope(
         () => super.visitExtensionTypeDeclaration(node),
-        names: _typeParameterNames(node.primaryConstructor.typeParameters),
+        names: _typeParameterNames(node.extensionTypePrimaryConstructor.typeParameters),
       ),
     );
   }

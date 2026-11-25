@@ -1,5 +1,7 @@
 import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/dart/ast/visitor.dart';
+import 'package:heimdall_test/src/util/extension/ast_node_extension.dart';
+import 'package:heimdall_test/src/util/extension/statement_extension.dart';
 
 /// Names forwarded from matching parameters to named arguments of a returned
 /// constructor of the owning class.
@@ -49,7 +51,7 @@ final class _ReturnVisitor extends RecursiveAstVisitor<void> {
   @override
   void visitTryStatement(TryStatement node) {
     final finallyBlock = node.finallyBlock;
-    if (finallyBlock != null && _alwaysExits(finallyBlock)) {
+    if (finallyBlock != null && finallyBlock.alwaysExits) {
       finallyBlock.accept(this);
     } else {
       super.visitTryStatement(node);
@@ -88,9 +90,9 @@ final class _ReturnVisitor extends RecursiveAstVisitor<void> {
         return;
       }
       final forwarded = <String>{};
-      for (final argument in arguments.arguments.whereType<NamedExpression>()) {
-        final name = argument.name.label.name;
-        if (parameterNames.contains(name) && _forwardsParameter(argument.expression, name)) {
+      for (final argument in arguments.arguments.whereType<NamedArgument>()) {
+        final name = argument.name.lexeme;
+        if (parameterNames.contains(name) && _forwardsParameter(argument.argumentExpression, name)) {
           forwarded.add(name);
         }
       }
@@ -98,14 +100,6 @@ final class _ReturnVisitor extends RecursiveAstVisitor<void> {
     }
   }
 }
-
-bool _alwaysExits(Statement statement) => switch (statement) {
-  ReturnStatement() => true,
-  ExpressionStatement(:final expression) => expression is ThrowExpression || expression is RethrowExpression,
-  Block(:final statements) => statements.any(_alwaysExits),
-  IfStatement(:final thenStatement, :final elseStatement) => elseStatement != null && _alwaysExits(thenStatement) && _alwaysExits(elseStatement),
-  _ => false,
-};
 
 bool _forwardsParameter(Expression expression, String name) {
   if (expression is ParenthesizedExpression) {
@@ -143,12 +137,12 @@ bool _hasLocalShadow(SimpleIdentifier identifier) {
         if (statement is FunctionDeclarationStatement && statement.functionDeclaration.name.lexeme == identifier.name) {
           return true;
         }
-        if (statement is PatternVariableDeclarationStatement && _declaresName(statement.declaration.pattern, identifier.name)) {
+        if (statement is PatternVariableDeclarationStatement && statement.declaration.pattern.declaresName(identifier.name)) {
           return true;
         }
       }
     }
-    if (parent is ForStatement && _declaresName(parent.forLoopParts, identifier.name)) {
+    if (parent is ForStatement && parent.forLoopParts.declaresName(identifier.name)) {
       return true;
     }
     if (parent is CatchClause &&
@@ -159,28 +153,15 @@ bool _hasLocalShadow(SimpleIdentifier identifier) {
         parent.caseClause != null &&
         parent.thenStatement.offset <= identifier.offset &&
         identifier.end <= parent.thenStatement.end &&
-        _declaresName(parent.caseClause!, identifier.name)) {
+        (parent.caseClause!).declaresName(identifier.name)) {
       return true;
     }
-    if (parent is SwitchPatternCase && _declaresName(parent.guardedPattern.pattern, identifier.name)) {
+    if (parent is SwitchPatternCase && parent.guardedPattern.pattern.declaresName(identifier.name)) {
       return true;
     }
-    if (parent is SwitchExpressionCase && _declaresName(parent.guardedPattern.pattern, identifier.name)) {
+    if (parent is SwitchExpressionCase && parent.guardedPattern.pattern.declaresName(identifier.name)) {
       return true;
     }
   }
   return false;
-}
-
-bool _declaresName(AstNode node, String name) {
-  if (node is VariableDeclaration && node.name.lexeme == name) {
-    return true;
-  }
-  if (node is DeclaredIdentifier && node.name.lexeme == name) {
-    return true;
-  }
-  if (node is DeclaredVariablePattern && node.name.lexeme == name) {
-    return true;
-  }
-  return node.childEntities.whereType<AstNode>().any((child) => _declaresName(child, name));
 }

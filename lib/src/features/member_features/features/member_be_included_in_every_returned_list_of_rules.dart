@@ -1,5 +1,6 @@
 import 'package:heimdall_test/heimdall_test.dart';
 import 'package:heimdall_test/src/features/queries/field_relationship_queries.dart';
+import 'package:heimdall_test/src/util/extension/relationships/class_member_extension.dart';
 
 /// Selects fields included in every returned list of a method or getter.
 extension MemberIncludedInEveryReturnedListPredicateRules on MemberPredicateBuilder {
@@ -7,7 +8,7 @@ extension MemberIncludedInEveryReturnedListPredicateRules on MemberPredicateBuil
   MemberPredicateBuilder areIncludedInEveryReturnedListOf(String methodName) => satisfy(
     HeimdallPredicate(
       'are included in every returned list of $methodName',
-      (item, _) => fieldMatchesMethod(item, methodName, returnedList: true, everyReturn: true),
+      (item, _) => item.fieldMatchesMethod(methodName, returnedList: true, everyReturn: true),
     ),
   );
 
@@ -15,7 +16,7 @@ extension MemberIncludedInEveryReturnedListPredicateRules on MemberPredicateBuil
   MemberPredicateBuilder areNotIncludedInEveryReturnedListOf(String methodName) => satisfy(
     HeimdallPredicate(
       'are not included in every returned list of $methodName',
-      (item, _) => !fieldMatchesMethod(item, methodName, returnedList: true, everyReturn: true),
+      (item, _) => !item.fieldMatchesMethod(methodName, returnedList: true, everyReturn: true),
     ),
   );
 }

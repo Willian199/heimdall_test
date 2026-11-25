@@ -1,6 +1,6 @@
 import 'package:heimdall_test/heimdall_test.dart';
-import 'package:heimdall_test/src/features/member_features/helpers/member_return_type_rule_helpers.dart';
 import 'package:heimdall_test/src/features/queries/member_queries.dart';
+import 'package:heimdall_test/src/util/extension/class_member_extension.dart';
 
 /// Predicate-side DSL for member method return type-name rules.
 extension MemberHaveReturnTypeNameStartingWithPredicateRules on MemberPredicateBuilder {
@@ -97,13 +97,13 @@ extension MemberHaveReturnTypeNameStartingWithShouldRules on MemberShouldBuilder
 HeimdallPredicate<ClassMember> _memberReturnTypeName(String prefix) {
   return HeimdallPredicate(
     'have return type name starting with $prefix',
-    (item, _) => memberReturnTypeName(item) != null && memberReturnTypeName(item)!.startsWith(prefix),
+    (item, _) => item.returnTypeName != null && item.returnTypeName!.startsWith(prefix),
   );
 }
 
 HeimdallCondition<ClassMember> _memberShouldHaveReturnTypeName(String prefix) {
   return HeimdallCondition('have return type name starting with $prefix', (item, _) {
-    final type = memberReturnTypeName(item);
+    final type = item.returnTypeName;
     final findings = type != null && type.startsWith(prefix)
         ? const <HeimdallValidationInfo>[]
         : [
@@ -124,13 +124,13 @@ HeimdallCondition<ClassMember> _memberShouldHaveReturnTypeName(String prefix) {
 HeimdallCondition<ClassMember> _memberShouldNotHaveReturnTypeNameStartingWith(String prefix) {
   return prohibitedMemberCondition(
     'have return type name starting with $prefix',
-    (item, _) => memberReturnTypeName(item) != null && memberReturnTypeName(item)!.startsWith(prefix),
+    (item, _) => item.returnTypeName != null && item.returnTypeName!.startsWith(prefix),
   );
 }
 
 HeimdallPredicate<ClassMember> _memberDoesNotHaveReturnTypeNameStartingWith(String prefix) {
   return HeimdallPredicate(
     'not have return type name starting with $prefix',
-    (item, project) => memberReturnTypeName(item) == null || !memberReturnTypeName(item)!.startsWith(prefix),
+    (item, project) => item.returnTypeName == null || !item.returnTypeName!.startsWith(prefix),
   );
 }

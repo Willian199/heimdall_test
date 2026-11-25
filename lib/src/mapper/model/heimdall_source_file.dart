@@ -5,6 +5,9 @@ import 'package:heimdall_test/src/mapper/model/flow_promotion_index.dart';
 import 'package:heimdall_test/src/mapper/model/heimdall_declaration.dart';
 import 'package:heimdall_test/src/mapper/model/heimdall_dependency.dart';
 import 'package:heimdall_test/src/mapper/model/heimdall_member.dart';
+import 'package:heimdall_test/src/util/extension/constructor_declaration_extension.dart';
+import 'package:heimdall_test/src/util/extension/uri_based_directive_extension.dart';
+import 'package:heimdall_test/src/util/extension/variable_declaration_extension.dart';
 import 'package:meta/meta.dart';
 
 /// Dart source file imported by Heimdall.
@@ -108,25 +111,27 @@ final class HeimdallSourceFile {
   ]);
 
   /// Imports using a `dart:` URI.
-  late final List<ImportDirective> dartImports = List.unmodifiable(importDirectives.where(_hasDartUri));
+  late final List<ImportDirective> dartImports = List.unmodifiable(importDirectives.where((value) => value.hasDartUri));
 
   /// Imports using a `package:` URI.
-  late final List<ImportDirective> packageImports = List.unmodifiable(importDirectives.where(_hasPackageUri));
+  late final List<ImportDirective> packageImports = List.unmodifiable(importDirectives.where((value) => value.hasPackageUri));
 
   /// Imports using a relative file URI.
-  late final List<ImportDirective> relativeImports = List.unmodifiable(importDirectives.where(_hasRelativeUri));
+  late final List<ImportDirective> relativeImports = List.unmodifiable(importDirectives.where((value) => value.hasRelativeUri));
 
   /// Relative imports that go to a parent directory.
-  late final List<ImportDirective> relativeUpwardImports = List.unmodifiable(relativeImports.where(_hasUpwardRelativeUri));
+  late final List<ImportDirective> relativeUpwardImports = List.unmodifiable(relativeImports.where((value) => value.hasUpwardRelativeUri));
 
   /// Relative imports that stay in the current directory.
-  late final List<ImportDirective> relativeSameDirectoryImports = List.unmodifiable(relativeImports.where(_hasSameDirectoryRelativeUri));
+  late final List<ImportDirective> relativeSameDirectoryImports = List.unmodifiable(
+    relativeImports.where((value) => value.hasSameDirectoryRelativeUri),
+  );
 
   /// Imports resolved to an imported local file.
   late final List<ImportDirective> resolvedImports = List.unmodifiable(importDirectives.where((directive) => directive.targetFiles.isNotEmpty));
 
   /// Relative or package imports that were not resolved to an imported file.
-  late final List<ImportDirective> unresolvedLocalImports = List.unmodifiable(importDirectives.where(_isUnresolvedLocalDirective));
+  late final List<ImportDirective> unresolvedLocalImports = List.unmodifiable(importDirectives.where((value) => value.isUnresolvedLocalDirective));
 
   /// Imports that point outside the imported source set.
   late final List<ImportDirective> externalImports = List.unmodifiable(
@@ -143,19 +148,19 @@ final class HeimdallSourceFile {
   late final List<ImportDirective> combinatorImports = List.unmodifiable(importDirectives.where((directive) => directive.combinators.isNotEmpty));
 
   /// Exports using a `dart:` URI.
-  late final List<ExportDirective> dartExports = List.unmodifiable(exportDirectives.where(_hasDartUri));
+  late final List<ExportDirective> dartExports = List.unmodifiable(exportDirectives.where((value) => value.hasDartUri));
 
   /// Exports using a `package:` URI.
-  late final List<ExportDirective> packageExports = List.unmodifiable(exportDirectives.where(_hasPackageUri));
+  late final List<ExportDirective> packageExports = List.unmodifiable(exportDirectives.where((value) => value.hasPackageUri));
 
   /// Exports using a relative file URI.
-  late final List<ExportDirective> relativeExports = List.unmodifiable(exportDirectives.where(_hasRelativeUri));
+  late final List<ExportDirective> relativeExports = List.unmodifiable(exportDirectives.where((value) => value.hasRelativeUri));
 
   /// Exports resolved to an imported local file.
   late final List<ExportDirective> resolvedExports = List.unmodifiable(exportDirectives.where((directive) => directive.targetFiles.isNotEmpty));
 
   /// Relative or package exports that were not resolved to an imported file.
-  late final List<ExportDirective> unresolvedLocalExports = List.unmodifiable(exportDirectives.where(_isUnresolvedLocalDirective));
+  late final List<ExportDirective> unresolvedLocalExports = List.unmodifiable(exportDirectives.where((value) => value.isUnresolvedLocalDirective));
 
   /// Exports that point outside the imported source set.
   late final List<ExportDirective> externalExports = List.unmodifiable(
@@ -317,12 +322,12 @@ final class HeimdallSourceFile {
 
   /// Individual public top-level variables declared in this file.
   late final List<VariableDeclaration> publicTopLevelVariableDeclarations = List.unmodifiable([
-    for (final declaration in topLevelVariables) ...declaration.variables.variables.where(_isPublicVariable),
+    for (final declaration in topLevelVariables) ...declaration.variables.variables.where((value) => value.isPublicDeclaration),
   ]);
 
   /// Individual private top-level variables declared in this file.
   late final List<VariableDeclaration> privateTopLevelVariableDeclarations = List.unmodifiable([
-    for (final declaration in topLevelVariables) ...declaration.variables.variables.where(_isPrivateVariable),
+    for (final declaration in topLevelVariables) ...declaration.variables.variables.where((value) => value.isPrivateDeclaration),
   ]);
 
   /// Top-level declarations that have annotations.
@@ -373,23 +378,27 @@ final class HeimdallSourceFile {
   ///
   /// For multi-variable declarations, prefer [publicFieldVariables] and
   /// [privateFieldVariables] when a rule needs per-field visibility.
-  late final List<FieldDeclaration> publicFields = List.unmodifiable(fields.where((field) => field.fields.variables.any(_isPublicVariable)));
+  late final List<FieldDeclaration> publicFields = List.unmodifiable(
+    fields.where((field) => field.fields.variables.any((value) => value.isPublicDeclaration)),
+  );
 
   /// Private field declarations in this file.
   ///
   /// A declaration with both public and private variables appears in both
   /// [publicFields] and [privateFields]. Use [publicFieldVariables] and
   /// [privateFieldVariables] for exact per-field checks.
-  late final List<FieldDeclaration> privateFields = List.unmodifiable(fields.where((field) => field.fields.variables.any(_isPrivateVariable)));
+  late final List<FieldDeclaration> privateFields = List.unmodifiable(
+    fields.where((field) => field.fields.variables.any((value) => value.isPrivateDeclaration)),
+  );
 
   /// Individual public field variables in this file.
   late final List<VariableDeclaration> publicFieldVariables = List.unmodifiable([
-    for (final field in fields) ...field.fields.variables.where(_isPublicVariable),
+    for (final field in fields) ...field.fields.variables.where((value) => value.isPublicDeclaration),
   ]);
 
   /// Individual private field variables in this file.
   late final List<VariableDeclaration> privateFieldVariables = List.unmodifiable([
-    for (final field in fields) ...field.fields.variables.where(_isPrivateVariable),
+    for (final field in fields) ...field.fields.variables.where((value) => value.isPrivateDeclaration),
   ]);
 
   /// Static field declarations in this file.
@@ -419,10 +428,10 @@ final class HeimdallSourceFile {
   ]);
 
   /// Public constructor declarations in this file.
-  late final List<ConstructorDeclaration> publicConstructors = List.unmodifiable(constructors.where(_isPublicConstructor));
+  late final List<ConstructorDeclaration> publicConstructors = List.unmodifiable(constructors.where((value) => value.isPublicConstructor));
 
   /// Private constructor declarations in this file.
-  late final List<ConstructorDeclaration> privateConstructors = List.unmodifiable(constructors.where(_isPrivateConstructor));
+  late final List<ConstructorDeclaration> privateConstructors = List.unmodifiable(constructors.where((value) => value.isPrivateConstructor));
 
   /// Const constructor declarations in this file.
   late final List<ConstructorDeclaration> constConstructors = List.unmodifiable(
@@ -501,63 +510,6 @@ final class HeimdallSourceUri {
   /// Whether the URI belongs to a part or part-of directive.
   bool get isPart => directive is PartDirective || directive is PartOfDirective;
 }
-
-bool _hasDartUri(UriBasedDirective directive) => directive.targetUris.any((uri) => uri._uriKind == _DirectiveUriKind.dart);
-
-bool _hasPackageUri(UriBasedDirective directive) => directive.targetUris.any((uri) => uri._uriKind == _DirectiveUriKind.package);
-
-bool _hasRelativeUri(UriBasedDirective directive) => directive.targetUris.any((uri) => uri._uriKind == _DirectiveUriKind.relative);
-
-bool _hasUpwardRelativeUri(UriBasedDirective directive) {
-  return directive.targetUris.any(
-    (uri) => uri == '..' || uri.startsWith('../') || uri.contains('/../'),
-  );
-}
-
-bool _hasSameDirectoryRelativeUri(UriBasedDirective directive) {
-  return directive.targetUris.any((uri) {
-    if (Uri.tryParse(uri)?.hasScheme != false || uri == '..' || uri.startsWith('../') || uri.contains('/../')) {
-      return false;
-    }
-    if (!uri.contains('/')) {
-      return true;
-    }
-    return uri.startsWith('./') && !uri.substring(2).contains('/');
-  });
-}
-
-bool _isUnresolvedLocalDirective(UriBasedDirective directive) {
-  return directive.targetUris.any(
-    (uri) =>
-        (uri._uriKind == _DirectiveUriKind.relative || uri._uriKind == _DirectiveUriKind.package) &&
-        !directive.resolvedTargets.any((target) => target.uri == uri),
-  );
-}
-
-enum _DirectiveUriKind { dart, package, relative, other }
-
-extension _StringUriKind on String {
-  _DirectiveUriKind get _uriKind {
-    if (startsWith('dart:')) {
-      return _DirectiveUriKind.dart;
-    }
-    if (startsWith('package:')) {
-      return _DirectiveUriKind.package;
-    }
-    if (Uri.tryParse(this)?.hasScheme == false) {
-      return _DirectiveUriKind.relative;
-    }
-    return _DirectiveUriKind.other;
-  }
-}
-
-bool _isPublicVariable(VariableDeclaration variable) => !variable.name.lexeme.startsWith('_');
-
-bool _isPrivateVariable(VariableDeclaration variable) => variable.name.lexeme.startsWith('_');
-
-bool _isPublicConstructor(ConstructorDeclaration constructor) => !_isPrivateConstructor(constructor);
-
-bool _isPrivateConstructor(ConstructorDeclaration constructor) => constructor.name?.lexeme.startsWith('_') ?? false;
 
 /// Parse diagnostic captured while importing a Dart file.
 final class HeimdallParseError {

@@ -1,5 +1,6 @@
 import 'package:heimdall_test/heimdall_test.dart';
 import 'package:heimdall_test/src/features/queries/member_queries.dart';
+import 'package:heimdall_test/src/util/extension/calls/class_member_extension.dart';
 
 /// Predicate-side DSL for member pattern rules.
 extension MemberCallConstructorTypeNameMatchingPredicateRules on MemberPredicateBuilder {
@@ -105,7 +106,7 @@ extension MemberCallConstructorTypeNameMatchingShouldRules on MemberShouldBuilde
 
 HeimdallCondition<ClassMember> _callConstructorTypeNameMatchingCondition(RegExp pattern) {
   return HeimdallCondition('call constructor type name matching $pattern', (item, project) {
-    final call = memberConstructorCallWhere(item, project, (typeName) => pattern.hasMatch(typeName));
+    final call = item.constructorCallWhere(project, (typeName) => pattern.hasMatch(typeName));
     final passed = call != null;
     final offset = switch (call) {
       InstanceCreationExpression(:final constructorName) => constructorName.type.offset,
@@ -131,7 +132,7 @@ HeimdallCondition<ClassMember> _callConstructorTypeNameMatchingCondition(RegExp 
 }
 
 bool _memberCallsConstructorTypeName(ClassMember item, RegExp pattern, HeimdallProject project) {
-  return memberHasConstructorCallWhere(item, project, (typeName) => pattern.hasMatch(typeName));
+  return item.hasConstructorCallWhere(project, (typeName) => pattern.hasMatch(typeName));
 }
 
 HeimdallPredicate<ClassMember> _callConstructorTypeNameMatchingPredicate(RegExp pattern) {

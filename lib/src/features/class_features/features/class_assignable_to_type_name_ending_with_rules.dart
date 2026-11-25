@@ -1,6 +1,6 @@
 import 'package:heimdall_test/heimdall_test.dart';
 import 'package:heimdall_test/src/features/queries/declaration_rule_predicates.dart';
-import 'package:heimdall_test/src/features/queries/declaration_type_queries.dart';
+import 'package:heimdall_test/src/util/extension/relationships/compilation_unit_member_extension.dart';
 
 /// Predicate-side DSL for assignability suffix rules.
 extension ClassAssignableToTypeNameEndingWithPredicateRules on ClassPredicateBuilder {
@@ -115,11 +115,7 @@ HeimdallPredicate<CompilationUnitMember> _classNotAssignableToTypeNameEndingWith
 ) {
   return HeimdallPredicate(
     'are not assignable to type name ending with $suffix',
-    (item, project) => !isAssignableToTypeNamedWhere(
-      item,
-      project,
-      (typeName) => typeName.endsWith(suffix),
-    ),
+    (item, project) => !item.isAssignableToTypeNamedWhere(project, (typeName) => typeName.endsWith(suffix)),
   );
 }
 
@@ -128,12 +124,7 @@ HeimdallCondition<CompilationUnitMember> _classShouldBeAssignableToTypeNameEndin
     item,
     project,
   ) {
-    final findings =
-        isAssignableToTypeNamedWhere(
-          item,
-          project,
-          (typeName) => typeName.endsWith(suffix),
-        )
+    final findings = item.isAssignableToTypeNamedWhere(project, (typeName) => typeName.endsWith(suffix))
         ? const <HeimdallValidationInfo>[]
         : [
             HeimdallValidationInfo(
@@ -155,12 +146,7 @@ HeimdallCondition<CompilationUnitMember> _classShouldNotBeAssignableToTypeNameEn
     item,
     project,
   ) {
-    final findings =
-        !isAssignableToTypeNamedWhere(
-          item,
-          project,
-          (typeName) => typeName.endsWith(suffix),
-        )
+    final findings = !item.isAssignableToTypeNamedWhere(project, (typeName) => typeName.endsWith(suffix))
         ? const <HeimdallValidationInfo>[]
         : [
             HeimdallValidationInfo(

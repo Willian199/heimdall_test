@@ -1,21 +1,6 @@
 import 'package:heimdall_test/heimdall_test.dart';
 import 'package:heimdall_test/src/features/queries/member_queries.dart';
 
-/// Kinds of class members that can be selected by member rules.
-enum MemberKind {
-  /// A method declaration.
-  method,
-
-  /// Any constructor declaration.
-  constructor,
-
-  /// A factory constructor declaration.
-  factoryConstructor,
-
-  /// A generative constructor declaration.
-  generativeConstructor,
-}
-
 /// Predicate-side DSL for member kind rules.
 extension MemberKindPredicateRules on MemberPredicateBuilder {
   /// Selects members with [kind].

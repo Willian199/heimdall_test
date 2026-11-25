@@ -1,31 +1,46 @@
 import 'package:analyzer/dart/ast/visitor.dart';
 import 'package:heimdall_test/heimdall_test.dart';
-import 'package:heimdall_test/src/features/queries/declaration_lookup_queries.dart';
-import 'package:heimdall_test/src/features/queries/sdk_type_queries.dart';
-import 'package:heimdall_test/src/features/queries/value_reference_queries.dart';
+import 'package:heimdall_test/src/util/extension/expression_extension.dart';
+import 'package:heimdall_test/src/util/extension/lookup/compilation_unit_member_extension.dart';
+import 'package:heimdall_test/src/util/extension/scope/ast_node_extension.dart';
+import 'package:heimdall_test/src/util/extension/sdk/compilation_unit_member_extension.dart';
 
-/// Returns calls shaped as `Target.method()` inside [node].
-List<AstNode> astNodeStaticMethodInvocations(
-  AstNode node,
-  String targetType,
-  String methodName,
-  HeimdallProject project,
-) {
-  final visitor = StaticMethodInvocationVisitor(targetType, methodName, project);
-  node.accept(visitor);
-  return visitor.matches;
-}
+/// Calls queries for [AstNode] nodes.
+extension AstNodeCallsExtension on AstNode {
+  /// Returns calls shaped as `Target.method()` inside this node.
+  List<AstNode> staticMethodInvocations(
+    String targetType,
+    String methodName,
+    HeimdallProject project,
+  ) {
+    final visitor = StaticMethodInvocationVisitor(targetType, methodName, project);
+    accept(visitor);
+    return visitor.matches;
+  }
 
-/// Returns whether [node] contains a call shaped as `Target.method()`.
-bool astNodeHasStaticMethodInvocation(
-  AstNode node,
-  String targetType,
-  String methodName,
-  HeimdallProject project,
-) {
-  final visitor = _HasStaticMethodInvocationVisitor(targetType, methodName, project);
-  node.accept(visitor);
-  return visitor.found;
+  /// Returns whether this node contains a call shaped as `Target.method()`.
+  bool hasStaticMethodInvocation(
+    String targetType,
+    String methodName,
+    HeimdallProject project,
+  ) {
+    final visitor = _HasStaticMethodInvocationVisitor(targetType, methodName, project);
+    accept(visitor);
+    return visitor.found;
+  }
+
+  /// Returns the source offset of the static method name in this node.
+  int get staticMethodInvocationNameOffset {
+    return switch (this) {
+      MethodInvocation(:final methodName) => methodName.offset,
+      FunctionExpressionInvocation(:final function) => switch (function) {
+        PrefixedIdentifier(:final identifier) => identifier.offset,
+        PropertyAccess(:final propertyName) => propertyName.offset,
+        _ => function.offset,
+      },
+      _ => offset,
+    };
+  }
 }
 
 /// AST visitor that finds calls shaped as `Target.method()`.
@@ -103,8 +118,8 @@ bool _matchesStaticMethodInvocation(
 ) {
   return node.methodName.name == methodName &&
       _matchesTargetType(node, node.target, targetType, project) &&
-      !hasValueReceiver(node, targetType, project) &&
-      _isStaticMethod(node, _qualifiedName(node.target) ?? targetType, methodName, project) &&
+      !node.hasValueReceiver(targetType, project) &&
+      _isStaticMethod(node, node.target.qualifiedName ?? targetType, methodName, project) &&
       !_isNamedConstructorReference(node, targetType, methodName, project);
 }
 
@@ -115,12 +130,12 @@ bool _matchesStaticFunctionInvocation(
   HeimdallProject project,
 ) {
   return _matchesTargetType(node, node.function, '$targetType.$methodName', project) &&
-      !hasValueReceiver(node, targetType, project) &&
+      !node.hasValueReceiver(targetType, project) &&
       !_isNamedConstructorReference(node, targetType, methodName, project);
 }
 
 bool _matchesTargetType(AstNode invocation, Expression? target, String expected, HeimdallProject project) {
-  final actual = _qualifiedName(target);
+  final actual = target.qualifiedName;
   if (actual == expected) {
     return true;
   }
@@ -130,7 +145,7 @@ bool _matchesTargetType(AstNode invocation, Expression? target, String expected,
   for (var ancestor = invocation.parent; ancestor != null; ancestor = ancestor.parent) {
     if (ancestor is CompilationUnitMember) {
       final typeReference = invocation is MethodInvocation ? actual : actual.substring(0, actual.lastIndexOf('.'));
-      return declarationNamedFrom(ancestor, project, typeReference) != null || sdkTypeName(ancestor, typeReference, project) != null;
+      return ancestor.declarationNamed(project, typeReference) != null || ancestor.sdkTypeName(typeReference, project) != null;
     }
   }
   return false;
@@ -141,7 +156,7 @@ bool _isStaticMethod(AstNode node, String reference, String name, HeimdallProjec
   if (owner == null) {
     return false;
   }
-  final type = declarationNamedFrom(owner, project, reference);
+  final type = owner.declarationNamed(project, reference);
   return type == null || type.methods.any((method) => method.name.lexeme == name && method.isStatic && !method.isGetter && !method.isSetter);
 }
 
@@ -153,37 +168,11 @@ bool _isNamedConstructorReference(
 ) {
   for (var ancestor = node.parent; ancestor != null; ancestor = ancestor.parent) {
     if (ancestor is CompilationUnitMember) {
-      final declaration = declarationNamedFrom(ancestor, project, targetType);
+      final declaration = ancestor.declarationNamed(project, targetType);
       return declaration != null &&
           declaration.isTypeDeclaration &&
           declaration.constructors.any((constructor) => constructor.name?.lexeme == methodName);
     }
   }
   return false;
-}
-
-/// Returns the source offset of the static method name in [node].
-int staticMethodInvocationNameOffset(AstNode node) {
-  return switch (node) {
-    MethodInvocation(:final methodName) => methodName.offset,
-    FunctionExpressionInvocation(:final function) => switch (function) {
-      PrefixedIdentifier(:final identifier) => identifier.offset,
-      PropertyAccess(:final propertyName) => propertyName.offset,
-      _ => function.offset,
-    },
-    _ => node.offset,
-  };
-}
-
-String? _qualifiedName(Expression? expression) {
-  return switch (expression) {
-    SimpleIdentifier(:final name) => name,
-    PrefixedIdentifier(:final prefix, :final identifier) => '${prefix.name}.${identifier.name}',
-    PropertyAccess(:final target, :final propertyName) => switch (_qualifiedName(target)) {
-      final targetName? => '$targetName.${propertyName.name}',
-      null => null,
-    },
-    ParenthesizedExpression(:final expression) => _qualifiedName(expression),
-    _ => null,
-  };
 }

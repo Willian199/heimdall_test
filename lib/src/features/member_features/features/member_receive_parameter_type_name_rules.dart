@@ -4,9 +4,9 @@ import 'package:heimdall_test/src/core/heimdall_condition.dart';
 import 'package:heimdall_test/src/core/heimdall_predicate.dart';
 import 'package:heimdall_test/src/core/member_rules/member_predicate_builder.dart';
 import 'package:heimdall_test/src/core/member_rules/member_should_builder.dart';
-import 'package:heimdall_test/src/core/non_empty_iterable.dart';
-import 'package:heimdall_test/src/features/member_features/helpers/member_parameter_type_name_rule_helpers.dart';
 import 'package:heimdall_test/src/features/queries/member_queries.dart';
+import 'package:heimdall_test/src/util/extension/iterable_extension.dart';
+import 'package:heimdall_test/src/util/extension/parameters/class_member_extension.dart';
 
 /// Predicate-side DSL for exact executable parameter type-name rules.
 extension MemberReceiveParameterTypeNamePredicateRules on MemberPredicateBuilder {
@@ -15,11 +15,7 @@ extension MemberReceiveParameterTypeNamePredicateRules on MemberPredicateBuilder
     return satisfy(
       HeimdallPredicate(
         'receive parameter type name $typeName',
-        (item, project) => memberReceivesResolvedParameterTypeNameWhere(
-          item,
-          project,
-          (parameterTypeName) => parameterTypeName == typeName,
-        ),
+        (item, project) => item.receivesResolvedParameterTypeNameWhere(project, (parameterTypeName) => parameterTypeName == typeName),
       ),
     );
   }
@@ -29,11 +25,7 @@ extension MemberReceiveParameterTypeNamePredicateRules on MemberPredicateBuilder
     return satisfy(
       HeimdallPredicate(
         'not receive parameter type name $typeName',
-        (item, project) => !memberReceivesResolvedParameterTypeNameWhere(
-          item,
-          project,
-          (parameterTypeName) => parameterTypeName == typeName,
-        ),
+        (item, project) => !item.receivesResolvedParameterTypeNameWhere(project, (parameterTypeName) => parameterTypeName == typeName),
       ),
     );
   }
@@ -46,11 +38,7 @@ extension MemberReceiveParameterTypeNamePredicateRules on MemberPredicateBuilder
         valueList.map(
           (typeName) => HeimdallPredicate(
             'receive parameter type name $typeName',
-            (item, project) => memberReceivesResolvedParameterTypeNameWhere(
-              item,
-              project,
-              (parameterTypeName) => parameterTypeName == typeName,
-            ),
+            (item, project) => item.receivesResolvedParameterTypeNameWhere(project, (parameterTypeName) => parameterTypeName == typeName),
           ),
         ),
         description: 'receive all parameter type names ${valueList.join(', ')}',
@@ -66,11 +54,7 @@ extension MemberReceiveParameterTypeNamePredicateRules on MemberPredicateBuilder
         valueList.map(
           (typeName) => HeimdallPredicate(
             'receive parameter type name $typeName',
-            (item, project) => memberReceivesResolvedParameterTypeNameWhere(
-              item,
-              project,
-              (parameterTypeName) => parameterTypeName == typeName,
-            ),
+            (item, project) => item.receivesResolvedParameterTypeNameWhere(project, (parameterTypeName) => parameterTypeName == typeName),
           ),
         ),
         description: 'receive any parameter type name ${valueList.join(', ')}',
@@ -86,11 +70,7 @@ extension MemberReceiveParameterTypeNamePredicateRules on MemberPredicateBuilder
         valueList.map(
           (typeName) => HeimdallPredicate(
             'receive parameter type name $typeName',
-            (item, project) => memberReceivesResolvedParameterTypeNameWhere(
-              item,
-              project,
-              (parameterTypeName) => parameterTypeName == typeName,
-            ),
+            (item, project) => item.receivesResolvedParameterTypeNameWhere(project, (parameterTypeName) => parameterTypeName == typeName),
           ),
         ),
         description: 'receive no parameter type names ${valueList.join(', ')}',
@@ -106,11 +86,7 @@ extension MemberReceiveParameterTypeNameShouldRules on MemberShouldBuilder {
     return satisfy(
       memberCondition(
         'receive parameter type name $typeName',
-        (item, project) => memberReceivesResolvedParameterTypeNameWhere(
-          item,
-          project,
-          (parameterTypeName) => parameterTypeName == typeName,
-        ),
+        (item, project) => item.receivesResolvedParameterTypeNameWhere(project, (parameterTypeName) => parameterTypeName == typeName),
       ),
     );
   }
@@ -120,11 +96,7 @@ extension MemberReceiveParameterTypeNameShouldRules on MemberShouldBuilder {
     return satisfy(
       prohibitedMemberCondition(
         'receive parameter type name $typeName',
-        (item, project) => memberReceivesResolvedParameterTypeNameWhere(
-          item,
-          project,
-          (parameterTypeName) => parameterTypeName == typeName,
-        ),
+        (item, project) => item.receivesResolvedParameterTypeNameWhere(project, (parameterTypeName) => parameterTypeName == typeName),
       ),
     );
   }
@@ -137,11 +109,7 @@ extension MemberReceiveParameterTypeNameShouldRules on MemberShouldBuilder {
         valueList.map(
           (typeName) => memberCondition(
             'receive parameter type name $typeName',
-            (item, project) => memberReceivesResolvedParameterTypeNameWhere(
-              item,
-              project,
-              (parameterTypeName) => parameterTypeName == typeName,
-            ),
+            (item, project) => item.receivesResolvedParameterTypeNameWhere(project, (parameterTypeName) => parameterTypeName == typeName),
           ),
         ),
         description: 'receive all parameter type names ${valueList.join(', ')}',
@@ -157,11 +125,7 @@ extension MemberReceiveParameterTypeNameShouldRules on MemberShouldBuilder {
         valueList.map(
           (typeName) => memberCondition(
             'receive parameter type name $typeName',
-            (item, project) => memberReceivesResolvedParameterTypeNameWhere(
-              item,
-              project,
-              (parameterTypeName) => parameterTypeName == typeName,
-            ),
+            (item, project) => item.receivesResolvedParameterTypeNameWhere(project, (parameterTypeName) => parameterTypeName == typeName),
           ),
         ),
         description: 'receive any parameter type name ${valueList.join(', ')}',
@@ -177,11 +141,7 @@ extension MemberReceiveParameterTypeNameShouldRules on MemberShouldBuilder {
         valueList.map(
           (typeName) => memberCondition(
             'receive parameter type name $typeName',
-            (item, project) => memberReceivesResolvedParameterTypeNameWhere(
-              item,
-              project,
-              (parameterTypeName) => parameterTypeName == typeName,
-            ),
+            (item, project) => item.receivesResolvedParameterTypeNameWhere(project, (parameterTypeName) => parameterTypeName == typeName),
           ),
         ),
         description: 'receive no parameter type names ${valueList.join(', ')}',

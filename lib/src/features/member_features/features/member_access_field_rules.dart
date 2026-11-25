@@ -1,8 +1,8 @@
 import 'package:analyzer/dart/ast/visitor.dart';
 import 'package:heimdall_test/heimdall_test.dart';
-import 'package:heimdall_test/src/features/queries/declaration_lookup_queries.dart';
 import 'package:heimdall_test/src/features/queries/member_queries.dart';
-import 'package:heimdall_test/src/features/queries/value_reference_queries.dart';
+import 'package:heimdall_test/src/util/extension/lookup/compilation_unit_member_extension.dart';
+import 'package:heimdall_test/src/util/extension/simple_identifier_extension.dart';
 
 /// Predicate-side DSL for executable field access rules.
 extension MemberAccessFieldPredicateRules on MemberPredicateBuilder {
@@ -156,7 +156,7 @@ bool _memberAccessesField(ClassMember member, String fieldName, HeimdallProject 
     };
 
     return parents.any((parent) {
-      final declaration = declarationNamedFrom(owner, project, parent.toSource());
+      final declaration = owner.declarationNamed(project, parent.toSource());
       return declaration != null && declares(declaration);
     });
   }
@@ -185,7 +185,7 @@ final class _FieldAccessVisitor extends RecursiveAstVisitor<void> {
     if (found) {
       return;
     }
-    if (node.name != fieldName || !isValueReference(node)) {
+    if (node.name != fieldName || !node.isValueReference) {
       return;
     }
     final parent = node.parent;
@@ -201,7 +201,7 @@ final class _FieldAccessVisitor extends RecursiveAstVisitor<void> {
     if (parent is MethodInvocation && identical(parent.methodName, node)) {
       return;
     }
-    if (!isShadowedValue(node)) {
+    if (!node.isShadowedValue) {
       found = true;
     }
   }

@@ -2,8 +2,9 @@ import 'dart:convert';
 
 import 'package:analyzer/dart/analysis/utilities.dart';
 import 'package:heimdall_test/heimdall_test.dart';
-import 'package:heimdall_test/src/features/queries/declaration_lookup_queries.dart';
-import 'package:heimdall_test/src/features/queries/value_reference_queries.dart';
+import 'package:heimdall_test/src/util/extension/expression_extension.dart';
+import 'package:heimdall_test/src/util/extension/lookup/compilation_unit_member_extension.dart';
+import 'package:heimdall_test/src/util/extension/scope/ast_node_extension.dart';
 
 /// Internal syntax matcher shared by file and member DSL features.
 typedef SyntaxMatch = bool Function(Expression expression, HeimdallProject project);
@@ -17,11 +18,8 @@ Iterable<Expression> scopedExpressions(Object subject) {
   };
 }
 
-/// Matches actual postfix assertions, without attempting flow analysis.
-bool isNullAssertion(Expression expression) => expression is PostfixExpression && expression.operator.lexeme == '!';
-
 /// Matches a null assertion in a project-aware syntax query.
-bool nullAssertionMatch(Expression expression, HeimdallProject _) => isNullAssertion(expression);
+bool nullAssertionMatch(Expression expression, HeimdallProject _) => expression.isNullAssertion;
 
 /// Returns whether any expression in [subject] matches [match].
 bool hasSyntaxMatch(Object subject, HeimdallProject project, SyntaxMatch match) =>
@@ -84,10 +82,10 @@ SyntaxMatch invocationMatcher(
     final actualNamed = <String, Expression>{};
     final actualPositional = <Expression>[];
     for (final argument in arguments.arguments) {
-      if (argument is NamedExpression) {
-        actualNamed[argument.name.label.name] = argument.expression;
+      if (argument is NamedArgument) {
+        actualNamed[argument.name.lexeme] = argument.argumentExpression;
       } else {
-        actualPositional.add(argument);
+        actualPositional.add(argument.argumentExpression);
       }
     }
     for (final entry in named.entries) {
@@ -136,7 +134,7 @@ bool _matchesConstructorReference(MethodInvocation invocation, String typeName, 
     effectiveType = '$prefix.$typeName';
   }
 
-  if (hasValueReceiver(invocation, effectiveType, project)) {
+  if (invocation.hasValueReceiver(effectiveType, project)) {
     return false;
   }
   AstNode? node = invocation;
@@ -146,7 +144,7 @@ bool _matchesConstructorReference(MethodInvocation invocation, String typeName, 
   if (node is! CompilationUnitMember) {
     return true;
   }
-  final declaration = declarationNamedFrom(node, project, effectiveType);
+  final declaration = node.declarationNamed(project, effectiveType);
   if (declaration == null) {
     return true;
   }
@@ -184,7 +182,7 @@ HeimdallCondition<T> syntaxCondition<T>(String description, SyntaxMatch match, {
 }
 
 HeimdallValidationInfo _expressionFinding(Object subject, Expression expression, String message) {
-  final offset = isNullAssertion(expression) ? (expression as PostfixExpression).operator.offset : expression.offset;
+  final offset = expression.isNullAssertion ? (expression as PostfixExpression).operator.offset : expression.offset;
   if (subject is ClassMember) {
     final location = subject.sourceLocationAt(offset);
     return HeimdallValidationInfo(filePath: subject.sourcePath, line: location.line, column: location.column, message: message);

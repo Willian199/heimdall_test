@@ -1,7 +1,7 @@
 import 'package:heimdall_test/heimdall_test.dart';
 import 'package:heimdall_test/src/features/member_features/helpers/member_owner_rule_helpers.dart';
-import 'package:heimdall_test/src/features/queries/declaration_type_queries.dart';
 import 'package:heimdall_test/src/features/queries/member_queries.dart';
+import 'package:heimdall_test/src/util/extension/relationships/compilation_unit_member_extension.dart';
 
 /// Predicate-side DSL for member owner declaration rules.
 extension MemberDeclaredInClassesAssignableStartingWithPredicateRules on MemberPredicateBuilder {
@@ -98,11 +98,7 @@ extension MemberDeclaredInClassesAssignableStartingWithShouldRules on MemberShou
 HeimdallPredicate<CompilationUnitMember> _classAssignableToTypeNameStartingWith(String prefix) {
   return HeimdallPredicate(
     'assignable to type name starting with $prefix',
-    (item, project) => isAssignableToTypeNamedWhere(
-      item,
-      project,
-      (typeName) => typeName.startsWith(prefix),
-    ),
+    (item, project) => item.isAssignableToTypeNamedWhere(project, (typeName) => typeName.startsWith(prefix)),
   );
 }
 

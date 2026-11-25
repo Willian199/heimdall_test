@@ -1,5 +1,5 @@
 import 'package:heimdall_test/heimdall_test.dart';
-import 'package:heimdall_test/src/features/file_features/helpers/source_file_location.dart';
+import 'package:heimdall_test/src/util/extension/heimdall_source_file_extension.dart';
 
 /// Predicate-side DSL for basic source-file content rules.
 extension FileBasicContentPredicateRules on FilePredicateBuilder {
@@ -66,11 +66,7 @@ HeimdallCondition<HeimdallSourceFile> _fileShouldHaveNoDocumentationComment() {
         ? const <HeimdallValidationInfo>[]
         : documentedNodes
               .map(
-                (node) => fileNodeFinding(
-                  item,
-                  node,
-                  'has a documentation comment',
-                ),
+                (node) => item.nodeFinding(node, 'has a documentation comment'),
               )
               .toList();
     return HeimdallFindings(

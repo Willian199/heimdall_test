@@ -1,5 +1,5 @@
 import 'package:heimdall_test/heimdall_test.dart';
-import 'package:heimdall_test/src/features/queries/declaration_type_queries.dart';
+import 'package:heimdall_test/src/util/extension/relationships/compilation_unit_member_extension.dart';
 
 /// Predicate-side DSL for superclass type name regex rules.
 extension ClassExtendTypeNameMatchingPredicateRules on ClassPredicateBuilder {
@@ -104,11 +104,7 @@ HeimdallPredicate<CompilationUnitMember> _classExtendsTypeNameMatching(
 ) {
   return HeimdallPredicate(
     'extend type name matching ${pattern.pattern}',
-    (item, project) => extendsTypeNamedWhere(
-      item,
-      project,
-      (typeName) => pattern.hasMatch(typeName),
-    ),
+    (item, project) => item.extendsTypeNamedWhere(project, (typeName) => pattern.hasMatch(typeName)),
   );
 }
 
@@ -117,11 +113,7 @@ HeimdallPredicate<CompilationUnitMember> _classDoesNotExtendTypeNameMatching(
 ) {
   return HeimdallPredicate(
     'not extend type name matching ${pattern.pattern}',
-    (item, project) => !extendsTypeNamedWhere(
-      item,
-      project,
-      (typeName) => pattern.hasMatch(typeName),
-    ),
+    (item, project) => !item.extendsTypeNamedWhere(project, (typeName) => pattern.hasMatch(typeName)),
   );
 }
 
@@ -132,11 +124,7 @@ HeimdallCondition<CompilationUnitMember> _classShouldExtendTypeNameMatching(
     item,
     project,
   ) {
-    final matches = extendsTypeNamedWhere(
-      item,
-      project,
-      (typeName) => pattern.hasMatch(typeName),
-    );
+    final matches = item.extendsTypeNamedWhere(project, (typeName) => pattern.hasMatch(typeName));
     final findings = [
       if (matches)
         HeimdallValidationInfo(
@@ -167,11 +155,7 @@ HeimdallCondition<CompilationUnitMember> _classShouldNotExtendTypeNameMatching(
     item,
     project,
   ) {
-    final matches = extendsTypeNamedWhere(
-      item,
-      project,
-      (typeName) => pattern.hasMatch(typeName),
-    );
+    final matches = item.extendsTypeNamedWhere(project, (typeName) => pattern.hasMatch(typeName));
     final findings = [
       if (matches)
         HeimdallValidationInfo(

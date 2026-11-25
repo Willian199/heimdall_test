@@ -4,9 +4,9 @@ import 'package:heimdall_test/src/core/heimdall_condition.dart';
 import 'package:heimdall_test/src/core/heimdall_predicate.dart';
 import 'package:heimdall_test/src/core/member_rules/member_predicate_builder.dart';
 import 'package:heimdall_test/src/core/member_rules/member_should_builder.dart';
-import 'package:heimdall_test/src/core/non_empty_iterable.dart';
-import 'package:heimdall_test/src/features/member_features/helpers/member_parameter_type_name_rule_helpers.dart';
 import 'package:heimdall_test/src/features/queries/member_queries.dart';
+import 'package:heimdall_test/src/util/extension/iterable_extension.dart';
+import 'package:heimdall_test/src/util/extension/parameters/class_member_extension.dart';
 
 /// Predicate-side DSL for parameter type-name suffix rules.
 extension MemberReceiveParameterTypeNameEndingWithPredicateRules on MemberPredicateBuilder {
@@ -103,43 +103,27 @@ extension MemberReceiveParameterTypeNameEndingWithShouldRules on MemberShouldBui
 HeimdallPredicate<ClassMember> _memberParameterTypeNameEndsWith(String suffix) {
   return HeimdallPredicate(
     'receive parameter type name ending with $suffix',
-    (item, project) => memberReceivesResolvedParameterTypeNameWhere(
-      item,
-      project,
-      (typeName) => typeName.endsWith(suffix),
-    ),
+    (item, project) => item.receivesResolvedParameterTypeNameWhere(project, (typeName) => typeName.endsWith(suffix)),
   );
 }
 
 HeimdallPredicate<ClassMember> _memberDoesNotReceiveParameterTypeNameEndingWith(String suffix) {
   return HeimdallPredicate(
     'not receive parameter type name ending with $suffix',
-    (item, project) => !memberReceivesResolvedParameterTypeNameWhere(
-      item,
-      project,
-      (typeName) => typeName.endsWith(suffix),
-    ),
+    (item, project) => !item.receivesResolvedParameterTypeNameWhere(project, (typeName) => typeName.endsWith(suffix)),
   );
 }
 
 HeimdallCondition<ClassMember> _memberShouldReceiveParameterTypeNameEndingWith(String suffix) {
   return memberCondition(
     'receive parameter type name ending with $suffix',
-    (item, project) => memberReceivesResolvedParameterTypeNameWhere(
-      item,
-      project,
-      (typeName) => typeName.endsWith(suffix),
-    ),
+    (item, project) => item.receivesResolvedParameterTypeNameWhere(project, (typeName) => typeName.endsWith(suffix)),
   );
 }
 
 HeimdallCondition<ClassMember> _memberShouldNotReceiveParameterTypeNameEndingWith(String suffix) {
   return prohibitedMemberCondition(
     'receive parameter type name ending with $suffix',
-    (item, project) => memberReceivesResolvedParameterTypeNameWhere(
-      item,
-      project,
-      (typeName) => typeName.endsWith(suffix),
-    ),
+    (item, project) => item.receivesResolvedParameterTypeNameWhere(project, (typeName) => typeName.endsWith(suffix)),
   );
 }

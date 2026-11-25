@@ -5,6 +5,8 @@ import 'package:analyzer/dart/analysis/utilities.dart';
 import 'package:analyzer/dart/ast/ast.dart';
 import 'package:heimdall_test/src/mapper/export.dart';
 import 'package:heimdall_test/src/mapper/importer/path_matcher.dart';
+import 'package:heimdall_test/src/util/extension/compilation_unit_member_extension.dart';
+import 'package:heimdall_test/src/util/extension/directive_extension.dart';
 import 'package:path/path.dart' as p;
 
 /// Parses one Dart source file and attaches Heimdall context to analyzer nodes.
@@ -39,7 +41,7 @@ final class HeimdallSourceFileParser {
         lineInfo: result.lineInfo,
       );
       directives.add(directive);
-      if (_isDependencyDirective(directive)) {
+      if (directive.isDependencyDirective) {
         dependencies.add(directive);
       }
     }
@@ -51,7 +53,7 @@ final class HeimdallSourceFileParser {
         relativePath: relativePath,
         lineInfo: result.lineInfo,
       );
-      for (final classMember in _classMembersOf(member)) {
+      for (final classMember in member.syntaxMembers) {
         classMembers.add(classMember);
         attachMemberContext(
           node: classMember,
@@ -84,26 +86,4 @@ final class HeimdallSourceFileParser {
       lineInfo: result.lineInfo,
     );
   }
-}
-
-bool _isDependencyDirective(Directive directive) {
-  return directive is ImportDirective || directive is ExportDirective || directive is PartDirective || directive is PartOfDirective;
-}
-
-Iterable<ClassMember> _classMembersOf(CompilationUnitMember member) {
-  return switch (member) {
-    ClassDeclaration(:final body) => _membersFromClassBody(body),
-    MixinDeclaration(:final body) => body.members,
-    EnumDeclaration(:final body) => body.members,
-    ExtensionDeclaration(:final body) => body.members,
-    ExtensionTypeDeclaration(:final body) => _membersFromClassBody(body),
-    _ => const <ClassMember>[],
-  };
-}
-
-Iterable<ClassMember> _membersFromClassBody(ClassBody body) {
-  return switch (body) {
-    BlockClassBody(:final members) => members,
-    _ => const <ClassMember>[],
-  };
 }

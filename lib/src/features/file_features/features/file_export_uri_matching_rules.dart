@@ -1,5 +1,6 @@
 import 'package:heimdall_test/heimdall_test.dart';
-import 'package:heimdall_test/src/features/file_features/helpers/source_file_location.dart';
+import 'package:heimdall_test/src/util/extension/heimdall_source_file_extension.dart';
+import 'package:heimdall_test/src/util/extension/uri_based_directive_extension.dart';
 
 /// Predicate-side DSL for export URI regex rules.
 extension FileExportUriMatchingPredicateRules on FilePredicateBuilder {
@@ -71,11 +72,10 @@ extension FileExportUriMatchingShouldRules on FileShouldBuilder {
         final findings = item.exportDirectives
             .where((directive) => directive.targetUris.any(pattern.hasMatch))
             .map(
-              (directive) => fileNodeFinding(
-                item,
+              (directive) => item.nodeFinding(
                 directive,
                 'exports forbidden URI matching ${pattern.pattern}',
-                offset: matchingDirectiveUris(directive, pattern.hasMatch).first.offset,
+                offset: directive.matchingUris(pattern.hasMatch).first.offset,
               ),
             )
             .toList();
@@ -152,11 +152,10 @@ HeimdallCondition<HeimdallSourceFile> _fileShouldExportUriMatching(
     if (matchingDirectives.isNotEmpty) {
       final matchingDirective = matchingDirectives.first;
       findings.add(
-        fileNodeFinding(
-          item,
+        item.nodeFinding(
           matchingDirective,
           'exports URI matching ${pattern.pattern}',
-          offset: matchingDirectiveUris(matchingDirective, pattern.hasMatch).first.offset,
+          offset: matchingDirective.matchingUris(pattern.hasMatch).first.offset,
         ),
       );
     } else {

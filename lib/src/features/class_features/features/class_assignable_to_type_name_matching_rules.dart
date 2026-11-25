@@ -1,5 +1,5 @@
 import 'package:heimdall_test/heimdall_test.dart';
-import 'package:heimdall_test/src/features/queries/declaration_type_queries.dart';
+import 'package:heimdall_test/src/util/extension/relationships/compilation_unit_member_extension.dart';
 
 /// Predicate-side DSL for assignability type name regex rules.
 extension ClassAssignableToTypeNameMatchingPredicateRules on ClassPredicateBuilder {
@@ -114,11 +114,7 @@ HeimdallPredicate<CompilationUnitMember> _classAssignableToTypeNameMatching(
 ) {
   return HeimdallPredicate(
     'are assignable to type name matching ${pattern.pattern}',
-    (item, project) => isAssignableToTypeNamedWhere(
-      item,
-      project,
-      (typeName) => pattern.hasMatch(typeName),
-    ),
+    (item, project) => item.isAssignableToTypeNamedWhere(project, (typeName) => pattern.hasMatch(typeName)),
   );
 }
 
@@ -127,11 +123,7 @@ HeimdallPredicate<CompilationUnitMember> _classNotAssignableToTypeNameMatching(
 ) {
   return HeimdallPredicate(
     'are not assignable to type name matching ${pattern.pattern}',
-    (item, project) => !isAssignableToTypeNamedWhere(
-      item,
-      project,
-      (typeName) => pattern.hasMatch(typeName),
-    ),
+    (item, project) => !item.isAssignableToTypeNamedWhere(project, (typeName) => pattern.hasMatch(typeName)),
   );
 }
 
@@ -139,11 +131,7 @@ HeimdallCondition<CompilationUnitMember> _classShouldBeAssignableToTypeNameMatch
   RegExp pattern,
 ) {
   return HeimdallCondition('be assignable to type name matching ${pattern.pattern}', (item, project) {
-    final matches = isAssignableToTypeNamedWhere(
-      item,
-      project,
-      (typeName) => pattern.hasMatch(typeName),
-    );
+    final matches = item.isAssignableToTypeNamedWhere(project, (typeName) => pattern.hasMatch(typeName));
     final findings = [
       if (matches)
         HeimdallValidationInfo(
@@ -171,11 +159,7 @@ HeimdallCondition<CompilationUnitMember> _classShouldNotBeAssignableToTypeNameMa
   RegExp pattern,
 ) {
   return HeimdallCondition('not be assignable to type name matching ${pattern.pattern}', (item, project) {
-    final matches = isAssignableToTypeNamedWhere(
-      item,
-      project,
-      (typeName) => pattern.hasMatch(typeName),
-    );
+    final matches = item.isAssignableToTypeNamedWhere(project, (typeName) => pattern.hasMatch(typeName));
     final findings = [
       if (matches)
         HeimdallValidationInfo(

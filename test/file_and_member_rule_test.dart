@@ -3,6 +3,29 @@ import 'dart:async';
 import 'package:heimdall_test/heimdall_test.dart';
 import 'package:test/test.dart';
 
+abstract final class _RegexPatterns {
+  static final repository = RegExp('repository');
+  static final dart = RegExp('dart:');
+  static final forbidden = RegExp('forbidden');
+  static final domainUser = RegExp('domain/user');
+  static final classUserRepository = RegExp(r'class\s+UserRepository');
+  static final createRepository = RegExp('createRepository');
+  static final missing = RegExp('missing');
+  static final user = RegExp(r'User\(');
+  static final dartMirrors = RegExp('dart:mirrors');
+  static final constUser = RegExp(r'const\s+User\(');
+  static final userFind = RegExp(r'User\s+find\(\)');
+  static final endsWithDomainDart = RegExp(r'domain/.*\.dart$');
+  static final find = RegExp('find');
+  static final toUpper = RegExp('toUpper');
+  static final helper = RegExp('Helper');
+  static final tracked = RegExp('Tracked');
+  static final endsWithCubit = RegExp(r'Cubit$');
+  static final missingType = RegExp('Missing');
+  static final child = RegExp('Child');
+  static final parent = RegExp('Parent');
+}
+
 void main() {
   group('File and member rules', () {
     const fixture = 'test/file_member_fixtures/file_member_project';
@@ -40,7 +63,7 @@ void main() {
           .and()
           .haveNameStartingWithNoneOf(['generated'])
           .and()
-          .haveNameMatchingAnyOf([RegExp('repository')])
+          .haveNameMatchingAnyOf([_RegexPatterns.repository])
           .and()
           .resideInAnyPath(['missing', 'lib/src/data/**'])
           .and()
@@ -78,13 +101,13 @@ void main() {
           .resideInPath('lib/src/data/user_repository.dart')
           .should()
           .not()
-          .importAnyUriMatching([RegExp('dart:'), RegExp('forbidden')])
+          .importAnyUriMatching([_RegexPatterns.dart, _RegexPatterns.forbidden])
           .check(project);
       final invertedMatchingImport = Heimdall.noFiles()
           .that()
           .resideInPath('lib/src/data/user_repository.dart')
           .should()
-          .importUriMatching(RegExp('domain/user'))
+          .importUriMatching(_RegexPatterns.domainUser)
           .check(project);
       final noContent = Heimdall.files()
           .that()
@@ -97,13 +120,13 @@ void main() {
           .resideInPath('lib/src/data/user_repository.dart')
           .should()
           .containAllSourceMatching([
-            RegExp(r'class\s+UserRepository'),
-            RegExp('createRepository'),
+            _RegexPatterns.classUserRepository,
+            _RegexPatterns.createRepository,
           ])
           .and()
-          .containAnySourceMatching([RegExp('missing'), RegExp(r'User\(')])
+          .containAnySourceMatching([_RegexPatterns.missing, _RegexPatterns.user])
           .and()
-          .containNoSourceMatching([RegExp('dart:mirrors')])
+          .containNoSourceMatching([_RegexPatterns.dartMirrors])
           .check(project);
       final content = Heimdall.files()
           .that()
@@ -118,7 +141,7 @@ void main() {
           .that()
           .resideInPath('lib/src/data/user_repository.dart')
           .should()
-          .containSourceMatching(RegExp(r'const\s+User\('))
+          .containSourceMatching(_RegexPatterns.constUser)
           .check(project);
       final forbiddenSource = Heimdall.files()
           .that()
@@ -130,7 +153,7 @@ void main() {
           .that()
           .resideInPath('lib/src/data/user_repository.dart')
           .should()
-          .containNoSourceMatching([RegExp(r'User\s+find\(\)')])
+          .containNoSourceMatching([_RegexPatterns.userFind])
           .check(project);
       final invertedSource = Heimdall.noFiles()
           .that()
@@ -142,7 +165,7 @@ void main() {
           .that()
           .resideInPath('lib/src/data/user_repository.dart')
           .should()
-          .containSourceMatching(RegExp(r'User\s+find\(\)'))
+          .containSourceMatching(_RegexPatterns.userFind)
           .check(project);
 
       expect(existing.findings, isEmpty);
@@ -303,11 +326,11 @@ void main() {
           .should()
           .exportAllUris(['domain/user.dart'])
           .and()
-          .exportUriMatching(RegExp(r'domain/.*\.dart$'))
+          .exportUriMatching(_RegexPatterns.endsWithDomainDart)
           .and()
-          .exportAnyUriMatching([RegExp('missing'), RegExp(r'domain/.*\.dart$')])
+          .exportAnyUriMatching([_RegexPatterns.missing, _RegexPatterns.endsWithDomainDart])
           .and()
-          .exportNoUrisMatching([RegExp('forbidden')])
+          .exportNoUrisMatching([_RegexPatterns.forbidden])
           .and()
           .exportAnyUri(['missing.dart', 'domain/user.dart'])
           .and()
@@ -317,7 +340,7 @@ void main() {
           .that()
           .resideInPath('lib/src/barrel.dart')
           .should()
-          .exportUriMatching(RegExp(r'domain/.*\.dart$'))
+          .exportUriMatching(_RegexPatterns.endsWithDomainDart)
           .check(project);
       final importDoesNotMatchExport = Heimdall.files()
           .that()
@@ -408,7 +431,7 @@ void main() {
           .and()
           .haveNameStartingWithNoneOf(['_'])
           .and()
-          .haveNameMatchingAnyOf([RegExp('find')])
+          .haveNameMatchingAnyOf([_RegexPatterns.find])
           .and()
           .areAnnotatedWithAnyOf(['Deprecated', 'Tracked'])
           .and()
@@ -421,19 +444,19 @@ void main() {
           .that()
           .haveName('findName')
           .should()
-          .callMethodNameMatching(RegExp('toUpper'))
+          .callMethodNameMatching(_RegexPatterns.toUpper)
           .check(project);
       final invertedMatchingConstructorCall = Heimdall.noConstructors()
           .that()
           .arePrivate()
           .should()
-          .callConstructorTypeNameMatching(RegExp('Helper'))
+          .callConstructorTypeNameMatching(_RegexPatterns.helper)
           .check(project);
       final invertedMatchingAnnotation = Heimdall.noMethods()
           .that()
           .haveName('findName')
           .should()
-          .beAnnotatedWithTypeNameMatching(RegExp('Tracked'))
+          .beAnnotatedWithTypeNameMatching(_RegexPatterns.tracked)
           .check(project);
       final constructorCombinations = Heimdall.constructors()
           .that()
@@ -481,11 +504,11 @@ void main() {
           .and()
           .receiveParameterTypeNameStartingWithAllOf(['Child', 'View', 'Parent'])
           .and()
-          .receiveParameterTypeNameMatching(RegExp(r'Cubit$'))
+          .receiveParameterTypeNameMatching(_RegexPatterns.endsWithCubit)
           .and()
-          .receiveParameterTypeNameMatchingAnyOf([RegExp('Missing'), RegExp(r'Cubit$')])
+          .receiveParameterTypeNameMatchingAnyOf([_RegexPatterns.missingType, _RegexPatterns.endsWithCubit])
           .and()
-          .receiveParameterTypeNameMatchingAllOf([RegExp('Child'), RegExp('Parent')])
+          .receiveParameterTypeNameMatchingAllOf([_RegexPatterns.child, _RegexPatterns.parent])
           .and()
           .receiveParameterTypeNameStartingWithNoneOf(['Missing'])
           .check(project);
@@ -548,7 +571,7 @@ void main() {
           .and()
           .haveDeclaredFieldTypeNameStartingWithAnyOf(['Child', 'View'])
           .and()
-          .haveDeclaredFieldTypeNameMatchingAnyOf([RegExp(r'Cubit$')])
+          .haveDeclaredFieldTypeNameMatchingAnyOf([_RegexPatterns.endsWithCubit])
           .should()
           .beFinal()
           .check(project);

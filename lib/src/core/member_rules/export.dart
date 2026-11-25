@@ -1,3 +1,5 @@
+export 'package:heimdall_test/src/util/enum/member_selection.dart';
+
 export 'member_condition_continuation.dart';
 export 'member_predicate_builder.dart';
 export 'member_rules.dart';

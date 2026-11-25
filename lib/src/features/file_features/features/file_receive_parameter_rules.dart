@@ -1,6 +1,6 @@
 import 'package:heimdall_test/heimdall_test.dart';
-import 'package:heimdall_test/src/features/file_features/helpers/source_file_location.dart';
-import 'package:heimdall_test/src/features/queries/parameter_queries.dart';
+import 'package:heimdall_test/src/util/extension/formal_parameter_extension.dart';
+import 'package:heimdall_test/src/util/extension/heimdall_source_file_extension.dart';
 
 /// Predicate-side DSL for received parameter rules.
 extension FileReceiveParameterPredicateRules on FilePredicateBuilder {
@@ -105,10 +105,7 @@ HeimdallCondition<HeimdallSourceFile> _fileShouldReceiveParameter(
 ) {
   return HeimdallCondition('receive parameter $parameterName', (item, _) {
     final hasParameter = _executableParameters(item).any(
-      (parameter) => isPositionalOrRequiredNamedParameter(
-        parameter,
-        parameterName,
-      ),
+      (parameter) => parameter.matchesPositionalOrRequiredNamedParameter(parameterName),
     );
     final findings = hasParameter
         ? const <HeimdallValidationInfo>[]
@@ -132,10 +129,7 @@ HeimdallPredicate<HeimdallSourceFile> _fileReceivesParameter(
   return HeimdallPredicate(
     'receive parameter $parameterName',
     (item, _) => _executableParameters(item).any(
-      (parameter) => isPositionalOrRequiredNamedParameter(
-        parameter,
-        parameterName,
-      ),
+      (parameter) => parameter.matchesPositionalOrRequiredNamedParameter(parameterName),
     ),
   );
 }
@@ -146,18 +140,10 @@ HeimdallCondition<HeimdallSourceFile> _fileShouldNotReceiveParameter(
   return HeimdallCondition('not receive parameter $parameterName', (item, _) {
     final findings = _executableParameters(item)
         .where(
-          (parameter) => isPositionalOrRequiredNamedParameter(
-            parameter,
-            parameterName,
-          ),
+          (parameter) => parameter.matchesPositionalOrRequiredNamedParameter(parameterName),
         )
         .map(
-          (parameter) => fileNodeFinding(
-            item,
-            parameter,
-            'receives forbidden parameter $parameterName',
-            offset: parameter.name?.offset,
-          ),
+          (parameter) => item.nodeFinding(parameter, 'receives forbidden parameter $parameterName', offset: parameter.name?.offset),
         )
         .toList();
     return HeimdallFindings(
@@ -174,10 +160,7 @@ HeimdallPredicate<HeimdallSourceFile> _fileDoesNotReceiveParameter(
   return HeimdallPredicate(
     'not receive parameter $parameterName',
     (item, _) => !_executableParameters(item).any(
-      (parameter) => isPositionalOrRequiredNamedParameter(
-        parameter,
-        parameterName,
-      ),
+      (parameter) => parameter.matchesPositionalOrRequiredNamedParameter(parameterName),
     ),
   );
 }

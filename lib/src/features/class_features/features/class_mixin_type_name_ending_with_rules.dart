@@ -1,6 +1,6 @@
 import 'package:heimdall_test/heimdall_test.dart';
 import 'package:heimdall_test/src/features/queries/declaration_rule_predicates.dart';
-import 'package:heimdall_test/src/features/queries/declaration_type_queries.dart';
+import 'package:heimdall_test/src/util/extension/relationships/compilation_unit_member_extension.dart';
 
 /// Predicate-side DSL for class mixin suffix rules.
 extension ClassMixinTypeNameEndingWithPredicateRules on ClassPredicateBuilder {
@@ -105,11 +105,7 @@ HeimdallPredicate<CompilationUnitMember> _classDoesNotMixinTypeNameEndingWith(
 ) {
   return HeimdallPredicate(
     'not mixin type name ending with $suffix',
-    (item, project) => !mixesInTypeNamedWhere(
-      item,
-      project,
-      (typeName) => typeName.endsWith(suffix),
-    ),
+    (item, project) => !item.mixesInTypeNamedWhere(project, (typeName) => typeName.endsWith(suffix)),
   );
 }
 
@@ -117,12 +113,7 @@ HeimdallCondition<CompilationUnitMember> _classShouldMixinTypeNameEndingWith(
   String suffix,
 ) {
   return HeimdallCondition('mixin type name ending with $suffix', (item, project) {
-    final findings =
-        mixesInTypeNamedWhere(
-          item,
-          project,
-          (typeName) => typeName.endsWith(suffix),
-        )
+    final findings = item.mixesInTypeNamedWhere(project, (typeName) => typeName.endsWith(suffix))
         ? const <HeimdallValidationInfo>[]
         : [
             HeimdallValidationInfo(
@@ -143,12 +134,7 @@ HeimdallCondition<CompilationUnitMember> _classShouldNotMixinTypeNameEndingWith(
   String suffix,
 ) {
   return HeimdallCondition('not mixin type name ending with $suffix', (item, project) {
-    final findings =
-        !mixesInTypeNamedWhere(
-          item,
-          project,
-          (typeName) => typeName.endsWith(suffix),
-        )
+    final findings = !item.mixesInTypeNamedWhere(project, (typeName) => typeName.endsWith(suffix))
         ? const <HeimdallValidationInfo>[]
         : [
             HeimdallValidationInfo(

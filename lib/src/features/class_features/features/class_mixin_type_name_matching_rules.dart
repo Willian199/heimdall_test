@@ -1,5 +1,5 @@
 import 'package:heimdall_test/heimdall_test.dart';
-import 'package:heimdall_test/src/features/queries/declaration_type_queries.dart';
+import 'package:heimdall_test/src/util/extension/relationships/compilation_unit_member_extension.dart';
 
 /// Predicate-side DSL for mixin type regex rules.
 extension ClassMixinTypeNameMatchingPredicateRules on ClassPredicateBuilder {
@@ -104,11 +104,7 @@ HeimdallPredicate<CompilationUnitMember> _classMixesInTypeNameMatching(
 ) {
   return HeimdallPredicate(
     'mixin type name matching ${pattern.pattern}',
-    (item, project) => mixesInTypeNamedWhere(
-      item,
-      project,
-      (typeName) => pattern.hasMatch(typeName),
-    ),
+    (item, project) => item.mixesInTypeNamedWhere(project, (typeName) => pattern.hasMatch(typeName)),
   );
 }
 
@@ -117,11 +113,7 @@ HeimdallPredicate<CompilationUnitMember> _classDoesNotMixinTypeNameMatching(
 ) {
   return HeimdallPredicate(
     'not mixin type name matching ${pattern.pattern}',
-    (item, project) => !mixesInTypeNamedWhere(
-      item,
-      project,
-      (typeName) => pattern.hasMatch(typeName),
-    ),
+    (item, project) => !item.mixesInTypeNamedWhere(project, (typeName) => pattern.hasMatch(typeName)),
   );
 }
 
@@ -132,11 +124,7 @@ HeimdallCondition<CompilationUnitMember> _classShouldMixinTypeNameMatching(
     item,
     project,
   ) {
-    final matches = mixesInTypeNamedWhere(
-      item,
-      project,
-      (typeName) => pattern.hasMatch(typeName),
-    );
+    final matches = item.mixesInTypeNamedWhere(project, (typeName) => pattern.hasMatch(typeName));
     final findings = [
       if (matches)
         HeimdallValidationInfo(
@@ -167,11 +155,7 @@ HeimdallCondition<CompilationUnitMember> _classShouldNotMixinTypeNameMatching(
     item,
     project,
   ) {
-    final matches = mixesInTypeNamedWhere(
-      item,
-      project,
-      (typeName) => pattern.hasMatch(typeName),
-    );
+    final matches = item.mixesInTypeNamedWhere(project, (typeName) => pattern.hasMatch(typeName));
     final findings = [
       if (matches)
         HeimdallValidationInfo(

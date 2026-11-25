@@ -1,5 +1,5 @@
 import 'package:heimdall_test/heimdall_test.dart';
-import 'package:heimdall_test/src/features/queries/declaration_type_queries.dart';
+import 'package:heimdall_test/src/util/extension/relationships/compilation_unit_member_extension.dart';
 
 /// Predicate-side DSL for assignability prefix rules.
 extension ClassAssignableToTypeNameStartingWithPredicateRules on ClassPredicateBuilder {
@@ -114,11 +114,7 @@ HeimdallPredicate<CompilationUnitMember> _classAssignableToTypeNameStartingWith(
 ) {
   return HeimdallPredicate(
     'are assignable to type name starting with $prefix',
-    (item, project) => isAssignableToTypeNamedWhere(
-      item,
-      project,
-      (typeName) => typeName.startsWith(prefix),
-    ),
+    (item, project) => item.isAssignableToTypeNamedWhere(project, (typeName) => typeName.startsWith(prefix)),
   );
 }
 
@@ -127,11 +123,7 @@ HeimdallPredicate<CompilationUnitMember> _classNotAssignableToTypeNameStartingWi
 ) {
   return HeimdallPredicate(
     'are not assignable to type name starting with $prefix',
-    (item, project) => !isAssignableToTypeNamedWhere(
-      item,
-      project,
-      (typeName) => typeName.startsWith(prefix),
-    ),
+    (item, project) => !item.isAssignableToTypeNamedWhere(project, (typeName) => typeName.startsWith(prefix)),
   );
 }
 
@@ -140,12 +132,7 @@ HeimdallCondition<CompilationUnitMember> _classShouldBeAssignableToTypeNameStart
     item,
     project,
   ) {
-    final findings =
-        isAssignableToTypeNamedWhere(
-          item,
-          project,
-          (typeName) => typeName.startsWith(prefix),
-        )
+    final findings = item.isAssignableToTypeNamedWhere(project, (typeName) => typeName.startsWith(prefix))
         ? const <HeimdallValidationInfo>[]
         : [
             HeimdallValidationInfo(
@@ -167,12 +154,7 @@ HeimdallCondition<CompilationUnitMember> _classShouldNotBeAssignableToTypeNameSt
     item,
     project,
   ) {
-    final findings =
-        !isAssignableToTypeNamedWhere(
-          item,
-          project,
-          (typeName) => typeName.startsWith(prefix),
-        )
+    final findings = !item.isAssignableToTypeNamedWhere(project, (typeName) => typeName.startsWith(prefix))
         ? const <HeimdallValidationInfo>[]
         : [
             HeimdallValidationInfo(

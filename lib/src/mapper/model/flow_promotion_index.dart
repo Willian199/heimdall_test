@@ -1,4 +1,9 @@
 import 'package:analyzer/dart/ast/ast.dart';
+import 'package:heimdall_test/src/util/extension/ast_node_extension.dart';
+
+abstract final class _RegexPatterns {
+  static final nullableSuffix = RegExp(r'\?$');
+}
 
 /// Conservative local type promotions over one cached expression snapshot.
 ///
@@ -30,14 +35,14 @@ final class FlowPromotionIndex {
         : binding.thisOrAncestorMatching((node) => node is Block || node is ForStatement || node is ForElement);
     for (var ancestor = reference.parent; ancestor != null; ancestor = ancestor.parent) {
       if (ancestor is IfStatement) {
-        if (_contains(ancestor.thenStatement, reference)) {
+        if (ancestor.thenStatement.containsNode(reference)) {
           assumptions.add((condition: ancestor.expression, truth: true));
-        } else if (ancestor.elseStatement case final branch? when _contains(branch, reference)) {
+        } else if (ancestor.elseStatement case final branch? when branch.containsNode(reference)) {
           assumptions.add((condition: ancestor.expression, truth: false));
         }
       } else if (ancestor is Block) {
         for (final statement in ancestor.statements) {
-          if (statement.offset >= reference.offset || _contains(statement, reference)) {
+          if (statement.offset >= reference.offset || statement.containsNode(reference)) {
             break;
           }
           if (statement.offset < binding.end || statement is! IfStatement) {
@@ -66,8 +71,6 @@ final class FlowPromotionIndex {
     }
     return type;
   }
-
-  bool _contains(AstNode outer, AstNode inner) => outer.offset <= inner.offset && inner.end <= outer.end;
 
   bool _exits(Statement statement) => switch (statement) {
     ReturnStatement() => true,
@@ -101,7 +104,7 @@ final class FlowPromotionIndex {
             rightOperand is SimpleIdentifier && rightOperand.name == name && leftOperand is NullLiteral;
         if ((token == '==' || token == '!=') && comparedToNull) {
           final nonNull = truth == (token == '!=');
-          return (name: nonNull ? current.name.replaceFirst(RegExp(r'\?$'), '') : 'Null', annotation: current.annotation);
+          return (name: nonNull ? current.name.replaceFirst(_RegexPatterns.nullableSuffix, '') : 'Null', annotation: current.annotation);
         }
       default:
         break;

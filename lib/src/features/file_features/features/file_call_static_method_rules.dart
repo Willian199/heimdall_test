@@ -1,6 +1,6 @@
 import 'package:heimdall_test/heimdall_test.dart';
-import 'package:heimdall_test/src/features/file_features/helpers/source_file_location.dart';
-import 'package:heimdall_test/src/features/queries/static_method_queries.dart';
+import 'package:heimdall_test/src/util/extension/calls/ast_node_extension.dart';
+import 'package:heimdall_test/src/util/extension/heimdall_source_file_extension.dart';
 
 /// Predicate-side DSL for static method invocation rules.
 extension FileCallStaticMethodPredicateRules on FilePredicateBuilder {
@@ -162,7 +162,7 @@ bool _callsStaticMethod(
   HeimdallProject project,
 ) {
   return item.declarations.any(
-    (declaration) => astNodeHasStaticMethodInvocation(declaration, targetType, methodName, project),
+    (declaration) => declaration.hasStaticMethodInvocation(targetType, methodName, project),
   );
 }
 
@@ -183,11 +183,10 @@ HeimdallCondition<HeimdallSourceFile> _fileShouldNotCallStaticMethod(
   return HeimdallCondition('not call static method $targetType.$methodName', (item, project) {
     final findings = _staticMethodInvocations(item, targetType, methodName, project)
         .map(
-          (invocation) => fileNodeFinding(
-            item,
+          (invocation) => item.nodeFinding(
             invocation,
             'calls forbidden static method $targetType.$methodName',
-            offset: staticMethodInvocationNameOffset(invocation),
+            offset: invocation.staticMethodInvocationNameOffset,
           ),
         )
         .toList();
@@ -206,6 +205,6 @@ Iterable<AstNode> _staticMethodInvocations(
   HeimdallProject project,
 ) sync* {
   for (final declaration in item.declarations) {
-    yield* astNodeStaticMethodInvocations(declaration, targetType, methodName, project);
+    yield* declaration.staticMethodInvocations(targetType, methodName, project);
   }
 }

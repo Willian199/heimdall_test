@@ -4,9 +4,9 @@ import 'package:heimdall_test/src/core/heimdall_condition.dart';
 import 'package:heimdall_test/src/core/heimdall_predicate.dart';
 import 'package:heimdall_test/src/core/member_rules/member_predicate_builder.dart';
 import 'package:heimdall_test/src/core/member_rules/member_should_builder.dart';
-import 'package:heimdall_test/src/core/non_empty_iterable.dart';
-import 'package:heimdall_test/src/features/member_features/helpers/member_parameter_type_name_rule_helpers.dart';
 import 'package:heimdall_test/src/features/queries/member_queries.dart';
+import 'package:heimdall_test/src/util/extension/iterable_extension.dart';
+import 'package:heimdall_test/src/util/extension/parameters/class_member_extension.dart';
 
 /// Predicate-side DSL for parameter type-name pattern rules.
 extension MemberReceiveParameterTypeNameMatchingPredicateRules on MemberPredicateBuilder {
@@ -103,43 +103,27 @@ extension MemberReceiveParameterTypeNameMatchingShouldRules on MemberShouldBuild
 HeimdallPredicate<ClassMember> _memberParameterTypeNameMatches(RegExp pattern) {
   return HeimdallPredicate(
     'receive parameter type name matching $pattern',
-    (item, project) => memberReceivesResolvedParameterTypeNameWhere(
-      item,
-      project,
-      pattern.hasMatch,
-    ),
+    (item, project) => item.receivesResolvedParameterTypeNameWhere(project, pattern.hasMatch),
   );
 }
 
 HeimdallPredicate<ClassMember> _memberDoesNotReceiveParameterTypeNameMatching(RegExp pattern) {
   return HeimdallPredicate(
     'not receive parameter type name matching $pattern',
-    (item, project) => !memberReceivesResolvedParameterTypeNameWhere(
-      item,
-      project,
-      pattern.hasMatch,
-    ),
+    (item, project) => !item.receivesResolvedParameterTypeNameWhere(project, pattern.hasMatch),
   );
 }
 
 HeimdallCondition<ClassMember> _memberShouldReceiveParameterTypeNameMatching(RegExp pattern) {
   return memberCondition(
     'receive parameter type name matching $pattern',
-    (item, project) => memberReceivesResolvedParameterTypeNameWhere(
-      item,
-      project,
-      pattern.hasMatch,
-    ),
+    (item, project) => item.receivesResolvedParameterTypeNameWhere(project, pattern.hasMatch),
   );
 }
 
 HeimdallCondition<ClassMember> _memberShouldNotReceiveParameterTypeNameMatching(RegExp pattern) {
   return prohibitedMemberCondition(
     'receive parameter type name matching $pattern',
-    (item, project) => memberReceivesResolvedParameterTypeNameWhere(
-      item,
-      project,
-      pattern.hasMatch,
-    ),
+    (item, project) => item.receivesResolvedParameterTypeNameWhere(project, pattern.hasMatch),
   );
 }

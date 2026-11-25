@@ -1,5 +1,5 @@
 import 'package:heimdall_test/heimdall_test.dart';
-import 'package:heimdall_test/src/features/queries/declaration_location_queries.dart';
+import 'package:heimdall_test/src/util/extension/constructor_declaration_extension.dart';
 
 /// Predicate-side DSL for factory constructor rules.
 extension ClassDeclareFactoryConstructorPredicateRules on ClassPredicateBuilder {
@@ -140,7 +140,7 @@ HeimdallCondition<CompilationUnitMember> _classShouldNotDeclareFactoryConstructo
   return HeimdallCondition('not declare factory constructor $name', (item, _) {
     final findings = _matchingFactoryConstructors(item, name).map(
       (constructor) {
-        final location = constructorLocation(constructor);
+        final location = constructor.nameLocation;
         return HeimdallValidationInfo(
           filePath: item.sourcePath,
           line: location.line,

@@ -1,6 +1,6 @@
 import 'package:heimdall_test/heimdall_test.dart';
 import 'package:heimdall_test/src/features/queries/declaration_rule_predicates.dart';
-import 'package:heimdall_test/src/features/queries/generic_assignability_queries.dart';
+import 'package:heimdall_test/src/util/extension/assignability/compilation_unit_member_extension.dart';
 
 /// Predicate-side DSL for exact class implementation rules.
 extension ClassImplementPredicateRules on ClassPredicateBuilder {
@@ -97,7 +97,7 @@ extension ClassImplementShouldRules on ClassShouldBuilder {
 HeimdallPredicate<CompilationUnitMember> _classDoesNotImplement(String typeName) {
   return HeimdallPredicate(
     'not implement $typeName',
-    (item, project) => !instantiatedTypeHasRelationship(item, typeName, project, relationship: 'implements'),
+    (item, project) => !item.instantiatedTypeHasRelationship(typeName, project, relationship: 'implements'),
   );
 }
 
@@ -105,7 +105,7 @@ HeimdallCondition<CompilationUnitMember> _classShouldImplement(
   String typeName,
 ) {
   return HeimdallCondition('implement $typeName', (item, project) {
-    final findings = instantiatedTypeHasRelationship(item, typeName, project, relationship: 'implements')
+    final findings = item.instantiatedTypeHasRelationship(typeName, project, relationship: 'implements')
         ? const <HeimdallValidationInfo>[]
         : [
             HeimdallValidationInfo(
@@ -126,7 +126,7 @@ HeimdallCondition<CompilationUnitMember> _classShouldNotImplement(
   String typeName,
 ) {
   return HeimdallCondition('not implement $typeName', (item, project) {
-    final findings = !instantiatedTypeHasRelationship(item, typeName, project, relationship: 'implements')
+    final findings = !item.instantiatedTypeHasRelationship(typeName, project, relationship: 'implements')
         ? const <HeimdallValidationInfo>[]
         : [
             HeimdallValidationInfo(
